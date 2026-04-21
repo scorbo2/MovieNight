@@ -1,3 +1,5 @@
+const MOVIES_API = '/api/movies'
+
 export default function MovieList({ movies, onEdit, onDelete }) {
   if (movies.length === 0) {
     return (
@@ -20,7 +22,15 @@ export default function MovieList({ movies, onEdit, onDelete }) {
 
 function MovieCard({ movie, onEdit, onDelete }) {
   return (
-    <div className="bg-gray-900 border border-gray-800 rounded-xl p-5 flex flex-col gap-3 hover:border-gray-600 transition-colors">
+    <div className="bg-gray-900 border border-gray-800 rounded-xl overflow-hidden flex flex-col hover:border-gray-600 transition-colors">
+      {movie.hasThumbnail && (
+        <img
+          src={`${MOVIES_API}/${movie.id}/thumbnail`}
+          alt={`${movie.title} thumbnail`}
+          className="w-full h-48 object-cover"
+        />
+      )}
+      <div className="p-5 flex flex-col gap-3 flex-1">
       <div className="flex items-start justify-between gap-2">
         <h2 className="text-lg font-semibold text-white leading-tight">{movie.title}</h2>
         {movie.watched ? (
@@ -62,6 +72,7 @@ function MovieCard({ movie, onEdit, onDelete }) {
         >
           Delete
         </button>
+      </div>
       </div>
     </div>
   )

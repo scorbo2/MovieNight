@@ -1,3 +1,5 @@
+const EPISODES_API = '/api/episodes'
+
 export default function EpisodeList({ episodes, onEdit, onDelete }) {
   if (episodes.length === 0) {
     return (
@@ -25,7 +27,15 @@ function EpisodeCard({ episode, onEdit, onDelete }) {
   ].filter(Boolean).join('')
 
   return (
-    <div className="bg-gray-900 border border-gray-800 rounded-xl p-5 flex flex-col gap-3 hover:border-gray-600 transition-colors">
+    <div className="bg-gray-900 border border-gray-800 rounded-xl overflow-hidden flex flex-col hover:border-gray-600 transition-colors">
+      {episode.hasThumbnail && (
+        <img
+          src={`${EPISODES_API}/${episode.id}/thumbnail`}
+          alt={`${episode.seriesName} thumbnail`}
+          className="w-full h-48 object-cover"
+        />
+      )}
+      <div className="p-5 flex flex-col gap-3 flex-1">
       <div className="flex items-start justify-between gap-2">
         <div className="flex flex-col gap-0.5">
           <h2 className="text-lg font-semibold text-white leading-tight">{episode.seriesName}</h2>
@@ -73,6 +83,7 @@ function EpisodeCard({ episode, onEdit, onDelete }) {
         >
           Delete
         </button>
+      </div>
       </div>
     </div>
   )

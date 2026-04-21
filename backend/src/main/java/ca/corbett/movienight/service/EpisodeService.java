@@ -17,17 +17,19 @@ import java.util.Optional;
 public class EpisodeService {
 
     private final EpisodeRepository episodeRepository;
+    private final ThumbnailService thumbnailService;
 
-    public EpisodeService(EpisodeRepository episodeRepository) {
+    public EpisodeService(EpisodeRepository episodeRepository, ThumbnailService thumbnailService) {
         this.episodeRepository = episodeRepository;
+        this.thumbnailService = thumbnailService;
     }
 
     public Optional<Episode> getEpisodeById(Long id) {
-        return episodeRepository.findById(id);
+        return episodeRepository.findById(id).map(this::populateHasThumbnail);
     }
 
     public Episode saveEpisode(Episode episode) {
-        return episodeRepository.save(episode);
+        return populateHasThumbnail(episodeRepository.save(episode));
     }
 
     public Episode updateEpisode(Long id, Episode updatedEpisode) {
@@ -39,11 +41,12 @@ public class EpisodeService {
             ep.setDescription(updatedEpisode.getDescription());
             ep.setWatched(updatedEpisode.getWatched());
             ep.setTags(updatedEpisode.getTags());
-            return episodeRepository.save(ep);
+            return populateHasThumbnail(episodeRepository.save(ep));
         }).orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Episode not found with id: " + id));
     }
 
     public void deleteEpisode(Long id) {
+        thumbnailService.deleteThumbnail("episodes", id);
         episodeRepository.deleteById(id);
     }
 
@@ -59,7 +62,17 @@ public class EpisodeService {
                 Sort.Order.asc("season"),
                 Sort.Order.asc("episode")
         );
-        return episodeRepository.findAll(spec, sort);
+        return populateHasThumbnail(episodeRepository.findAll(spec, sort));
+    }
+
+    private Episode populateHasThumbnail(Episode episode) {
+        episode.setHasThumbnail(thumbnailService.hasThumbnail("episodes", episode.getId()));
+        return episode;
+    }
+
+    private List<Episode> populateHasThumbnail(List<Episode> episodes) {
+        episodes.forEach(this::populateHasThumbnail);
+        return episodes;
     }
 
     private static Specification<Episode> seriesNameContains(String seriesName) {

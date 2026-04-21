@@ -52,14 +52,25 @@ export default function App() {
 
   const handleSaveMovie = async (movieData) => {
     try {
-      const isEdit = movieData.id != null
-      const url = isEdit ? `${MOVIES_API}/${movieData.id}` : MOVIES_API
+      const { _thumbnail, _clearThumbnail, ...data } = movieData
+      const isEdit = data.id != null
+      const url = isEdit ? `${MOVIES_API}/${data.id}` : MOVIES_API
       const res = await fetch(url, {
         method: isEdit ? 'PUT' : 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(movieData),
+        body: JSON.stringify(data),
       })
       if (!res.ok) throw new Error('Failed to save movie')
+      const saved = await res.json()
+      if (_clearThumbnail) {
+        const thumbnailRes = await fetch(`${MOVIES_API}/${saved.id}/thumbnail`, { method: 'DELETE' })
+        if (!thumbnailRes.ok) throw new Error('Failed to delete movie thumbnail')
+      } else if (_thumbnail) {
+        const formData = new FormData()
+        formData.append('file', _thumbnail)
+        const thumbnailRes = await fetch(`${MOVIES_API}/${saved.id}/thumbnail`, { method: 'POST', body: formData })
+        if (!thumbnailRes.ok) throw new Error('Failed to upload movie thumbnail')
+      }
       setShowMovieForm(false)
       setEditingMovie(null)
       fetchMovies()
@@ -106,14 +117,25 @@ export default function App() {
 
   const handleSaveEpisode = async (episodeData) => {
     try {
-      const isEdit = episodeData.id != null
-      const url = isEdit ? `${EPISODES_API}/${episodeData.id}` : EPISODES_API
+      const { _thumbnail, _clearThumbnail, ...data } = episodeData
+      const isEdit = data.id != null
+      const url = isEdit ? `${EPISODES_API}/${data.id}` : EPISODES_API
       const res = await fetch(url, {
         method: isEdit ? 'PUT' : 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(episodeData),
+        body: JSON.stringify(data),
       })
       if (!res.ok) throw new Error('Failed to save episode')
+      const saved = await res.json()
+      if (_clearThumbnail) {
+        const thumbnailRes = await fetch(`${EPISODES_API}/${saved.id}/thumbnail`, { method: 'DELETE' })
+        if (!thumbnailRes.ok) throw new Error('Failed to clear episode thumbnail')
+      } else if (_thumbnail) {
+        const formData = new FormData()
+        formData.append('file', _thumbnail)
+        const thumbnailRes = await fetch(`${EPISODES_API}/${saved.id}/thumbnail`, { method: 'POST', body: formData })
+        if (!thumbnailRes.ok) throw new Error('Failed to upload episode thumbnail')
+      }
       setShowEpisodeForm(false)
       setEditingEpisode(null)
       fetchEpisodes()

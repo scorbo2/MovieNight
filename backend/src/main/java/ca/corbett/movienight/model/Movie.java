@@ -1,5 +1,6 @@
 package ca.corbett.movienight.model;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
@@ -39,6 +40,10 @@ public class Movie {
     @CollectionTable(name = "movie_tags", joinColumns = @JoinColumn(name = "movie_id"))
     @Column(name = "tag")
     private List<String> tags = new ArrayList<>();
+
+    @Transient
+    @JsonProperty(value = "hasThumbnail", access = JsonProperty.Access.READ_ONLY)
+    private boolean hasThumbnail = false;
 
     public Movie() {}
 
@@ -83,4 +88,7 @@ public class Movie {
                     .collect(Collectors.toCollection(ArrayList::new));
         }
     }
+
+    public boolean isHasThumbnail() { return hasThumbnail; }
+    public void setHasThumbnail(boolean hasThumbnail) { this.hasThumbnail = hasThumbnail; }
 }

@@ -1,4 +1,6 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
+
+const EPISODES_API = '/api/episodes'
 
 const EMPTY_FORM = {
   seriesName: '',
@@ -14,8 +16,27 @@ export default function EpisodeForm({ episode, onSave, onCancel }) {
   const [form, setForm] = useState(EMPTY_FORM)
   const [errors, setErrors] = useState({})
   const [tagInput, setTagInput] = useState('')
+  const [thumbnailFile, setThumbnailFile] = useState(null)
+  const [thumbnailPreview, setThumbnailPreview] = useState(null)
+  const [clearThumbnail, setClearThumbnail] = useState(false)
+  const fileInputRef = useRef(null)
+  const objectUrlRef = useRef(null)
+
+  // Revoke any tracked object URL on unmount to avoid memory leaks
+  useEffect(() => {
+    return () => {
+      if (objectUrlRef.current) {
+        URL.revokeObjectURL(objectUrlRef.current)
+      }
+    }
+  }, [])
 
   useEffect(() => {
+    // Revoke any existing object URL when the episode prop changes (form reset)
+    if (objectUrlRef.current) {
+      URL.revokeObjectURL(objectUrlRef.current)
+      objectUrlRef.current = null
+    }
     if (episode) {
       setForm({
         ...episode,
@@ -23,11 +44,15 @@ export default function EpisodeForm({ episode, onSave, onCancel }) {
         episode: episode.episode ?? '',
         tags: episode.tags ?? [],
       })
+      setThumbnailPreview(episode.hasThumbnail ? `${EPISODES_API}/${episode.id}/thumbnail` : null)
     } else {
       setForm(EMPTY_FORM)
+      setThumbnailPreview(null)
     }
     setErrors({})
     setTagInput('')
+    setThumbnailFile(null)
+    setClearThumbnail(false)
   }, [episode])
 
   const validate = () => {
@@ -59,6 +84,8 @@ export default function EpisodeForm({ episode, onSave, onCancel }) {
       season: form.season !== '' ? Number(form.season) : null,
       episode: form.episode !== '' ? Number(form.episode) : null,
       tags: pendingTags,
+      _thumbnail: thumbnailFile,
+      _clearThumbnail: clearThumbnail,
     })
   }
 
@@ -184,6 +211,57 @@ export default function EpisodeForm({ episode, onSave, onCancel }) {
             ))}
           </div>
         )}
+      </div>
+
+      {/* Thumbnail */}
+      <div>
+        <label className="block text-sm text-gray-400 mb-1">Thumbnail</label>
+        {thumbnailPreview && !clearThumbnail && (
+          <div className="mb-2 relative inline-block">
+            <img
+              src={thumbnailPreview}
+              alt="Thumbnail preview"
+              className="rounded-lg max-h-40 object-cover border border-gray-700"
+            />
+            <button
+              type="button"
+              onClick={() => {
+                if (objectUrlRef.current) {
+                  URL.revokeObjectURL(objectUrlRef.current)
+                  objectUrlRef.current = null
+                }
+                setThumbnailPreview(null)
+                setThumbnailFile(null)
+                setClearThumbnail(episode?.hasThumbnail ?? false)
+                if (fileInputRef.current) fileInputRef.current.value = ''
+              }}
+              className="absolute top-1 right-1 bg-gray-900/80 hover:bg-red-800/80 text-gray-300 hover:text-white rounded-full w-6 h-6 flex items-center justify-center text-xs leading-none"
+              aria-label="Remove thumbnail"
+            >
+              ×
+            </button>
+          </div>
+        )}
+        <input
+          ref={fileInputRef}
+          type="file"
+          accept="image/jpeg,image/png"
+          onChange={(e) => {
+            const file = e.target.files?.[0]
+            if (file) {
+              if (objectUrlRef.current) {
+                URL.revokeObjectURL(objectUrlRef.current)
+              }
+              const url = URL.createObjectURL(file)
+              objectUrlRef.current = url
+              setThumbnailFile(file)
+              setClearThumbnail(false)
+              setThumbnailPreview(url)
+            }
+          }}
+          className="block w-full text-sm text-gray-400 file:mr-3 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-sm file:bg-gray-700 file:text-gray-200 hover:file:bg-gray-600 cursor-pointer"
+        />
+        <p className="text-xs text-gray-500 mt-1">JPEG or PNG, 26×26 to 2000×2000</p>
       </div>
 
       {/* Watched */}

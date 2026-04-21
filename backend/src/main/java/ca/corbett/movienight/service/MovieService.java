@@ -37,6 +37,7 @@ public class MovieService {
             movie.setGenre(updatedMovie.getGenre());
             movie.setDescription(updatedMovie.getDescription());
             movie.setWatched(updatedMovie.getWatched());
+            movie.setTags(updatedMovie.getTags());
             return movieRepository.save(movie);
         }).orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Movie not found with id: " + id));
     }
@@ -51,5 +52,9 @@ public class MovieService {
 
     public List<Movie> getByWatched(Boolean watched) {
         return movieRepository.findByWatched(watched);
+    }
+
+    public List<Movie> searchByTag(String tag) {
+        return movieRepository.findByTagsContainingIgnoreCase(tag);
     }
 }

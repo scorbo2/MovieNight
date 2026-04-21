@@ -39,6 +39,16 @@ function MovieCard({ movie, onEdit, onDelete }) {
         <p className="text-sm text-gray-400 line-clamp-2">{movie.description}</p>
       )}
 
+      {movie.tags && movie.tags.length > 0 && (
+        <div className="flex flex-wrap gap-1.5">
+          {movie.tags.map((tag, i) => (
+            <span key={i} className="text-xs bg-indigo-800/40 text-indigo-300 px-2 py-0.5 rounded-full">
+              {tag}
+            </span>
+          ))}
+        </div>
+      )}
+
       <div className="flex gap-2 mt-auto pt-2">
         <button
           onClick={() => onEdit(movie)}

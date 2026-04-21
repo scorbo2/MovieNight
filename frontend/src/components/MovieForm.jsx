@@ -6,22 +6,26 @@ const EMPTY_FORM = {
   genre: '',
   description: '',
   watched: false,
+  tags: [],
 }
 
 export default function MovieForm({ movie, onSave, onCancel }) {
   const [form, setForm] = useState(EMPTY_FORM)
   const [errors, setErrors] = useState({})
+  const [tagInput, setTagInput] = useState('')
 
   useEffect(() => {
     if (movie) {
       setForm({
         ...movie,
         year: movie.year ?? '',
+        tags: movie.tags ?? [],
       })
     } else {
       setForm(EMPTY_FORM)
     }
     setErrors({})
+    setTagInput('')
   }, [movie])
 
   const validate = () => {
@@ -48,9 +52,14 @@ export default function MovieForm({ movie, onSave, onCancel }) {
       setErrors(errs)
       return
     }
+    // Flush any pending tag input on submit
+    const pendingTags = tagInput.trim()
+      ? [...form.tags, ...tagInput.split(',').map(t => t.trim()).filter(Boolean)]
+      : form.tags
     onSave({
       ...form,
       year: form.year !== '' ? Number(form.year) : null,
+      tags: pendingTags,
     })
   }
 
@@ -110,9 +119,61 @@ export default function MovieForm({ movie, onSave, onCancel }) {
         />
       </div>
 
+      {/* Tags */}
+      <div>
+        <label className="block text-sm text-gray-400 mb-1">Tags</label>
+        <div className="flex gap-2">
+          <input
+            value={tagInput}
+            onChange={(e) => setTagInput(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter' || e.key === ',') {
+                e.preventDefault()
+                const newTags = tagInput.split(',').map(t => t.trim()).filter(Boolean)
+                if (newTags.length) {
+                  setForm(prev => ({ ...prev, tags: [...prev.tags, ...newTags] }))
+                  setTagInput('')
+                }
+              }
+            }}
+            placeholder="Type a tag and press Enter"
+            className="flex-1 bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-gray-100 focus:outline-none focus:border-indigo-500"
+          />
+          <button
+            type="button"
+            onClick={() => {
+              const newTags = tagInput.split(',').map(t => t.trim()).filter(Boolean)
+              if (newTags.length) {
+                setForm(prev => ({ ...prev, tags: [...prev.tags, ...newTags] }))
+                setTagInput('')
+              }
+            }}
+            className="bg-gray-700 hover:bg-gray-600 text-gray-200 px-3 py-2 rounded-lg text-sm transition-colors"
+          >
+            Add
+          </button>
+        </div>
+        {form.tags.length > 0 && (
+          <div className="flex flex-wrap gap-2 mt-2">
+            {form.tags.map((tag, i) => (
+              <span key={i} className="flex items-center gap-1 bg-indigo-800/50 text-indigo-300 text-xs px-2 py-0.5 rounded-full">
+                {tag}
+                <button
+                  type="button"
+                  onClick={() => setForm(prev => ({ ...prev, tags: prev.tags.filter((_, j) => j !== i) }))}
+                  className="hover:text-white ml-0.5"
+                  aria-label={`Remove tag ${tag}`}
+                >
+                  ×
+                </button>
+              </span>
+            ))}
+          </div>
+        )}
+      </div>
+
       {/* Watched */}
-      <label className="flex items-center gap-2 text-sm text-gray-300 cursor-pointer">
-        <input
+      <label className="flex items-center gap-2 text-sm text-gray-300 cursor-pointer">        <input
           name="watched"
           type="checkbox"
           checked={form.watched}

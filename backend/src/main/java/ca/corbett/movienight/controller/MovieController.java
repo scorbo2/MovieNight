@@ -22,12 +22,16 @@ public class MovieController {
 
     @GetMapping
     public List<Movie> getAllMovies(@RequestParam(required = false) String title,
-                                   @RequestParam(required = false) Boolean watched) {
+                                   @RequestParam(required = false) Boolean watched,
+                                   @RequestParam(required = false) String tag) {
         if (title != null && !title.isBlank()) {
             return movieService.searchByTitle(title);
         }
         if (watched != null) {
             return movieService.getByWatched(watched);
+        }
+        if (tag != null && !tag.isBlank()) {
+            return movieService.searchByTag(tag);
         }
         return movieService.getAllMovies();
     }

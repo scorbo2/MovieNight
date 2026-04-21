@@ -40,3 +40,7 @@ frontend/.vite/
 *.iml
 .vscode/
 .DS_Store
+
+# front-end build output:
+backend/src/main/resources/static/frontend
+frontend/node

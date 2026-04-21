@@ -137,6 +137,12 @@ class ThumbnailServiceTest {
     }
 
     @Test
+    void acceptsMinimumSizeImage() throws Exception {
+        thumbnailService.saveThumbnail(validJpeg(26, 26), "movies", 7L);
+        assertThat(thumbnailService.hasThumbnail("movies", 7L)).isTrue();
+    }
+
+    @Test
     void returnsNullWhenNoThumbnail() {
         assertThat(thumbnailService.getThumbnailPath("movies", 999L)).isNull();
         assertThat(thumbnailService.hasThumbnail("movies", 999L)).isFalse();

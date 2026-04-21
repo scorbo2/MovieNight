@@ -20,7 +20,7 @@ import java.util.List;
 public class ThumbnailService {
 
     private static final int MAX_DIMENSION = 2000;
-    private static final int MIN_DIMENSION = 25;
+    private static final int MIN_DIMENSION = 26;
     private static final List<String> EXTENSIONS = List.of("jpg", "jpeg", "png");
 
     private final String dataDir;
@@ -76,9 +76,9 @@ public class ThumbnailService {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
                     "Image too large (max " + MAX_DIMENSION + "x" + MAX_DIMENSION + ")");
         }
-        if (image.getWidth() <= MIN_DIMENSION || image.getHeight() <= MIN_DIMENSION) {
+        if (image.getWidth() < MIN_DIMENSION || image.getHeight() < MIN_DIMENSION) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
-                    "Image too small (min > " + MIN_DIMENSION + "x" + MIN_DIMENSION + ")");
+                    "Image too small (min " + MIN_DIMENSION + "x" + MIN_DIMENSION + ")");
         }
 
         // Delete any existing thumbnail before saving the new one

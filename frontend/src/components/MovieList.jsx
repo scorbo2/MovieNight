@@ -1,0 +1,67 @@
+export default function MovieList({ movies, onEdit, onDelete }) {
+  if (movies.length === 0) {
+    return (
+      <div className="text-center text-gray-500 py-16">
+        <p className="text-5xl mb-4">🎥</p>
+        <p className="text-xl">No movies found.</p>
+        <p className="text-sm mt-2">Add a movie to get started!</p>
+      </div>
+    )
+  }
+
+  return (
+    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
+      {movies.map((movie) => (
+        <MovieCard key={movie.id} movie={movie} onEdit={onEdit} onDelete={onDelete} />
+      ))}
+    </div>
+  )
+}
+
+function MovieCard({ movie, onEdit, onDelete }) {
+  const stars = movie.rating ? '★'.repeat(Math.round(movie.rating / 2)) + '☆'.repeat(5 - Math.round(movie.rating / 2)) : null
+
+  return (
+    <div className="bg-gray-900 border border-gray-800 rounded-xl p-5 flex flex-col gap-3 hover:border-gray-600 transition-colors">
+      <div className="flex items-start justify-between gap-2">
+        <h2 className="text-lg font-semibold text-white leading-tight">{movie.title}</h2>
+        {movie.watched ? (
+          <span className="shrink-0 text-xs bg-green-800/60 text-green-300 px-2 py-0.5 rounded-full">Watched</span>
+        ) : (
+          <span className="shrink-0 text-xs bg-gray-700 text-gray-400 px-2 py-0.5 rounded-full">Unwatched</span>
+        )}
+      </div>
+
+      <div className="flex flex-wrap gap-x-4 gap-y-1 text-sm text-gray-400">
+        {movie.year && <span>📅 {movie.year}</span>}
+        {movie.genre && <span>🎭 {movie.genre}</span>}
+        {movie.director && <span>🎬 {movie.director}</span>}
+      </div>
+
+      {stars && (
+        <div className="text-yellow-400 text-sm tracking-wider" title={`Rating: ${movie.rating}/10`}>
+          {stars} <span className="text-gray-500 text-xs">({movie.rating}/10)</span>
+        </div>
+      )}
+
+      {movie.description && (
+        <p className="text-sm text-gray-400 line-clamp-2">{movie.description}</p>
+      )}
+
+      <div className="flex gap-2 mt-auto pt-2">
+        <button
+          onClick={() => onEdit(movie)}
+          className="flex-1 bg-gray-800 hover:bg-gray-700 text-gray-200 text-sm px-3 py-1.5 rounded-lg transition-colors"
+        >
+          Edit
+        </button>
+        <button
+          onClick={() => onDelete(movie.id)}
+          className="flex-1 bg-red-900/40 hover:bg-red-800/60 text-red-300 text-sm px-3 py-1.5 rounded-lg transition-colors"
+        >
+          Delete
+        </button>
+      </div>
+    </div>
+  )
+}

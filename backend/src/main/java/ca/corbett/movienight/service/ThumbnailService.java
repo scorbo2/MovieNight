@@ -8,12 +8,15 @@ import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.server.ResponseStatusException;
 
 import javax.imageio.ImageIO;
+import javax.imageio.ImageReader;
+import javax.imageio.stream.ImageInputStream;
 import java.awt.image.BufferedImage;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.Iterator;
 import java.util.List;
 
 @Service
@@ -63,6 +66,42 @@ public class ThumbnailService {
         }
 
         byte[] bytes = file.getBytes();
+
+        // Use ImageReader to read dimensions from metadata first (avoids full decode)
+        // This guards against decompression bombs before committing memory to a full decode.
+        ImageInputStream iis;
+        try {
+            iis = ImageIO.createImageInputStream(new ByteArrayInputStream(bytes));
+        } catch (Exception e) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Invalid image file");
+        }
+        if (iis == null) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Invalid image file");
+        }
+        Iterator<ImageReader> readers = ImageIO.getImageReaders(iis);
+        if (!readers.hasNext()) {
+            try { iis.close(); } catch (IOException ignored) {}
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Invalid image file");
+        }
+        ImageReader reader = readers.next();
+        try {
+            reader.setInput(iis, true, true);
+            int width = reader.getWidth(0);
+            int height = reader.getHeight(0);
+            if (width > MAX_DIMENSION || height > MAX_DIMENSION) {
+                throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
+                        "Image too large (max " + MAX_DIMENSION + "x" + MAX_DIMENSION + ")");
+            }
+            if (width < MIN_DIMENSION || height < MIN_DIMENSION) {
+                throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
+                        "Image too small (min " + MIN_DIMENSION + "x" + MIN_DIMENSION + ")");
+            }
+        } finally {
+            reader.dispose();
+            try { iis.close(); } catch (IOException ignored) {}
+        }
+
+        // Dimensions are within bounds — now fully decode to validate image integrity
         BufferedImage image;
         try {
             image = ImageIO.read(new ByteArrayInputStream(bytes));
@@ -71,14 +110,6 @@ public class ThumbnailService {
         }
         if (image == null) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Invalid image file");
-        }
-        if (image.getWidth() > MAX_DIMENSION || image.getHeight() > MAX_DIMENSION) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
-                    "Image too large (max " + MAX_DIMENSION + "x" + MAX_DIMENSION + ")");
-        }
-        if (image.getWidth() < MIN_DIMENSION || image.getHeight() < MIN_DIMENSION) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
-                    "Image too small (min " + MIN_DIMENSION + "x" + MIN_DIMENSION + ")");
         }
 
         // Delete any existing thumbnail before saving the new one

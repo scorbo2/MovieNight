@@ -67,6 +67,12 @@
             <plugin>
                 <groupId>org.springframework.boot</groupId>
                 <artifactId>spring-boot-maven-plugin</artifactId>
+                <configuration>
+                    <!-- Activate the prod profile when running the packaged executable jar -->
+                    <profiles>
+                        <profile>prod</profile>
+                    </profiles>
+                </configuration>
             </plugin>
 
             <plugin>

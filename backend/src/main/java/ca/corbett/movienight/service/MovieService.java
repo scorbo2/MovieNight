@@ -2,6 +2,9 @@ package ca.corbett.movienight.service;
 
 import ca.corbett.movienight.model.Movie;
 import ca.corbett.movienight.repository.MovieRepository;
+import jakarta.persistence.criteria.Join;
+import jakarta.persistence.criteria.JoinType;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
@@ -56,5 +59,32 @@ public class MovieService {
 
     public List<Movie> searchByTag(String tag) {
         return movieRepository.findByTagsContainingIgnoreCase(tag);
+    }
+
+    public List<Movie> searchMovies(String title, Boolean watched, String tag) {
+        Specification<Movie> spec = Specification.where(titleContains(title))
+                .and(watchedEquals(watched))
+                .and(tagContains(tag));
+        return movieRepository.findAll(spec);
+    }
+
+    private static Specification<Movie> titleContains(String title) {
+        return (root, query, cb) -> {
+            if (title == null || title.isBlank()) return null;
+            return cb.like(cb.lower(root.get("title")), "%" + title.trim().toLowerCase() + "%");
+        };
+    }
+
+    private static Specification<Movie> watchedEquals(Boolean watched) {
+        return (root, query, cb) -> watched == null ? null : cb.equal(root.get("watched"), watched);
+    }
+
+    private static Specification<Movie> tagContains(String tag) {
+        return (root, query, cb) -> {
+            if (tag == null || tag.isBlank()) return null;
+            query.distinct(true);
+            Join<Movie, String> tagsJoin = root.join("tags", JoinType.INNER);
+            return cb.like(cb.lower(tagsJoin.as(String.class)), "%" + tag.trim().toLowerCase() + "%");
+        };
     }
 }

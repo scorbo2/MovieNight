@@ -2,10 +2,13 @@ package ca.corbett.movienight;
 
 import ca.corbett.movienight.model.Movie;
 import ca.corbett.movienight.repository.MovieRepository;
+import jakarta.persistence.criteria.Join;
+import jakarta.persistence.criteria.JoinType;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.jdbc.AutoConfigureTestDatabase;
 import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.test.context.TestPropertySource;
 
 import java.util.List;
@@ -90,5 +93,35 @@ class MovieRepositoryTest {
 
         List<Movie> all = movieRepository.findAll();
         assertThat(all.get(0).getTags()).containsExactly("action");
+    }
+
+    @Test
+    void combinedFilterTitleAndWatchedAndTag() {
+        Movie m1 = new Movie("Action Hero", 2020, "Action", "Hero stuff.", true);
+        m1.setTags(List.of("action", "blockbuster"));
+
+        Movie m2 = new Movie("Action Zero", 2021, "Action", "Zero stuff.", false);
+        m2.setTags(List.of("action", "blockbuster"));
+
+        Movie m3 = new Movie("Comedy King", 2022, "Comedy", "Funny stuff.", true);
+        m3.setTags(List.of("comedy"));
+
+        movieRepository.saveAll(List.of(m1, m2, m3));
+
+        // title contains "action", watched=true, tag contains "blockbuster" → only m1
+        Specification<Movie> spec = Specification
+                .<Movie>where((root, query, cb) ->
+                        cb.like(cb.lower(root.get("title")), "%action%"))
+                .and((root, query, cb) ->
+                        cb.equal(root.get("watched"), true))
+                .and((root, query, cb) -> {
+                    query.distinct(true);
+                    Join<Movie, String> tagsJoin = root.join("tags", JoinType.INNER);
+                    return cb.like(cb.lower(tagsJoin.as(String.class)), "%blockbuster%");
+                });
+
+        List<Movie> results = movieRepository.findAll(spec);
+        assertThat(results).hasSize(1);
+        assertThat(results.get(0).getTitle()).isEqualTo("Action Hero");
     }
 }

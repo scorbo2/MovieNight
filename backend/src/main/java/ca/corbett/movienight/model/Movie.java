@@ -42,7 +42,7 @@ public class Movie {
     private List<String> tags = new ArrayList<>();
 
     @Transient
-    @JsonProperty("hasThumbnail")
+    @JsonProperty(value = "hasThumbnail", access = JsonProperty.Access.READ_ONLY)
     private boolean hasThumbnail = false;
 
     public Movie() {}

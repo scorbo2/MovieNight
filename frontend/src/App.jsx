@@ -81,7 +81,7 @@ export default function App() {
       <header className="bg-gray-900 border-b border-gray-800 shadow-lg">
         <div className="max-w-6xl mx-auto px-4 py-4 flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <span className="text-3xl">🎬</span>
+            <span className="text-3xl" aria-hidden="true">🎬</span>
             <h1 className="text-2xl font-bold text-white tracking-tight">MovieNight</h1>
           </div>
           <button

@@ -99,7 +99,10 @@ export default function App() {
     }
   }
 
-  useEffect(() => { fetchEpisodes() }, [episodeSeriesQuery, episodeSeasonQuery, filterEpisodeWatched])
+  useEffect(() => {
+    if (activeTab !== 'episodes') return
+    fetchEpisodes()
+  }, [activeTab, episodeSeriesQuery, episodeSeasonQuery, filterEpisodeWatched])
 
   const handleSaveEpisode = async (episodeData) => {
     try {

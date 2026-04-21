@@ -4,6 +4,10 @@ import jakarta.persistence.*;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
 
+import java.util.ArrayList;
+import java.util.List;
+import java.util.stream.Collectors;
+
 @Entity
 @Table(name = "movies")
 public class Movie {
@@ -30,6 +34,11 @@ public class Movie {
 
     @Column
     private Boolean watched = false;
+
+    @ElementCollection(fetch = FetchType.EAGER)
+    @CollectionTable(name = "movie_tags", joinColumns = @JoinColumn(name = "movie_id"))
+    @Column(name = "tag")
+    private List<String> tags = new ArrayList<>();
 
     public Movie() {}
 
@@ -61,4 +70,17 @@ public class Movie {
 
     public Boolean getWatched() { return watched; }
     public void setWatched(Boolean watched) { this.watched = watched; }
+
+    public List<String> getTags() { return tags; }
+    public void setTags(List<String> tags) {
+        if (tags == null) {
+            this.tags = new ArrayList<>();
+        } else {
+            this.tags = tags.stream()
+                    .filter(t -> t != null && !t.isBlank())
+                    .map(t -> t.trim().toLowerCase())
+                    .distinct()
+                    .collect(Collectors.toCollection(ArrayList::new));
+        }
+    }
 }

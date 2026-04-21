@@ -20,8 +20,23 @@ export default function EpisodeForm({ episode, onSave, onCancel }) {
   const [thumbnailPreview, setThumbnailPreview] = useState(null)
   const [clearThumbnail, setClearThumbnail] = useState(false)
   const fileInputRef = useRef(null)
+  const objectUrlRef = useRef(null)
+
+  // Revoke any tracked object URL on unmount to avoid memory leaks
+  useEffect(() => {
+    return () => {
+      if (objectUrlRef.current) {
+        URL.revokeObjectURL(objectUrlRef.current)
+      }
+    }
+  }, [])
 
   useEffect(() => {
+    // Revoke any existing object URL when the episode prop changes (form reset)
+    if (objectUrlRef.current) {
+      URL.revokeObjectURL(objectUrlRef.current)
+      objectUrlRef.current = null
+    }
     if (episode) {
       setForm({
         ...episode,
@@ -211,6 +226,10 @@ export default function EpisodeForm({ episode, onSave, onCancel }) {
             <button
               type="button"
               onClick={() => {
+                if (objectUrlRef.current) {
+                  URL.revokeObjectURL(objectUrlRef.current)
+                  objectUrlRef.current = null
+                }
                 setThumbnailPreview(null)
                 setThumbnailFile(null)
                 setClearThumbnail(episode?.hasThumbnail ?? false)
@@ -230,9 +249,14 @@ export default function EpisodeForm({ episode, onSave, onCancel }) {
           onChange={(e) => {
             const file = e.target.files?.[0]
             if (file) {
+              if (objectUrlRef.current) {
+                URL.revokeObjectURL(objectUrlRef.current)
+              }
+              const url = URL.createObjectURL(file)
+              objectUrlRef.current = url
               setThumbnailFile(file)
               setClearThumbnail(false)
-              setThumbnailPreview(URL.createObjectURL(file))
+              setThumbnailPreview(url)
             }
           }}
           className="block w-full text-sm text-gray-400 file:mr-3 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-sm file:bg-gray-700 file:text-gray-200 hover:file:bg-gray-600 cursor-pointer"

@@ -2,8 +2,6 @@ package ca.corbett.movienight;
 
 import ca.corbett.movienight.model.Episode;
 import ca.corbett.movienight.repository.EpisodeRepository;
-import jakarta.persistence.criteria.Join;
-import jakarta.persistence.criteria.JoinType;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.jdbc.AutoConfigureTestDatabase;

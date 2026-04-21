@@ -164,7 +164,7 @@ export default function App() {
         {/* Tabs */}
         <div className="flex gap-1 mb-6 bg-gray-900 border border-gray-800 rounded-lg p-1 w-fit">
           <button
-            onClick={() => setActiveTab('movies')}
+            onClick={() => { setActiveTab('movies'); setShowEpisodeForm(false); setEditingEpisode(null) }}
             className={`px-5 py-2 rounded-md text-sm font-medium transition-colors ${
               activeTab === 'movies'
                 ? 'bg-indigo-600 text-white'
@@ -174,7 +174,7 @@ export default function App() {
             🎬 Movies
           </button>
           <button
-            onClick={() => setActiveTab('episodes')}
+            onClick={() => { setActiveTab('episodes'); setShowMovieForm(false); setEditingMovie(null) }}
             className={`px-5 py-2 rounded-md text-sm font-medium transition-colors ${
               activeTab === 'episodes'
                 ? 'bg-indigo-600 text-white'

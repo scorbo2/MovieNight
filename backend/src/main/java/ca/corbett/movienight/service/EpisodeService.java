@@ -54,7 +54,11 @@ public class EpisodeService {
                 .and(episodeEquals(episode))
                 .and(watchedEquals(watched))
                 .and(tagContains(tag));
-        Sort sort = Sort.by(Sort.Direction.ASC, "season").and(Sort.by(Sort.Direction.ASC, "episode"));
+        Sort sort = Sort.by(
+                Sort.Order.asc("seriesName").ignoreCase(),
+                Sort.Order.asc("season"),
+                Sort.Order.asc("episode")
+        );
         return episodeRepository.findAll(spec, sort);
     }
 

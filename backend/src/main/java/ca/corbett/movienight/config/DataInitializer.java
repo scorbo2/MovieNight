@@ -1,7 +1,7 @@
-package com.movienight.config;
+package ca.corbett.movienight.config;
 
-import com.movienight.model.Movie;
-import com.movienight.repository.MovieRepository;
+import ca.corbett.movienight.model.Movie;
+import ca.corbett.movienight.repository.MovieRepository;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;

@@ -1,7 +1,7 @@
-package com.movienight;
+package ca.corbett.movienight;
 
-import com.movienight.model.Movie;
-import com.movienight.repository.MovieRepository;
+import ca.corbett.movienight.model.Movie;
+import ca.corbett.movienight.repository.MovieRepository;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.jdbc.AutoConfigureTestDatabase;

@@ -1,4 +1,4 @@
-package com.movienight;
+package ca.corbett.movienight;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;

@@ -1,7 +1,7 @@
-package com.movienight.service;
+package ca.corbett.movienight.service;
 
-import com.movienight.model.Movie;
-import com.movienight.repository.MovieRepository;
+import ca.corbett.movienight.model.Movie;
+import ca.corbett.movienight.repository.MovieRepository;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;

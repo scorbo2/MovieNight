@@ -1,7 +1,7 @@
-package com.movienight.controller;
+package ca.corbett.movienight.controller;
 
-import com.movienight.model.Movie;
-import com.movienight.service.MovieService;
+import ca.corbett.movienight.model.Movie;
+import ca.corbett.movienight.service.MovieService;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;

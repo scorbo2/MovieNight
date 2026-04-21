@@ -1,4 +1,4 @@
-package com.movienight.model;
+package ca.corbett.movienight.model;
 
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotBlank;

@@ -173,7 +173,8 @@ export default function MovieForm({ movie, onSave, onCancel }) {
       </div>
 
       {/* Watched */}
-      <label className="flex items-center gap-2 text-sm text-gray-300 cursor-pointer">        <input
+      <label className="flex items-center gap-2 text-sm text-gray-300 cursor-pointer">
+        <input
           name="watched"
           type="checkbox"
           checked={form.watched}

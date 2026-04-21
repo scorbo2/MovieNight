@@ -63,11 +63,13 @@ export default function App() {
       if (!res.ok) throw new Error('Failed to save movie')
       const saved = await res.json()
       if (_clearThumbnail) {
-        await fetch(`${MOVIES_API}/${saved.id}/thumbnail`, { method: 'DELETE' })
+        const thumbnailRes = await fetch(`${MOVIES_API}/${saved.id}/thumbnail`, { method: 'DELETE' })
+        if (!thumbnailRes.ok) throw new Error('Failed to delete movie thumbnail')
       } else if (_thumbnail) {
         const formData = new FormData()
         formData.append('file', _thumbnail)
-        await fetch(`${MOVIES_API}/${saved.id}/thumbnail`, { method: 'POST', body: formData })
+        const thumbnailRes = await fetch(`${MOVIES_API}/${saved.id}/thumbnail`, { method: 'POST', body: formData })
+        if (!thumbnailRes.ok) throw new Error('Failed to upload movie thumbnail')
       }
       setShowMovieForm(false)
       setEditingMovie(null)

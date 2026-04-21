@@ -6,6 +6,7 @@ import jakarta.validation.constraints.Size;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Collectors;
 
 @Entity
 @Table(name = "movies")
@@ -71,5 +72,15 @@ public class Movie {
     public void setWatched(Boolean watched) { this.watched = watched; }
 
     public List<String> getTags() { return tags; }
-    public void setTags(List<String> tags) { this.tags = tags != null ? tags : new ArrayList<>(); }
+    public void setTags(List<String> tags) {
+        if (tags == null) {
+            this.tags = new ArrayList<>();
+        } else {
+            this.tags = tags.stream()
+                    .filter(t -> t != null && !t.isBlank())
+                    .map(t -> t.trim().toLowerCase())
+                    .distinct()
+                    .collect(Collectors.toCollection(ArrayList::new));
+        }
+    }
 }

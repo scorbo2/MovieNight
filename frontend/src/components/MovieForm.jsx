@@ -4,8 +4,6 @@ const EMPTY_FORM = {
   title: '',
   year: '',
   genre: '',
-  director: '',
-  rating: '',
   description: '',
   watched: false,
 }
@@ -19,7 +17,6 @@ export default function MovieForm({ movie, onSave, onCancel }) {
       setForm({
         ...movie,
         year: movie.year ?? '',
-        rating: movie.rating ?? '',
       })
     } else {
       setForm(EMPTY_FORM)
@@ -32,9 +29,6 @@ export default function MovieForm({ movie, onSave, onCancel }) {
     if (!form.title.trim()) errs.title = 'Title is required.'
     if (form.year && (isNaN(form.year) || form.year < 1888 || form.year > 2100)) {
       errs.year = 'Enter a valid year (1888–2100).'
-    }
-    if (form.rating && (isNaN(form.rating) || form.rating < 0 || form.rating > 10)) {
-      errs.rating = 'Rating must be between 0 and 10.'
     }
     return errs
   }
@@ -57,7 +51,6 @@ export default function MovieForm({ movie, onSave, onCancel }) {
     onSave({
       ...form,
       year: form.year !== '' ? Number(form.year) : null,
-      rating: form.rating !== '' ? Number(form.rating) : null,
     })
   }
 
@@ -102,33 +95,6 @@ export default function MovieForm({ movie, onSave, onCancel }) {
             placeholder="e.g. Drama"
             className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-gray-100 focus:outline-none focus:border-indigo-500"
           />
-        </div>
-      </div>
-
-      {/* Director & Rating */}
-      <div className="grid grid-cols-2 gap-3">
-        <div>
-          <label className="block text-sm text-gray-400 mb-1">Director</label>
-          <input
-            name="director"
-            value={form.director}
-            onChange={handleChange}
-            className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-gray-100 focus:outline-none focus:border-indigo-500"
-          />
-        </div>
-        <div>
-          <label className="block text-sm text-gray-400 mb-1">Rating (0–10)</label>
-          <input
-            name="rating"
-            type="number"
-            step="0.1"
-            min="0"
-            max="10"
-            value={form.rating}
-            onChange={handleChange}
-            className={`w-full bg-gray-800 border rounded-lg px-3 py-2 text-gray-100 focus:outline-none focus:border-indigo-500 ${errors.rating ? 'border-red-500' : 'border-gray-700'}`}
-          />
-          {errors.rating && <p className="text-red-400 text-xs mt-1">{errors.rating}</p>}
         </div>
       </div>
 

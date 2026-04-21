@@ -19,8 +19,6 @@ export default function MovieList({ movies, onEdit, onDelete }) {
 }
 
 function MovieCard({ movie, onEdit, onDelete }) {
-  const stars = movie.rating ? '★'.repeat(Math.round(movie.rating / 2)) + '☆'.repeat(5 - Math.round(movie.rating / 2)) : null
-
   return (
     <div className="bg-gray-900 border border-gray-800 rounded-xl p-5 flex flex-col gap-3 hover:border-gray-600 transition-colors">
       <div className="flex items-start justify-between gap-2">
@@ -35,14 +33,7 @@ function MovieCard({ movie, onEdit, onDelete }) {
       <div className="flex flex-wrap gap-x-4 gap-y-1 text-sm text-gray-400">
         {movie.year && <span>📅 {movie.year}</span>}
         {movie.genre && <span>🎭 {movie.genre}</span>}
-        {movie.director && <span>🎬 {movie.director}</span>}
       </div>
-
-      {stars && (
-        <div className="text-yellow-400 text-sm tracking-wider" title={`Rating: ${movie.rating}/10`}>
-          {stars} <span className="text-gray-500 text-xs">({movie.rating}/10)</span>
-        </div>
-      )}
 
       {movie.description && (
         <p className="text-sm text-gray-400 line-clamp-2">{movie.description}</p>

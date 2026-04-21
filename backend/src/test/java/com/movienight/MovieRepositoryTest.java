@@ -27,7 +27,7 @@ class MovieRepositoryTest {
 
     @Test
     void saveAndFindMovie() {
-        Movie movie = new Movie("Test Movie", 2024, "Drama", "Test Director", 8.0, "A test movie.", false);
+        Movie movie = new Movie("Test Movie", 2024, "Drama", "A test movie.", false);
         movieRepository.save(movie);
 
         List<Movie> all = movieRepository.findAll();
@@ -37,8 +37,8 @@ class MovieRepositoryTest {
 
     @Test
     void findByTitleContainingIgnoreCase() {
-        movieRepository.save(new Movie("Inception", 2010, "Sci-Fi", "Christopher Nolan", 8.8, "Dream heist.", false));
-        movieRepository.save(new Movie("Interstellar", 2014, "Sci-Fi", "Christopher Nolan", 8.7, "Space travel.", false));
+        movieRepository.save(new Movie("Inception", 2010, "Sci-Fi", "Dream heist.", false));
+        movieRepository.save(new Movie("Interstellar", 2014, "Sci-Fi", "Space travel.", false));
 
         List<Movie> results = movieRepository.findByTitleContainingIgnoreCase("inter");
         assertThat(results).hasSize(1);
@@ -47,8 +47,8 @@ class MovieRepositoryTest {
 
     @Test
     void findByWatched() {
-        movieRepository.save(new Movie("Watched Movie", 2020, "Comedy", "Director A", 7.0, "Seen it.", true));
-        movieRepository.save(new Movie("Unwatched Movie", 2021, "Thriller", "Director B", 6.5, "Not yet.", false));
+        movieRepository.save(new Movie("Watched Movie", 2020, "Comedy", "Seen it.", true));
+        movieRepository.save(new Movie("Unwatched Movie", 2021, "Thriller", "Not yet.", false));
 
         List<Movie> watched = movieRepository.findByWatched(true);
         assertThat(watched).hasSize(1);

@@ -24,13 +24,6 @@ public class Movie {
     @Column
     private String genre;
 
-    @Size(max = 255)
-    @Column
-    private String director;
-
-    @Column
-    private Double rating;
-
     @Size(max = 2000)
     @Column(length = 2000)
     private String description;
@@ -40,13 +33,11 @@ public class Movie {
 
     public Movie() {}
 
-    public Movie(String title, Integer year, String genre, String director,
-                 Double rating, String description, Boolean watched) {
+    public Movie(String title, Integer year, String genre,
+                 String description, Boolean watched) {
         this.title = title;
         this.year = year;
         this.genre = genre;
-        this.director = director;
-        this.rating = rating;
         this.description = description;
         this.watched = watched;
     }
@@ -64,12 +55,6 @@ public class Movie {
 
     public String getGenre() { return genre; }
     public void setGenre(String genre) { this.genre = genre; }
-
-    public String getDirector() { return director; }
-    public void setDirector(String director) { this.director = director; }
-
-    public Double getRating() { return rating; }
-    public void setRating(Double rating) { this.rating = rating; }
 
     public String getDescription() { return description; }
     public void setDescription(String description) { this.description = description; }

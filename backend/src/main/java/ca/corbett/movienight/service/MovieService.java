@@ -16,21 +16,23 @@ import java.util.Optional;
 public class MovieService {
 
     private final MovieRepository movieRepository;
+    private final ThumbnailService thumbnailService;
 
-    public MovieService(MovieRepository movieRepository) {
+    public MovieService(MovieRepository movieRepository, ThumbnailService thumbnailService) {
         this.movieRepository = movieRepository;
+        this.thumbnailService = thumbnailService;
     }
 
     public List<Movie> getAllMovies() {
-        return movieRepository.findAll();
+        return populateHasThumbnail(movieRepository.findAll());
     }
 
     public Optional<Movie> getMovieById(Long id) {
-        return movieRepository.findById(id);
+        return movieRepository.findById(id).map(this::populateHasThumbnail);
     }
 
     public Movie saveMovie(Movie movie) {
-        return movieRepository.save(movie);
+        return populateHasThumbnail(movieRepository.save(movie));
     }
 
     public Movie updateMovie(Long id, Movie updatedMovie) {
@@ -41,31 +43,42 @@ public class MovieService {
             movie.setDescription(updatedMovie.getDescription());
             movie.setWatched(updatedMovie.getWatched());
             movie.setTags(updatedMovie.getTags());
-            return movieRepository.save(movie);
+            return populateHasThumbnail(movieRepository.save(movie));
         }).orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Movie not found with id: " + id));
     }
 
     public void deleteMovie(Long id) {
+        thumbnailService.deleteThumbnail("movies", id);
         movieRepository.deleteById(id);
     }
 
     public List<Movie> searchByTitle(String title) {
-        return movieRepository.findByTitleContainingIgnoreCase(title);
+        return populateHasThumbnail(movieRepository.findByTitleContainingIgnoreCase(title));
     }
 
     public List<Movie> getByWatched(Boolean watched) {
-        return movieRepository.findByWatched(watched);
+        return populateHasThumbnail(movieRepository.findByWatched(watched));
     }
 
     public List<Movie> searchByTag(String tag) {
-        return movieRepository.findByTagsContainingIgnoreCase(tag);
+        return populateHasThumbnail(movieRepository.findByTagsContainingIgnoreCase(tag));
     }
 
     public List<Movie> searchMovies(String title, Boolean watched, String tag) {
         Specification<Movie> spec = Specification.where(titleContains(title))
                 .and(watchedEquals(watched))
                 .and(tagContains(tag));
-        return movieRepository.findAll(spec);
+        return populateHasThumbnail(movieRepository.findAll(spec));
+    }
+
+    private Movie populateHasThumbnail(Movie movie) {
+        movie.setHasThumbnail(thumbnailService.hasThumbnail("movies", movie.getId()));
+        return movie;
+    }
+
+    private List<Movie> populateHasThumbnail(List<Movie> movies) {
+        movies.forEach(this::populateHasThumbnail);
+        return movies;
     }
 
     private static Specification<Movie> titleContains(String title) {

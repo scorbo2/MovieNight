@@ -1,4 +1,6 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
+
+const MOVIES_API = '/api/movies'
 
 const EMPTY_FORM = {
   title: '',
@@ -13,6 +15,10 @@ export default function MovieForm({ movie, onSave, onCancel }) {
   const [form, setForm] = useState(EMPTY_FORM)
   const [errors, setErrors] = useState({})
   const [tagInput, setTagInput] = useState('')
+  const [thumbnailFile, setThumbnailFile] = useState(null)
+  const [thumbnailPreview, setThumbnailPreview] = useState(null)
+  const [clearThumbnail, setClearThumbnail] = useState(false)
+  const fileInputRef = useRef(null)
 
   useEffect(() => {
     if (movie) {
@@ -21,11 +27,15 @@ export default function MovieForm({ movie, onSave, onCancel }) {
         year: movie.year ?? '',
         tags: movie.tags ?? [],
       })
+      setThumbnailPreview(movie.hasThumbnail ? `${MOVIES_API}/${movie.id}/thumbnail` : null)
     } else {
       setForm(EMPTY_FORM)
+      setThumbnailPreview(null)
     }
     setErrors({})
     setTagInput('')
+    setThumbnailFile(null)
+    setClearThumbnail(false)
   }, [movie])
 
   const validate = () => {
@@ -60,6 +70,8 @@ export default function MovieForm({ movie, onSave, onCancel }) {
       ...form,
       year: form.year !== '' ? Number(form.year) : null,
       tags: pendingTags,
+      _thumbnail: thumbnailFile,
+      _clearThumbnail: clearThumbnail,
     })
   }
 
@@ -170,6 +182,48 @@ export default function MovieForm({ movie, onSave, onCancel }) {
             ))}
           </div>
         )}
+      </div>
+
+      {/* Thumbnail */}
+      <div>
+        <label className="block text-sm text-gray-400 mb-1">Thumbnail</label>
+        {thumbnailPreview && !clearThumbnail && (
+          <div className="mb-2 relative inline-block">
+            <img
+              src={thumbnailPreview}
+              alt="Thumbnail preview"
+              className="rounded-lg max-h-40 object-cover border border-gray-700"
+            />
+            <button
+              type="button"
+              onClick={() => {
+                setThumbnailPreview(null)
+                setThumbnailFile(null)
+                setClearThumbnail(movie?.hasThumbnail ?? false)
+                if (fileInputRef.current) fileInputRef.current.value = ''
+              }}
+              className="absolute top-1 right-1 bg-gray-900/80 hover:bg-red-800/80 text-gray-300 hover:text-white rounded-full w-6 h-6 flex items-center justify-center text-xs leading-none"
+              aria-label="Remove thumbnail"
+            >
+              ×
+            </button>
+          </div>
+        )}
+        <input
+          ref={fileInputRef}
+          type="file"
+          accept="image/jpeg,image/png"
+          onChange={(e) => {
+            const file = e.target.files?.[0]
+            if (file) {
+              setThumbnailFile(file)
+              setClearThumbnail(false)
+              setThumbnailPreview(URL.createObjectURL(file))
+            }
+          }}
+          className="block w-full text-sm text-gray-400 file:mr-3 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-sm file:bg-gray-700 file:text-gray-200 hover:file:bg-gray-600 cursor-pointer"
+        />
+        <p className="text-xs text-gray-500 mt-1">JPEG or PNG, 26×26 to 2000×2000</p>
       </div>
 
       {/* Watched */}

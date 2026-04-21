@@ -2,7 +2,7 @@ export default function MovieList({ movies, onEdit, onDelete }) {
   if (movies.length === 0) {
     return (
       <div className="text-center text-gray-500 py-16">
-        <p className="text-5xl mb-4">🎥</p>
+        <p className="text-5xl mb-4" aria-hidden="true">🎥</p>
         <p className="text-xl">No movies found.</p>
         <p className="text-sm mt-2">Add a movie to get started!</p>
       </div>

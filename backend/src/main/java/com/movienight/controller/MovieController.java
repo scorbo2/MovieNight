@@ -48,16 +48,18 @@ public class MovieController {
     @PutMapping("/{id}")
     public ResponseEntity<Movie> updateMovie(@PathVariable Long id,
                                              @Valid @RequestBody Movie movie) {
-        try {
-            Movie updated = movieService.updateMovie(id, movie);
-            return ResponseEntity.ok(updated);
-        } catch (RuntimeException e) {
+        if (movieService.getMovieById(id).isEmpty()) {
             return ResponseEntity.notFound().build();
         }
+        Movie updated = movieService.updateMovie(id, movie);
+        return ResponseEntity.ok(updated);
     }
 
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> deleteMovie(@PathVariable Long id) {
+        if (movieService.getMovieById(id).isEmpty()) {
+            return ResponseEntity.notFound().build();
+        }
         movieService.deleteMovie(id);
         return ResponseEntity.noContent().build();
     }

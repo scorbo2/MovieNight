@@ -2,7 +2,9 @@ package com.movienight.service;
 
 import com.movienight.model.Movie;
 import com.movienight.repository.MovieRepository;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
+import org.springframework.web.server.ResponseStatusException;
 
 import java.util.List;
 import java.util.Optional;
@@ -36,7 +38,7 @@ public class MovieService {
             movie.setDescription(updatedMovie.getDescription());
             movie.setWatched(updatedMovie.getWatched());
             return movieRepository.save(movie);
-        }).orElseThrow(() -> new RuntimeException("Movie not found with id: " + id));
+        }).orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Movie not found with id: " + id));
     }
 
     public void deleteMovie(Long id) {

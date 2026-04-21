@@ -34,7 +34,7 @@ public class Movie {
     @Column
     private Boolean watched = false;
 
-    @ElementCollection
+    @ElementCollection(fetch = FetchType.EAGER)
     @CollectionTable(name = "movie_tags", joinColumns = @JoinColumn(name = "movie_id"))
     @Column(name = "tag")
     private List<String> tags = new ArrayList<>();

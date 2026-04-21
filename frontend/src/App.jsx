@@ -126,11 +126,13 @@ export default function App() {
       if (!res.ok) throw new Error('Failed to save episode')
       const saved = await res.json()
       if (_clearThumbnail) {
-        await fetch(`${EPISODES_API}/${saved.id}/thumbnail`, { method: 'DELETE' })
+        const thumbnailRes = await fetch(`${EPISODES_API}/${saved.id}/thumbnail`, { method: 'DELETE' })
+        if (!thumbnailRes.ok) throw new Error('Failed to clear episode thumbnail')
       } else if (_thumbnail) {
         const formData = new FormData()
         formData.append('file', _thumbnail)
-        await fetch(`${EPISODES_API}/${saved.id}/thumbnail`, { method: 'POST', body: formData })
+        const thumbnailRes = await fetch(`${EPISODES_API}/${saved.id}/thumbnail`, { method: 'POST', body: formData })
+        if (!thumbnailRes.ok) throw new Error('Failed to upload episode thumbnail')
       }
       setShowEpisodeForm(false)
       setEditingEpisode(null)

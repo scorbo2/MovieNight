@@ -71,9 +71,9 @@ function EpisodeCard({ episode, onEdit, onDelete, onTagClick, readOnly }) {
 
       {episode.tags && episode.tags.length > 0 && (
         <div className="flex flex-wrap gap-1.5">
-          {episode.tags.map((tag, i) => (
+          {episode.tags.map((tag) => (
             <button
-              key={i}
+              key={tag}
               type="button"
               onClick={() => onTagClick && onTagClick(tag)}
               aria-label={`Filter by tag ${tag}`}

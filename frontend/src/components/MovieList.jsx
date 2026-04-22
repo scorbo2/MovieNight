@@ -53,9 +53,9 @@ function MovieCard({ movie, onEdit, onDelete, onTagClick, readOnly }) {
 
       {movie.tags && movie.tags.length > 0 && (
         <div className="flex flex-wrap gap-1.5">
-          {movie.tags.map((tag, i) => (
+          {movie.tags.map((tag) => (
             <button
-              key={i}
+              key={tag}
               type="button"
               onClick={() => onTagClick && onTagClick(tag)}
               aria-label={`Filter by tag ${tag}`}

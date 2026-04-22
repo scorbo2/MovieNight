@@ -58,9 +58,14 @@ export default function FileBrowserModal({ initialPath, onSelect, onClose }) {
 
   return (
     <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-[60] p-4">
-      <div className="bg-gray-900 border border-gray-700 rounded-xl shadow-2xl w-full max-w-xl flex flex-col max-h-[80vh]">
+      <div
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="file-browser-title"
+        className="bg-gray-900 border border-gray-700 rounded-xl shadow-2xl w-full max-w-xl flex flex-col max-h-[80vh]"
+      >
         <div className="flex items-center justify-between px-5 py-4 border-b border-gray-700">
-          <h3 className="text-lg font-bold text-white">Browse for Video File</h3>
+          <h3 id="file-browser-title" className="text-lg font-bold text-white">Browse for Video File</h3>
           <button
             onClick={onClose}
             className="text-gray-400 hover:text-white text-xl leading-none"

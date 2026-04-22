@@ -87,6 +87,13 @@ public class StreamController {
         long end = range.getRangeEnd(contentLength);
         long rangeLength = end - start + 1;
 
+        // Check for 416 - Range Not Satisfiable
+        if (end >= contentLength || start > end) {
+            return ResponseEntity.status(HttpStatus.REQUESTED_RANGE_NOT_SATISFIABLE)
+                    .header(HttpHeaders.CONTENT_RANGE, "bytes */" + contentLength)
+                    .build();
+        }
+
         // Optional safety cap to avoid huge in-memory chunks from abusive ranges.
         int maxChunkSize = 1024 * 1024; // 1 MiB
         int bytesToRead = (int) Math.min(rangeLength, maxChunkSize);

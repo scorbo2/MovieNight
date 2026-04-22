@@ -151,4 +151,40 @@ class StreamControllerTest {
         mockMvc.perform(get("/api/stream/M999"))
                 .andExpect(status().isNotFound());
     }
+
+    @Test
+    void rangeRequest_openEnded_returnsBytesToEndOfFile() throws Exception {
+        mockMvc.perform(get("/api/stream/M1")
+                        .header("Range", "bytes=10-"))
+                .andExpect(status().isPartialContent())
+                .andExpect(header().string("Content-Range",
+                        containsString("bytes 10-25/" + VIDEO_CONTENT.length)))
+                .andExpect(content().bytes("KLMNOPQRSTUVWXYZ".getBytes()));
+    }
+
+    @Test
+    void rangeRequest_suffix_returnsLastBytes() throws Exception {
+        mockMvc.perform(get("/api/stream/M1")
+                        .header("Range", "bytes=-5"))
+                .andExpect(status().isPartialContent())
+                .andExpect(header().string("Content-Range",
+                        containsString("bytes 21-25/" + VIDEO_CONTENT.length)))
+                .andExpect(content().bytes("VWXYZ".getBytes()));
+    }
+
+    @Test
+    void rangeRequest_outOfBounds_returns416() throws Exception {
+        mockMvc.perform(get("/api/stream/M1")
+                        .header("Range", "bytes=999-1000"))
+                .andExpect(status().isRequestedRangeNotSatisfiable())
+                .andExpect(header().string("Content-Range", "bytes */" + VIDEO_CONTENT.length));
+    }
+
+    @Test
+    void rangeRequest_hasExpectedContentLength() throws Exception {
+        mockMvc.perform(get("/api/stream/M1")
+                        .header("Range", "bytes=10-14"))
+                .andExpect(status().isPartialContent())
+                .andExpect(header().string("Content-Length", "5"));
+    }
 }

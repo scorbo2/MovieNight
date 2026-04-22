@@ -27,6 +27,7 @@ export default function MovieList({ movies, onEdit, onDelete, onTagClick, readOn
 
 function MovieCard({ movie, onEdit, onDelete, onTagClick, readOnly }) {
   const [showPlayer, setShowPlayer] = useState(false)
+  const genreLabel = typeof movie.genre === 'string' ? movie.genre : movie.genre?.name
 
   return (
     <div className="bg-gray-900 border border-gray-800 rounded-xl overflow-hidden flex flex-col hover:border-gray-600 transition-colors">
@@ -56,7 +57,7 @@ function MovieCard({ movie, onEdit, onDelete, onTagClick, readOnly }) {
 
       <div className="flex flex-wrap gap-x-4 gap-y-1 text-sm text-gray-400">
         {movie.year && <span>📅 {movie.year}</span>}
-        {movie.genre && <span>🎭 {movie.genre}</span>}
+        {genreLabel && <span>🎭 {genreLabel}</span>}
       </div>
 
       {movie.description && (

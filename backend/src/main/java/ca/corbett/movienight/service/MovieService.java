@@ -1,5 +1,6 @@
 package ca.corbett.movienight.service;
 
+import ca.corbett.movienight.model.Genre;
 import ca.corbett.movienight.model.Movie;
 import ca.corbett.movienight.repository.MovieRepository;
 import jakarta.persistence.criteria.Join;
@@ -70,6 +71,10 @@ public class MovieService {
 
     public List<Movie> searchByTag(String tag) {
         return populateHasThumbnail(movieRepository.findByTagsContainingIgnoreCase(tag));
+    }
+
+    public List<Movie> searchMovies(Genre genre) {
+        return populateHasThumbnail(movieRepository.findByGenre(genre));
     }
 
     public List<Movie> searchMovies(String title, Boolean watched, String tag) {

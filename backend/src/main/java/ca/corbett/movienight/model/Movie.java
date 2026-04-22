@@ -25,9 +25,9 @@ public class Movie {
     @Column
     private Integer year;
 
-    @Size(max = 100)
-    @Column
-    private String genre;
+    @ManyToOne(fetch = FetchType.EAGER)
+    @JoinColumn(name = "genre_id", nullable = false)
+    private Genre genre;
 
     @Size(max = 2000)
     @Column(length = 2000)
@@ -51,7 +51,7 @@ public class Movie {
 
     public Movie() {}
 
-    public Movie(String title, Integer year, String genre,
+    public Movie(String title, Integer year, Genre genre,
                  String description, Boolean watched) {
         this.title = title;
         this.year = year;
@@ -71,8 +71,13 @@ public class Movie {
     public Integer getYear() { return year; }
     public void setYear(Integer year) { this.year = year; }
 
-    public String getGenre() { return genre; }
-    public void setGenre(String genre) { this.genre = genre; }
+    public Genre getGenre() {
+        return genre;
+    }
+
+    public void setGenre(Genre genre) {
+        this.genre = genre;
+    }
 
     public String getDescription() { return description; }
     public void setDescription(String description) { this.description = description; }

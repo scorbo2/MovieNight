@@ -18,6 +18,7 @@ export default function MediaLibraryPage({ mode }) {
   const [editingMovie, setEditingMovie] = useState(null)
   const [movieSearchQuery, setMovieSearchQuery] = useState('')
   const [filterWatched, setFilterWatched] = useState('')
+  const [movieTagQuery, setMovieTagQuery] = useState('')
 
   const [episodes, setEpisodes] = useState([])
   const [episodesLoading, setEpisodesLoading] = useState(true)
@@ -27,6 +28,7 @@ export default function MediaLibraryPage({ mode }) {
   const [episodeSeriesQuery, setEpisodeSeriesQuery] = useState('')
   const [episodeSeasonQuery, setEpisodeSeasonQuery] = useState('')
   const [filterEpisodeWatched, setFilterEpisodeWatched] = useState('')
+  const [episodeTagQuery, setEpisodeTagQuery] = useState('')
 
   const fetchMovies = async () => {
     try {
@@ -34,6 +36,7 @@ export default function MediaLibraryPage({ mode }) {
       const params = new URLSearchParams()
       if (movieSearchQuery) params.append('title', movieSearchQuery)
       if (filterWatched !== '') params.append('watched', filterWatched)
+      if (movieTagQuery) params.append('tag', movieTagQuery)
       const res = await fetch(`${MOVIES_API}?${params}`)
       if (!res.ok) throw new Error('Failed to fetch movies')
       setMovies(await res.json())
@@ -47,7 +50,7 @@ export default function MediaLibraryPage({ mode }) {
 
   useEffect(() => {
     fetchMovies()
-  }, [movieSearchQuery, filterWatched])
+  }, [movieSearchQuery, filterWatched, movieTagQuery])
 
   const fetchEpisodes = async () => {
     try {
@@ -56,6 +59,7 @@ export default function MediaLibraryPage({ mode }) {
       if (episodeSeriesQuery) params.append('seriesName', episodeSeriesQuery)
       if (episodeSeasonQuery !== '') params.append('season', episodeSeasonQuery)
       if (filterEpisodeWatched !== '') params.append('watched', filterEpisodeWatched)
+      if (episodeTagQuery) params.append('tag', episodeTagQuery)
       const res = await fetch(`${EPISODES_API}?${params}`)
       if (!res.ok) throw new Error('Failed to fetch episodes')
       setEpisodes(await res.json())
@@ -70,7 +74,7 @@ export default function MediaLibraryPage({ mode }) {
   useEffect(() => {
     if (activeTab !== 'episodes') return
     fetchEpisodes()
-  }, [activeTab, episodeSeriesQuery, episodeSeasonQuery, filterEpisodeWatched])
+  }, [activeTab, episodeSeriesQuery, episodeSeasonQuery, filterEpisodeWatched, episodeTagQuery])
 
   const handleSaveMovie = async (movieData) => {
     try {
@@ -241,6 +245,22 @@ export default function MediaLibraryPage({ mode }) {
               <option value="false">Unwatched</option>
             </select>
           </div>
+          {movieTagQuery && (
+            <div className="flex items-center gap-2 mb-4">
+              <span className="text-sm text-gray-400">Tag filter:</span>
+              <span className="flex items-center gap-1 text-xs bg-indigo-800/40 text-indigo-300 px-2 py-0.5 rounded-full">
+                {movieTagQuery}
+                <button
+                  type="button"
+                  onClick={() => setMovieTagQuery('')}
+                  className="hover:text-white ml-0.5"
+                  aria-label={`Remove tag filter ${movieTagQuery}`}
+                >
+                  ×
+                </button>
+              </span>
+            </div>
+          )}
 
           {moviesError && (
             <div className="bg-red-900/50 border border-red-700 text-red-300 px-4 py-3 rounded-lg mb-6">
@@ -273,6 +293,7 @@ export default function MediaLibraryPage({ mode }) {
                 setShowMovieForm(true)
               }}
               onDelete={handleDeleteMovie}
+              onTagClick={(tag) => setMovieTagQuery(tag)}
               readOnly={!isAdmin}
             />
           )}
@@ -307,6 +328,22 @@ export default function MediaLibraryPage({ mode }) {
               <option value="false">Unwatched</option>
             </select>
           </div>
+          {episodeTagQuery && (
+            <div className="flex items-center gap-2 mb-4">
+              <span className="text-sm text-gray-400">Tag filter:</span>
+              <span className="flex items-center gap-1 text-xs bg-indigo-800/40 text-indigo-300 px-2 py-0.5 rounded-full">
+                {episodeTagQuery}
+                <button
+                  type="button"
+                  onClick={() => setEpisodeTagQuery('')}
+                  className="hover:text-white ml-0.5"
+                  aria-label={`Remove tag filter ${episodeTagQuery}`}
+                >
+                  ×
+                </button>
+              </span>
+            </div>
+          )}
 
           {episodesError && (
             <div className="bg-red-900/50 border border-red-700 text-red-300 px-4 py-3 rounded-lg mb-6">
@@ -339,6 +376,7 @@ export default function MediaLibraryPage({ mode }) {
                 setShowEpisodeForm(true)
               }}
               onDelete={handleDeleteEpisode}
+              onTagClick={(tag) => setEpisodeTagQuery(tag)}
               readOnly={!isAdmin}
             />
           )}

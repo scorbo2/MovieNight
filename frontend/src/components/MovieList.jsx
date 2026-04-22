@@ -1,6 +1,6 @@
 const MOVIES_API = '/api/movies'
 
-export default function MovieList({ movies, onEdit, onDelete, readOnly = false }) {
+export default function MovieList({ movies, onEdit, onDelete, onTagClick, readOnly = false }) {
   if (movies.length === 0) {
     return (
       <div className="text-center text-gray-500 py-16">
@@ -16,13 +16,13 @@ export default function MovieList({ movies, onEdit, onDelete, readOnly = false }
   return (
     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
       {movies.map((movie) => (
-        <MovieCard key={movie.id} movie={movie} onEdit={onEdit} onDelete={onDelete} readOnly={readOnly} />
+        <MovieCard key={movie.id} movie={movie} onEdit={onEdit} onDelete={onDelete} onTagClick={onTagClick} readOnly={readOnly} />
       ))}
     </div>
   )
 }
 
-function MovieCard({ movie, onEdit, onDelete, readOnly }) {
+function MovieCard({ movie, onEdit, onDelete, onTagClick, readOnly }) {
   return (
     <div className="bg-gray-900 border border-gray-800 rounded-xl overflow-hidden flex flex-col hover:border-gray-600 transition-colors">
       {movie.hasThumbnail && (
@@ -53,10 +53,16 @@ function MovieCard({ movie, onEdit, onDelete, readOnly }) {
 
       {movie.tags && movie.tags.length > 0 && (
         <div className="flex flex-wrap gap-1.5">
-          {movie.tags.map((tag, i) => (
-            <span key={i} className="text-xs bg-indigo-800/40 text-indigo-300 px-2 py-0.5 rounded-full">
+          {movie.tags.map((tag) => (
+            <button
+              key={tag}
+              type="button"
+              onClick={() => onTagClick && onTagClick(tag)}
+              aria-label={`Filter by tag ${tag}`}
+              className="text-xs bg-indigo-800/40 text-indigo-300 px-2 py-0.5 rounded-full hover:bg-indigo-700/60 hover:text-indigo-100 transition-colors cursor-pointer"
+            >
               {tag}
-            </span>
+            </button>
           ))}
         </div>
       )}

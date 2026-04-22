@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 
 const FILES_API = '/api/files'
 
@@ -19,7 +19,7 @@ export default function FileBrowserModal({ initialPath, onSelect, onClose }) {
   const [error, setError] = useState(null)
   const [pathInput, setPathInput] = useState(initialPath || '/')
 
-  const loadDirectory = async (path) => {
+  const loadDirectory = useCallback(async (path) => {
     setLoading(true)
     setError(null)
     try {
@@ -35,11 +35,11 @@ export default function FileBrowserModal({ initialPath, onSelect, onClose }) {
     } finally {
       setLoading(false)
     }
-  }
+  }, [])
 
   useEffect(() => {
     loadDirectory(initialPath || '/')
-  }, [])
+  }, [initialPath, loadDirectory])
 
   const handleEntryClick = (entry) => {
     if (entry.type === 'directory') {

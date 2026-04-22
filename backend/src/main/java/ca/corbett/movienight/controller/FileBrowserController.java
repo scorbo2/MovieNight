@@ -20,20 +20,19 @@ public class FileBrowserController {
     public ResponseEntity<Map<String, Object>> listFiles(
             @RequestParam(defaultValue = "/") String path) {
 
-        File dir = new File(path);
+        File dir;
+        try {
+            dir = new File(path).getCanonicalFile();
+        } catch (Exception e) {
+            dir = new File(File.separator);
+        }
 
         if (!dir.exists() || !dir.isDirectory()) {
             // Fall back to filesystem root
             dir = new File(File.separator);
         }
 
-        String canonicalPath;
-        try {
-            canonicalPath = dir.getCanonicalPath();
-        } catch (Exception e) {
-            canonicalPath = dir.getAbsolutePath();
-        }
-
+        String canonicalPath = dir.getAbsolutePath();
         File parentDir = dir.getParentFile();
         String parentPath = (parentDir != null) ? parentDir.getAbsolutePath() : canonicalPath;
 
@@ -45,6 +44,10 @@ public class FileBrowserController {
                     .thenComparing(f -> f.getName().toLowerCase()));
             for (File child : children) {
                 if (child.getName().startsWith(".")) {
+                    continue;
+                }
+                // Skip symbolic links to avoid traversal outside the browsed tree
+                if (java.nio.file.Files.isSymbolicLink(child.toPath())) {
                     continue;
                 }
                 Map<String, String> entry = new HashMap<>();

@@ -99,7 +99,10 @@ function EpisodeCard({ episode, onEdit, onDelete, onTagClick, readOnly }) {
 
       <div className="flex gap-2 mt-auto pt-2">
         <button
+          type="button"
           onClick={() => setShowPlayer((prev) => !prev)}
+          aria-pressed={showPlayer}
+          aria-label={showPlayer ? `Hide player for ${episode.title}` : `Watch ${episode.title}`}
           className="flex-1 bg-indigo-700 hover:bg-indigo-600 text-white text-sm px-3 py-1.5 rounded-lg transition-colors"
         >
           {showPlayer ? 'Hide' : '▶ Watch'}

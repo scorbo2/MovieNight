@@ -108,12 +108,12 @@ export default function FileBrowserModal({ initialPath, onSelect, onClose }) {
           {!loading && !error && entries.length === 0 && (
             <div className="text-gray-500 text-sm py-4 text-center">No files found</div>
           )}
-          {!loading && !error && entries.map((entry, i) => {
+          {!loading && !error && entries.map((entry) => {
             const isDir = entry.type === 'directory'
             const isVideo = !isDir && isVideoFile(entry.name)
             return (
               <button
-                key={i}
+                key={`${entry.type}:${entry.name}`}
                 onClick={() => handleEntryClick(entry)}
                 className={`w-full text-left flex items-center gap-2 px-3 py-2 rounded-lg text-sm transition-colors ${
                   isDir

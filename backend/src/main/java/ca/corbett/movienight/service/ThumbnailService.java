@@ -6,6 +6,8 @@ import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.server.ResponseStatusException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import javax.imageio.ImageIO;
 import javax.imageio.ImageReader;
@@ -22,6 +24,7 @@ import java.util.List;
 @Service
 public class ThumbnailService {
 
+    private static final Logger logger = LoggerFactory.getLogger(ThumbnailService.class);
     private static final int MAX_DIMENSION = 2000;
     private static final int MIN_DIMENSION = 26;
     private static final List<String> EXTENSIONS = List.of("jpg", "jpeg", "png");
@@ -36,18 +39,21 @@ public class ThumbnailService {
     @PostConstruct
     public void init() {
         if (dataDir == null || dataDir.isBlank()) {
+            logger.info("Thumbnail support is disabled because movienight.data-dir is not configured");
             return;
         }
         Path dir = Paths.get(dataDir);
         if (!Files.exists(dir)) {
+            logger.info("Thumbnail support is disabled because data directory does not exist: {}", dir);
             return;
         }
         try {
             Files.createDirectories(dir.resolve("movies"));
             Files.createDirectories(dir.resolve("episodes"));
             enabled = true;
+            logger.info("Thumbnail support enabled using {}", dir);
         } catch (IOException e) {
-            // silently disable thumbnail support
+            logger.warn("Thumbnail support could not be initialized for {}", dir, e);
         }
     }
 
@@ -59,13 +65,19 @@ public class ThumbnailService {
      * Validate and save a thumbnail for the given subdir (movies/episodes) and entity id.
      * Replaces any existing thumbnail for the same id.
      */
-    public void saveThumbnail(MultipartFile file, String subDir, Long id) throws IOException {
+    public void saveThumbnail(MultipartFile file, String subDir, Long id) {
         if (!enabled) {
             throw new ResponseStatusException(HttpStatus.SERVICE_UNAVAILABLE,
                     "Thumbnail support is not available");
         }
 
-        byte[] bytes = file.getBytes();
+        byte[] bytes;
+        try {
+            bytes = file.getBytes();
+        } catch (IOException e) {
+            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR,
+                    "Unable to read uploaded image", e);
+        }
 
         // Use ImageReader to read dimensions from metadata first (avoids full decode)
         // This guards against decompression bombs before committing memory to a full decode.
@@ -86,15 +98,19 @@ public class ThumbnailService {
         ImageReader reader = readers.next();
         try {
             reader.setInput(iis, true, true);
-            int width = reader.getWidth(0);
-            int height = reader.getHeight(0);
-            if (width > MAX_DIMENSION || height > MAX_DIMENSION) {
-                throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
-                        "Image too large (max " + MAX_DIMENSION + "x" + MAX_DIMENSION + ")");
-            }
-            if (width < MIN_DIMENSION || height < MIN_DIMENSION) {
-                throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
-                        "Image too small (min " + MIN_DIMENSION + "x" + MIN_DIMENSION + ")");
+            try {
+                int width = reader.getWidth(0);
+                int height = reader.getHeight(0);
+                if (width > MAX_DIMENSION || height > MAX_DIMENSION) {
+                    throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
+                            "Image too large (max " + MAX_DIMENSION + "x" + MAX_DIMENSION + ")");
+                }
+                if (width < MIN_DIMENSION || height < MIN_DIMENSION) {
+                    throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
+                            "Image too small (min " + MIN_DIMENSION + "x" + MIN_DIMENSION + ")");
+                }
+            } catch (IOException e) {
+                throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Invalid image file", e);
             }
         } finally {
             reader.dispose();
@@ -117,7 +133,12 @@ public class ThumbnailService {
 
         String ext = resolveExtension(file.getContentType());
         Path dest = Paths.get(dataDir, subDir, id + "." + ext);
-        Files.write(dest, bytes);
+        try {
+            Files.write(dest, bytes);
+        } catch (IOException e) {
+            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR,
+                    "Unable to save thumbnail", e);
+        }
     }
 
     /**
@@ -131,7 +152,8 @@ public class ThumbnailService {
             Path p = Paths.get(dataDir, subDir, id + "." + ext);
             try {
                 Files.deleteIfExists(p);
-            } catch (IOException ignored) {
+            } catch (IOException e) {
+                logger.warn("Could not delete thumbnail {}", p, e);
             }
         }
     }

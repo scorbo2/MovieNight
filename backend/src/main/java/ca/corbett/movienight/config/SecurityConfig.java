@@ -18,6 +18,8 @@ import org.springframework.security.provisioning.InMemoryUserDetailsManager;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.access.intercept.RequestAuthorizationContext;
 import org.springframework.security.config.http.SessionCreationPolicy;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.net.InetAddress;
 import java.net.UnknownHostException;
@@ -26,6 +28,8 @@ import static org.springframework.security.authorization.AuthorityAuthorizationM
 
 @Configuration
 public class SecurityConfig {
+
+    private static final Logger logger = LoggerFactory.getLogger(SecurityConfig.class);
 
     @Bean
     public SecurityFilterChain securityFilterChain(
@@ -84,6 +88,7 @@ public class SecurityConfig {
         try {
             return InetAddress.getByName(remoteAddress).isLoopbackAddress();
         } catch (UnknownHostException e) {
+            logger.warn("Could not resolve remote address {}", remoteAddress, e);
             return false;
         }
     }

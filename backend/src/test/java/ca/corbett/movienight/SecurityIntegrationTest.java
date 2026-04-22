@@ -9,9 +9,13 @@ import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.request.RequestPostProcessor;
 
+import static org.hamcrest.Matchers.not;
+import static org.hamcrest.Matchers.blankOrNullString;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.httpBasic;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.header;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 @SpringBootTest
@@ -33,7 +37,8 @@ class SecurityIntegrationTest {
     @Test
     void publicReadEndpointsRemainOpen() throws Exception {
         mockMvc.perform(get("/api/movies"))
-                .andExpect(status().isOk());
+                .andExpect(status().isOk())
+                .andExpect(header().string("X-Correlation-Id", not(blankOrNullString())));
     }
 
     @Test
@@ -80,6 +85,31 @@ class SecurityIntegrationTest {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(movieJson))
                 .andExpect(status().isCreated());
+    }
+
+    @Test
+    void echoesIncomingCorrelationId() throws Exception {
+        mockMvc.perform(get("/api/movies")
+                        .header("X-Correlation-Id", "test-correlation-id"))
+                .andExpect(status().isOk())
+                .andExpect(header().string("X-Correlation-Id", "test-correlation-id"));
+    }
+
+    @Test
+    void validationErrorsUseStandardErrorResponse() throws Exception {
+        mockMvc.perform(post("/api/movies")
+                        .with(remoteAddr("127.0.0.1"))
+                        .with(httpBasic("admin", "secret"))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{}"))
+                .andExpect(status().isBadRequest())
+                .andExpect(header().string("X-Correlation-Id", not(blankOrNullString())))
+                .andExpect(jsonPath("$.status").value(400))
+                .andExpect(jsonPath("$.error").value("Bad Request"))
+                .andExpect(jsonPath("$.message").value("Validation failed"))
+                .andExpect(jsonPath("$.path").value("/api/movies"))
+                .andExpect(jsonPath("$.correlationId").value(not(blankOrNullString())))
+                .andExpect(jsonPath("$.details[0]").exists());
     }
 
     private static RequestPostProcessor remoteAddr(String remoteAddress) {

@@ -49,8 +49,15 @@ public class MovieService {
     }
 
     public void deleteMovie(Long id) {
+        requireMovie(id);
         thumbnailService.deleteThumbnail("movies", id);
         movieRepository.deleteById(id);
+    }
+
+    public Movie requireMovie(Long id) {
+        return getMovieById(id)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND,
+                        "Movie not found with id: " + id));
     }
 
     public List<Movie> searchByTitle(String title) {

@@ -88,6 +88,7 @@ public class StreamController {
         return ResponseEntity.status(HttpStatus.PARTIAL_CONTENT)
                 .contentType(mediaType)
                 .header(HttpHeaders.ACCEPT_RANGES, "bytes")
+                .header(HttpHeaders.CONTENT_RANGE, "bytes " + start + "-" + end + "/" + contentLength)
                 .body(region);
     }
 }

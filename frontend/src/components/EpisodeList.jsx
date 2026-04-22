@@ -1,6 +1,6 @@
 const EPISODES_API = '/api/episodes'
 
-export default function EpisodeList({ episodes, onEdit, onDelete, readOnly = false }) {
+export default function EpisodeList({ episodes, onEdit, onDelete, onTagClick, readOnly = false }) {
   if (episodes.length === 0) {
     return (
       <div className="text-center text-gray-500 py-16">
@@ -21,6 +21,7 @@ export default function EpisodeList({ episodes, onEdit, onDelete, readOnly = fal
           episode={episode}
           onEdit={onEdit}
           onDelete={onDelete}
+          onTagClick={onTagClick}
           readOnly={readOnly}
         />
       ))}
@@ -28,7 +29,7 @@ export default function EpisodeList({ episodes, onEdit, onDelete, readOnly = fal
   )
 }
 
-function EpisodeCard({ episode, onEdit, onDelete, readOnly }) {
+function EpisodeCard({ episode, onEdit, onDelete, onTagClick, readOnly }) {
   const seasonEpisodeLabel = [
     episode.season != null ? `S${episode.season}` : null,
     episode.episode != null ? `E${episode.episode}` : null,
@@ -71,9 +72,15 @@ function EpisodeCard({ episode, onEdit, onDelete, readOnly }) {
       {episode.tags && episode.tags.length > 0 && (
         <div className="flex flex-wrap gap-1.5">
           {episode.tags.map((tag, i) => (
-            <span key={i} className="text-xs bg-indigo-800/40 text-indigo-300 px-2 py-0.5 rounded-full">
+            <button
+              key={i}
+              type="button"
+              onClick={() => onTagClick && onTagClick(tag)}
+              aria-label={`Filter by tag ${tag}`}
+              className="text-xs bg-indigo-800/40 text-indigo-300 px-2 py-0.5 rounded-full hover:bg-indigo-700/60 hover:text-indigo-100 transition-colors cursor-pointer"
+            >
               {tag}
-            </span>
+            </button>
           ))}
         </div>
       )}

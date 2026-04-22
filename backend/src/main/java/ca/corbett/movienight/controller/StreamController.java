@@ -1,12 +1,10 @@
 package ca.corbett.movienight.controller;
 
 import ca.corbett.movienight.service.MediaService;
-import jakarta.servlet.http.HttpServletRequest;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.core.io.FileSystemResource;
 import org.springframework.core.io.Resource;
-import org.springframework.core.io.support.ResourceRegion;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpRange;
 import org.springframework.http.HttpStatus;
@@ -47,8 +45,7 @@ public class StreamController {
      */
     @GetMapping("/{id}")
     public ResponseEntity<?> streamVideo(@PathVariable String id,
-                                         @RequestHeader HttpHeaders headers,
-                                         HttpServletRequest request) {
+                                         @RequestHeader HttpHeaders headers) {
         String filePath = mediaService.findById(id);
         Path videoPath = Paths.get(filePath);
 
@@ -79,16 +76,43 @@ public class StreamController {
                     "Failed to read video file for media id: " + id);
         }
 
+        // Dev note: Spring Boot's built-in resource range handling seems
+        // broken. It consistently yields conversion errors which neither
+        // Copilot nor Claude can solve. So, our "nuclear option" fallback
+        // is to bypass it entirely and implement basic range handling ourselves.
+        // This may seem like overkill, but it works very nicely!
+
         HttpRange range = ranges.get(0);
         long start = range.getRangeStart(contentLength);
         long end = range.getRangeEnd(contentLength);
         long rangeLength = end - start + 1;
 
-        ResourceRegion region = new ResourceRegion(resource, start, rangeLength);
+        // Optional safety cap to avoid huge in-memory chunks from abusive ranges.
+        int maxChunkSize = 1024 * 1024; // 1 MiB
+        int bytesToRead = (int) Math.min(rangeLength, maxChunkSize);
+        end = start + bytesToRead - 1;
+        rangeLength = bytesToRead;
+
+        byte[] data = new byte[bytesToRead];
+        try (var input = Files.newInputStream(videoPath)) {
+            input.skipNBytes(start);
+            int read = input.read(data, 0, bytesToRead);
+            if (read < bytesToRead) {
+                data = java.util.Arrays.copyOf(data, Math.max(read, 0));
+                end = start + data.length - 1;
+                rangeLength = data.length;
+            }
+        } catch (IOException e) {
+            logger.error("Failed to read range for media id {} (path: {})", id, filePath, e);
+            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR,
+                    "Failed to stream video file for media id: " + id);
+        }
+
         return ResponseEntity.status(HttpStatus.PARTIAL_CONTENT)
                 .contentType(mediaType)
                 .header(HttpHeaders.ACCEPT_RANGES, "bytes")
                 .header(HttpHeaders.CONTENT_RANGE, "bytes " + start + "-" + end + "/" + contentLength)
-                .body(region);
+                .contentLength(rangeLength)
+                .body(data);
     }
 }

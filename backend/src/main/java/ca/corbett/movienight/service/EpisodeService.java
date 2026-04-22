@@ -47,8 +47,15 @@ public class EpisodeService {
     }
 
     public void deleteEpisode(Long id) {
+        requireEpisode(id);
         thumbnailService.deleteThumbnail("episodes", id);
         episodeRepository.deleteById(id);
+    }
+
+    public Episode requireEpisode(Long id) {
+        return getEpisodeById(id)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND,
+                        "Episode not found with id: " + id));
     }
 
     public List<Episode> searchEpisodes(String seriesName, Integer season, Integer episode,

@@ -11,10 +11,9 @@ import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
-
-import java.io.IOException;
 import java.nio.file.Path;
 import java.util.List;
+import org.springframework.web.server.ResponseStatusException;
 
 @RestController
 @RequestMapping("/api/episodes")
@@ -39,10 +38,10 @@ public class EpisodeController {
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<Episode> getEpisodeById(@PathVariable Long id) {
+    public Episode getEpisodeById(@PathVariable Long id) {
         return episodeService.getEpisodeById(id)
-                .map(ResponseEntity::ok)
-                .orElse(ResponseEntity.notFound().build());
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND,
+                        "Episode not found with id: " + id));
     }
 
     @PostMapping
@@ -52,20 +51,13 @@ public class EpisodeController {
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<Episode> updateEpisode(@PathVariable Long id,
-                                                  @Valid @RequestBody Episode episode) {
-        if (episodeService.getEpisodeById(id).isEmpty()) {
-            return ResponseEntity.notFound().build();
-        }
-        Episode updated = episodeService.updateEpisode(id, episode);
-        return ResponseEntity.ok(updated);
+    public Episode updateEpisode(@PathVariable Long id,
+                                 @Valid @RequestBody Episode episode) {
+        return episodeService.updateEpisode(id, episode);
     }
 
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> deleteEpisode(@PathVariable Long id) {
-        if (episodeService.getEpisodeById(id).isEmpty()) {
-            return ResponseEntity.notFound().build();
-        }
         episodeService.deleteEpisode(id);
         return ResponseEntity.noContent().build();
     }
@@ -73,28 +65,18 @@ public class EpisodeController {
     @PostMapping("/{id}/thumbnail")
     public ResponseEntity<Void> uploadEpisodeThumbnail(@PathVariable Long id,
                                                        @RequestParam("file") MultipartFile file) {
-        if (episodeService.getEpisodeById(id).isEmpty()) {
-            return ResponseEntity.notFound().build();
-        }
-        if (!thumbnailService.isEnabled()) {
-            return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE).build();
-        }
-        try {
-            thumbnailService.saveThumbnail(file, "episodes", id);
-            return ResponseEntity.noContent().build();
-        } catch (IOException e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
-        }
+        episodeService.requireEpisode(id);
+        thumbnailService.saveThumbnail(file, "episodes", id);
+        return ResponseEntity.noContent().build();
     }
 
     @GetMapping("/{id}/thumbnail")
     public ResponseEntity<Resource> getEpisodeThumbnail(@PathVariable Long id) {
-        if (episodeService.getEpisodeById(id).isEmpty()) {
-            return ResponseEntity.notFound().build();
-        }
+        episodeService.requireEpisode(id);
         Path thumbnailPath = thumbnailService.getThumbnailPath("episodes", id);
         if (thumbnailPath == null) {
-            return ResponseEntity.notFound().build();
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND,
+                    "Episode thumbnail not found for id: " + id);
         }
         String filename = thumbnailPath.getFileName().toString().toLowerCase();
         MediaType mediaType = filename.endsWith(".png") ? MediaType.IMAGE_PNG : MediaType.IMAGE_JPEG;
@@ -105,9 +87,7 @@ public class EpisodeController {
 
     @DeleteMapping("/{id}/thumbnail")
     public ResponseEntity<Void> deleteEpisodeThumbnail(@PathVariable Long id) {
-        if (episodeService.getEpisodeById(id).isEmpty()) {
-            return ResponseEntity.notFound().build();
-        }
+        episodeService.requireEpisode(id);
         thumbnailService.deleteThumbnail("episodes", id);
         return ResponseEntity.noContent().build();
     }

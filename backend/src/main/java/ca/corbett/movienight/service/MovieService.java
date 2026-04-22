@@ -43,6 +43,7 @@ public class MovieService {
             movie.setDescription(updatedMovie.getDescription());
             movie.setWatched(updatedMovie.getWatched());
             movie.setTags(updatedMovie.getTags());
+            movie.setVideoFilePath(updatedMovie.getVideoFilePath());
             return populateHasThumbnail(movieRepository.save(movie));
         }).orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Movie not found with id: " + id));
     }

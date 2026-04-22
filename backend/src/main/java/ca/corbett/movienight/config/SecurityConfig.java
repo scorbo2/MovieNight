@@ -43,6 +43,7 @@ public class SecurityConfig {
                 .authorizeHttpRequests(authorize -> authorize
                         .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
                         .requestMatchers("/", "/frontend/**", "/favicon.svg", "/error").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/files").access(adminAccess)
                         .requestMatchers(HttpMethod.GET, "/api/**").permitAll()
                         .requestMatchers("/admin", "/admin/**").access(adminAccess)
                         .requestMatchers(HttpMethod.POST, "/api/**").access(adminAccess)

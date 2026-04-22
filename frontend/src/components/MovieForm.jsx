@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from 'react'
+import FileBrowserModal from './FileBrowserModal'
 
 const MOVIES_API = '/api/movies'
 
@@ -9,6 +10,7 @@ const EMPTY_FORM = {
   description: '',
   watched: false,
   tags: [],
+  videoFilePath: '',
 }
 
 export default function MovieForm({ movie, onSave, onCancel }) {
@@ -18,6 +20,7 @@ export default function MovieForm({ movie, onSave, onCancel }) {
   const [thumbnailFile, setThumbnailFile] = useState(null)
   const [thumbnailPreview, setThumbnailPreview] = useState(null)
   const [clearThumbnail, setClearThumbnail] = useState(false)
+  const [showFileBrowser, setShowFileBrowser] = useState(false)
   const fileInputRef = useRef(null)
   const objectUrlRef = useRef(null)
 
@@ -59,6 +62,7 @@ export default function MovieForm({ movie, onSave, onCancel }) {
     if (form.year && (isNaN(form.year) || form.year < 1888 || form.year > 2100)) {
       errs.year = 'Enter a valid year (1888–2100).'
     }
+    if (!form.videoFilePath || !form.videoFilePath.trim()) errs.videoFilePath = 'Video file path is required.'
     return errs
   }
 
@@ -93,6 +97,7 @@ export default function MovieForm({ movie, onSave, onCancel }) {
   const isEditing = movie != null
 
   return (
+    <>
     <form onSubmit={handleSubmit} className="p-6 flex flex-col gap-4">
       <h2 className="text-xl font-bold text-white">{isEditing ? 'Edit Movie' : 'Add Movie'}</h2>
 
@@ -250,6 +255,28 @@ export default function MovieForm({ movie, onSave, onCancel }) {
         <p className="text-xs text-gray-500 mt-1">JPEG or PNG, 26×26 to 2000×2000</p>
       </div>
 
+      {/* Video File Path */}
+      <div>
+        <label className="block text-sm text-gray-400 mb-1">Video File Path *</label>
+        <div className="flex gap-2">
+          <input
+            name="videoFilePath"
+            value={form.videoFilePath}
+            onChange={handleChange}
+            placeholder="/path/to/movie.mkv"
+            className={`flex-1 bg-gray-800 border rounded-lg px-3 py-2 text-gray-100 focus:outline-none focus:border-indigo-500 font-mono text-sm ${errors.videoFilePath ? 'border-red-500' : 'border-gray-700'}`}
+          />
+          <button
+            type="button"
+            onClick={() => setShowFileBrowser(true)}
+            className="bg-gray-700 hover:bg-gray-600 text-gray-200 px-3 py-2 rounded-lg text-sm transition-colors whitespace-nowrap"
+          >
+            Browse…
+          </button>
+        </div>
+        {errors.videoFilePath && <p className="text-red-400 text-xs mt-1">{errors.videoFilePath}</p>}
+      </div>
+
       {/* Watched */}
       <label className="flex items-center gap-2 text-sm text-gray-300 cursor-pointer">
         <input
@@ -279,5 +306,19 @@ export default function MovieForm({ movie, onSave, onCancel }) {
         </button>
       </div>
     </form>
+
+    {showFileBrowser && (
+      <FileBrowserModal
+        initialPath={form.videoFilePath || '/'}
+        onSelect={(path) => {
+          const normalizedPath = path.trim()
+          setForm((prev) => ({ ...prev, videoFilePath: normalizedPath }))
+          setErrors((prev) => ({ ...prev, videoFilePath: undefined }))
+          setShowFileBrowser(false)
+        }}
+        onClose={() => setShowFileBrowser(false)}
+      />
+    )}
+    </>
   )
 }

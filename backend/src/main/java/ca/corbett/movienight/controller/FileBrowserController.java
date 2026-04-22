@@ -5,6 +5,7 @@ import org.springframework.web.bind.annotation.*;
 
 import java.io.File;
 import java.io.IOException;
+import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Comparator;
@@ -48,7 +49,7 @@ public class FileBrowserController {
                     continue;
                 }
                 // Skip symbolic links to avoid traversal outside the browsed tree
-                if (java.nio.file.Files.isSymbolicLink(child.toPath())) {
+                if (Files.isSymbolicLink(child.toPath())) {
                     continue;
                 }
                 Map<String, String> entry = new HashMap<>();

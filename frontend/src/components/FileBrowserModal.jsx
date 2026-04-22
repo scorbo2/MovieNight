@@ -7,8 +7,10 @@ const VIDEO_EXTENSIONS = new Set([
 ])
 
 function isVideoFile(name) {
-  const ext = name.split('.').pop()?.toLowerCase()
-  return ext ? VIDEO_EXTENSIONS.has(ext) : false
+  const dotIndex = name.lastIndexOf('.')
+  if (dotIndex === -1) return false
+  const ext = name.slice(dotIndex + 1).toLowerCase()
+  return VIDEO_EXTENSIONS.has(ext)
 }
 
 export default function FileBrowserModal({ initialPath, onSelect, onClose }) {

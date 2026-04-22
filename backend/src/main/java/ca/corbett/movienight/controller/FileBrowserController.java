@@ -4,6 +4,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.io.File;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Comparator;
@@ -23,7 +24,7 @@ public class FileBrowserController {
         File dir;
         try {
             dir = new File(path).getCanonicalFile();
-        } catch (Exception e) {
+        } catch (IOException e) {
             dir = new File(File.separator);
         }
 

@@ -82,6 +82,7 @@ function MovieCard({ movie, onEdit, onDelete, onTagClick, readOnly }) {
       <div className="flex gap-2 mt-auto pt-2">
         <button
           onClick={() => setShowPlayer((prev) => !prev)}
+          aria-pressed={showPlayer}
           className="flex-1 bg-indigo-700 hover:bg-indigo-600 text-white text-sm px-3 py-1.5 rounded-lg transition-colors"
         >
           {showPlayer ? 'Hide' : '▶ Watch'}

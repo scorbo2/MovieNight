@@ -3,6 +3,7 @@ package ca.corbett.movienight.exception;
 import ca.corbett.movienight.config.CorrelationIdFilter;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.ConstraintViolationException;
+import org.apache.catalina.connector.ClientAbortException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
@@ -12,6 +13,7 @@ import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.web.context.request.async.AsyncRequestNotUsableException;
 import org.springframework.web.server.ResponseStatusException;
 
 import java.time.OffsetDateTime;
@@ -72,6 +74,15 @@ public class GlobalExceptionHandler {
                                                                      HttpServletRequest request) {
         logger.error("Unhandled exception for {} {}", request.getMethod(), request.getRequestURI(), exception);
         return buildResponse(HttpStatus.INTERNAL_SERVER_ERROR, "An unexpected error occurred", request, List.of());
+    }
+
+    @ExceptionHandler({
+            AsyncRequestNotUsableException.class,
+            ClientAbortException.class
+    })
+    public void handleClientAbort(Exception e) {
+        // Client disconnected mid-stream — completely normal for video playback, ignore it
+        logger.debug("Client disconnected during streaming (normal): {}", e.getMessage());
     }
 
     private void logException(HttpStatusCode statusCode,

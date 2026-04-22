@@ -40,7 +40,6 @@ function MovieCard({ movie, onEdit, onDelete, onTagClick, readOnly }) {
       {showPlayer && (
         <video
           controls
-          autoPlay
           className="w-full bg-black"
           src={`${STREAM_API}/M${movie.id}`}
         />

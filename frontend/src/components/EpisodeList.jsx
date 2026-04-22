@@ -52,7 +52,6 @@ function EpisodeCard({ episode, onEdit, onDelete, onTagClick, readOnly }) {
       {showPlayer && (
         <video
           controls
-          autoPlay
           className="w-full bg-black"
           src={`${STREAM_API}/E${episode.id}`}
         />

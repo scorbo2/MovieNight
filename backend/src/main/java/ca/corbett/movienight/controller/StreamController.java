@@ -33,6 +33,7 @@ import java.util.List;
 public class StreamController {
 
     private static final Logger logger = LoggerFactory.getLogger(StreamController.class);
+    private static final MediaType DEFAULT_VIDEO_MEDIA_TYPE = MediaType.parseMediaType("video/mp4");
 
     private final MediaService mediaService;
 
@@ -59,7 +60,7 @@ public class StreamController {
 
         Resource resource = new FileSystemResource(videoPath);
         MediaType mediaType = MediaTypeFactory.getMediaType(resource)
-                .orElse(MediaType.parseMediaType("video/mp4"));
+                .orElse(DEFAULT_VIDEO_MEDIA_TYPE);
 
         List<HttpRange> ranges = headers.getRange();
         if (ranges.isEmpty()) {

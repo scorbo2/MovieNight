@@ -1,4 +1,7 @@
+import { useState } from 'react'
+
 const EPISODES_API = '/api/episodes'
+const STREAM_API = '/api/stream'
 
 export default function EpisodeList({ episodes, onEdit, onDelete, onTagClick, readOnly = false }) {
   if (episodes.length === 0) {
@@ -30,6 +33,8 @@ export default function EpisodeList({ episodes, onEdit, onDelete, onTagClick, re
 }
 
 function EpisodeCard({ episode, onEdit, onDelete, onTagClick, readOnly }) {
+  const [showPlayer, setShowPlayer] = useState(false)
+
   const seasonEpisodeLabel = [
     episode.season != null ? `S${episode.season}` : null,
     episode.episode != null ? `E${episode.episode}` : null,
@@ -37,11 +42,19 @@ function EpisodeCard({ episode, onEdit, onDelete, onTagClick, readOnly }) {
 
   return (
     <div className="bg-gray-900 border border-gray-800 rounded-xl overflow-hidden flex flex-col hover:border-gray-600 transition-colors">
-      {episode.hasThumbnail && (
+      {episode.hasThumbnail && !showPlayer && (
         <img
           src={`${EPISODES_API}/${episode.id}/thumbnail`}
           alt={`${episode.seriesName} thumbnail`}
           className="w-full h-48 object-cover"
+        />
+      )}
+      {showPlayer && (
+        <video
+          controls
+          autoPlay
+          className="w-full bg-black"
+          src={`${STREAM_API}/E${episode.id}`}
         />
       )}
       <div className="p-5 flex flex-col gap-3 flex-1">
@@ -85,22 +98,30 @@ function EpisodeCard({ episode, onEdit, onDelete, onTagClick, readOnly }) {
         </div>
       )}
 
-      {!readOnly && (
-        <div className="flex gap-2 mt-auto pt-2">
-          <button
-            onClick={() => onEdit(episode)}
-            className="flex-1 bg-gray-800 hover:bg-gray-700 text-gray-200 text-sm px-3 py-1.5 rounded-lg transition-colors"
-          >
-            Edit
-          </button>
-          <button
-            onClick={() => onDelete(episode.id)}
-            className="flex-1 bg-red-900/40 hover:bg-red-800/60 text-red-300 text-sm px-3 py-1.5 rounded-lg transition-colors"
-          >
-            Delete
-          </button>
-        </div>
-      )}
+      <div className="flex gap-2 mt-auto pt-2">
+        <button
+          onClick={() => setShowPlayer((prev) => !prev)}
+          className="flex-1 bg-indigo-700 hover:bg-indigo-600 text-white text-sm px-3 py-1.5 rounded-lg transition-colors"
+        >
+          {showPlayer ? 'Hide' : '▶ Watch'}
+        </button>
+        {!readOnly && (
+          <>
+            <button
+              onClick={() => onEdit(episode)}
+              className="flex-1 bg-gray-800 hover:bg-gray-700 text-gray-200 text-sm px-3 py-1.5 rounded-lg transition-colors"
+            >
+              Edit
+            </button>
+            <button
+              onClick={() => onDelete(episode.id)}
+              className="flex-1 bg-red-900/40 hover:bg-red-800/60 text-red-300 text-sm px-3 py-1.5 rounded-lg transition-colors"
+            >
+              Delete
+            </button>
+          </>
+        )}
+      </div>
       </div>
     </div>
   )

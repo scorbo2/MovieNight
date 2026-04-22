@@ -325,7 +325,8 @@ export default function EpisodeForm({ episode, onSave, onCancel }) {
       <FileBrowserModal
         initialPath={form.videoFilePath || '/'}
         onSelect={(path) => {
-          setForm((prev) => ({ ...prev, videoFilePath: path }))
+          const normalizedPath = typeof path === 'string' ? path.trim() : ''
+          setForm((prev) => ({ ...prev, videoFilePath: normalizedPath }))
           setErrors((prev) => ({ ...prev, videoFilePath: undefined }))
           setShowFileBrowser(false)
         }}

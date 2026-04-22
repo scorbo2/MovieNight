@@ -1,12 +1,14 @@
 const EPISODES_API = '/api/episodes'
 
-export default function EpisodeList({ episodes, onEdit, onDelete }) {
+export default function EpisodeList({ episodes, onEdit, onDelete, readOnly = false }) {
   if (episodes.length === 0) {
     return (
       <div className="text-center text-gray-500 py-16">
         <p className="text-5xl mb-4" aria-hidden="true">📺</p>
         <p className="text-xl">No episodes found.</p>
-        <p className="text-sm mt-2">Add an episode to get started!</p>
+        <p className="text-sm mt-2">
+          {readOnly ? 'Try adjusting your filters.' : 'Add an episode to get started!'}
+        </p>
       </div>
     )
   }
@@ -14,13 +16,19 @@ export default function EpisodeList({ episodes, onEdit, onDelete }) {
   return (
     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
       {episodes.map((episode) => (
-        <EpisodeCard key={episode.id} episode={episode} onEdit={onEdit} onDelete={onDelete} />
+        <EpisodeCard
+          key={episode.id}
+          episode={episode}
+          onEdit={onEdit}
+          onDelete={onDelete}
+          readOnly={readOnly}
+        />
       ))}
     </div>
   )
 }
 
-function EpisodeCard({ episode, onEdit, onDelete }) {
+function EpisodeCard({ episode, onEdit, onDelete, readOnly }) {
   const seasonEpisodeLabel = [
     episode.season != null ? `S${episode.season}` : null,
     episode.episode != null ? `E${episode.episode}` : null,
@@ -70,20 +78,22 @@ function EpisodeCard({ episode, onEdit, onDelete }) {
         </div>
       )}
 
-      <div className="flex gap-2 mt-auto pt-2">
-        <button
-          onClick={() => onEdit(episode)}
-          className="flex-1 bg-gray-800 hover:bg-gray-700 text-gray-200 text-sm px-3 py-1.5 rounded-lg transition-colors"
-        >
-          Edit
-        </button>
-        <button
-          onClick={() => onDelete(episode.id)}
-          className="flex-1 bg-red-900/40 hover:bg-red-800/60 text-red-300 text-sm px-3 py-1.5 rounded-lg transition-colors"
-        >
-          Delete
-        </button>
-      </div>
+      {!readOnly && (
+        <div className="flex gap-2 mt-auto pt-2">
+          <button
+            onClick={() => onEdit(episode)}
+            className="flex-1 bg-gray-800 hover:bg-gray-700 text-gray-200 text-sm px-3 py-1.5 rounded-lg transition-colors"
+          >
+            Edit
+          </button>
+          <button
+            onClick={() => onDelete(episode.id)}
+            className="flex-1 bg-red-900/40 hover:bg-red-800/60 text-red-300 text-sm px-3 py-1.5 rounded-lg transition-colors"
+          >
+            Delete
+          </button>
+        </div>
+      )}
       </div>
     </div>
   )

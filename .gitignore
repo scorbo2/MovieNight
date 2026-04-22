@@ -42,5 +42,7 @@ frontend/.vite/
 .DS_Store
 
 # front-end build output:
+backend/src/main/resources/static/assets/
+backend/src/main/resources/static/index.html
 backend/src/main/resources/static/frontend
 frontend/node

@@ -56,7 +56,8 @@ class SecurityIntegrationTest {
                   "genre": "Drama",
                   "description": "Created through the secured admin API.",
                   "watched": false,
-                  "tags": ["security"]
+                  "tags": ["security"],
+                  "videoFilePath": "/movies/secured_movie.mkv"
                 }
                 """;
 

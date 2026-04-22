@@ -30,6 +30,7 @@ class EpisodeRepositoryTest {
     @Test
     void saveAndFindEpisode() {
         Episode ep = new Episode("Dexter", "Hungry Man", 4, 9, "Thanksgiving.", false);
+        ep.setVideoFilePath("/shows/dexter/s04e09.mkv");
         episodeRepository.save(ep);
 
         List<Episode> all = episodeRepository.findAll();
@@ -39,8 +40,12 @@ class EpisodeRepositoryTest {
 
     @Test
     void findBySeriesNameContainingIgnoreCase() {
-        episodeRepository.save(new Episode("Dexter", "Pilot", 1, 1, "Dexter pilot.", false));
-        episodeRepository.save(new Episode("Breaking Bad", "Pilot", 1, 1, "BB pilot.", false));
+        Episode dexterPilot = new Episode("Dexter", "Pilot", 1, 1, "Dexter pilot.", false);
+        dexterPilot.setVideoFilePath("/shows/dexter/s01e01.mkv");
+        episodeRepository.save(dexterPilot);
+        Episode bbPilot = new Episode("Breaking Bad", "Pilot", 1, 1, "BB pilot.", false);
+        bbPilot.setVideoFilePath("/shows/breakingbad/s01e01.mkv");
+        episodeRepository.save(bbPilot);
 
         List<Episode> results = episodeRepository
                 .findBySeriesNameContainingIgnoreCaseOrderBySeasonAscEpisodeAsc("dexter");
@@ -50,10 +55,18 @@ class EpisodeRepositoryTest {
 
     @Test
     void findBySeriesNameAndSeasonOrderedByEpisode() {
-        episodeRepository.save(new Episode("Dexter", "Ep 3", 4, 3, null, false));
-        episodeRepository.save(new Episode("Dexter", "Ep 1", 4, 1, null, false));
-        episodeRepository.save(new Episode("Dexter", "Ep 2", 4, 2, null, false));
-        episodeRepository.save(new Episode("Dexter", "S3Ep1", 3, 1, null, false));
+        Episode ep3 = new Episode("Dexter", "Ep 3", 4, 3, null, false);
+        ep3.setVideoFilePath("/shows/dexter/s04e03.mkv");
+        episodeRepository.save(ep3);
+        Episode ep1 = new Episode("Dexter", "Ep 1", 4, 1, null, false);
+        ep1.setVideoFilePath("/shows/dexter/s04e01.mkv");
+        episodeRepository.save(ep1);
+        Episode ep2 = new Episode("Dexter", "Ep 2", 4, 2, null, false);
+        ep2.setVideoFilePath("/shows/dexter/s04e02.mkv");
+        episodeRepository.save(ep2);
+        Episode s3ep1 = new Episode("Dexter", "S3Ep1", 3, 1, null, false);
+        s3ep1.setVideoFilePath("/shows/dexter/s03e01.mkv");
+        episodeRepository.save(s3ep1);
 
         List<Episode> results = episodeRepository
                 .findBySeriesNameIgnoreCaseAndSeasonOrderByEpisodeAsc("Dexter", 4);
@@ -65,8 +78,12 @@ class EpisodeRepositoryTest {
 
     @Test
     void findByWatched() {
-        episodeRepository.save(new Episode("Dexter", "Watched Ep", 1, 1, null, true));
-        episodeRepository.save(new Episode("Dexter", "Unwatched Ep", 1, 2, null, false));
+        Episode watchedEp = new Episode("Dexter", "Watched Ep", 1, 1, null, true);
+        watchedEp.setVideoFilePath("/shows/dexter/s01e01.mkv");
+        episodeRepository.save(watchedEp);
+        Episode unwatchedEp = new Episode("Dexter", "Unwatched Ep", 1, 2, null, false);
+        unwatchedEp.setVideoFilePath("/shows/dexter/s01e02.mkv");
+        episodeRepository.save(unwatchedEp);
 
         List<Episode> watched = episodeRepository.findByWatched(true);
         assertThat(watched).hasSize(1);
@@ -76,6 +93,7 @@ class EpisodeRepositoryTest {
     @Test
     void saveAndFindEpisodeWithTags() {
         Episode ep = new Episode("Dexter", "Hungry Man", 4, 9, "Thanksgiving.", false);
+        ep.setVideoFilePath("/shows/dexter/s04e09.mkv");
         ep.setTags(List.of("Drama", "Thriller", "Must-See"));
         episodeRepository.save(ep);
 
@@ -87,6 +105,7 @@ class EpisodeRepositoryTest {
     @Test
     void tagsAreNormalizedToLowercase() {
         Episode ep = new Episode("Show", "Ep", 1, 1, null, false);
+        ep.setVideoFilePath("/shows/show/s01e01.mkv");
         ep.setTags(List.of("Drama", "DRAMA", "drama", "  Drama  "));
         episodeRepository.save(ep);
 
@@ -97,9 +116,11 @@ class EpisodeRepositoryTest {
     @Test
     void findByTagsContainingIgnoreCase() {
         Episode ep1 = new Episode("Show A", "Ep1", 1, 1, null, false);
+        ep1.setVideoFilePath("/shows/showa/s01e01.mkv");
         ep1.setTags(List.of("drama", "award-winner"));
 
         Episode ep2 = new Episode("Show B", "Ep1", 1, 1, null, false);
+        ep2.setVideoFilePath("/shows/showb/s01e01.mkv");
         ep2.setTags(List.of("comedy", "family"));
 
         episodeRepository.saveAll(List.of(ep1, ep2));
@@ -111,10 +132,18 @@ class EpisodeRepositoryTest {
 
     @Test
     void searchOrderedBySeasonThenEpisode() {
-        episodeRepository.save(new Episode("Dexter", "S4E3", 4, 3, null, false));
-        episodeRepository.save(new Episode("Dexter", "S2E1", 2, 1, null, false));
-        episodeRepository.save(new Episode("Dexter", "S4E1", 4, 1, null, false));
-        episodeRepository.save(new Episode("Dexter", "S1E1", 1, 1, null, false));
+        Episode s4e3 = new Episode("Dexter", "S4E3", 4, 3, null, false);
+        s4e3.setVideoFilePath("/shows/dexter/s04e03.mkv");
+        episodeRepository.save(s4e3);
+        Episode s2e1 = new Episode("Dexter", "S2E1", 2, 1, null, false);
+        s2e1.setVideoFilePath("/shows/dexter/s02e01.mkv");
+        episodeRepository.save(s2e1);
+        Episode s4e1 = new Episode("Dexter", "S4E1", 4, 1, null, false);
+        s4e1.setVideoFilePath("/shows/dexter/s04e01.mkv");
+        episodeRepository.save(s4e1);
+        Episode s1e1 = new Episode("Dexter", "S1E1", 1, 1, null, false);
+        s1e1.setVideoFilePath("/shows/dexter/s01e01.mkv");
+        episodeRepository.save(s1e1);
 
         Specification<Episode> spec = (root, query, cb) ->
                 cb.like(cb.lower(root.get("seriesName")), "%dexter%");

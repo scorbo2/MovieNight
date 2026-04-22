@@ -44,6 +44,10 @@ public class Episode {
     @Column(name = "tag")
     private List<String> tags = new ArrayList<>();
 
+    @NotBlank
+    @Column(nullable = false)
+    private String videoFilePath;
+
     @Transient
     @JsonProperty(value = "hasThumbnail", access = JsonProperty.Access.READ_ONLY)
     private boolean hasThumbnail = false;
@@ -98,4 +102,7 @@ public class Episode {
 
     public boolean isHasThumbnail() { return hasThumbnail; }
     public void setHasThumbnail(boolean hasThumbnail) { this.hasThumbnail = hasThumbnail; }
+
+    public String getVideoFilePath() { return videoFilePath; }
+    public void setVideoFilePath(String videoFilePath) { this.videoFilePath = videoFilePath; }
 }

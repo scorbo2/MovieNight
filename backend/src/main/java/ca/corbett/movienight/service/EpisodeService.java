@@ -41,6 +41,7 @@ public class EpisodeService {
             ep.setDescription(updatedEpisode.getDescription());
             ep.setWatched(updatedEpisode.getWatched());
             ep.setTags(updatedEpisode.getTags());
+            ep.setVideoFilePath(updatedEpisode.getVideoFilePath());
             return populateHasThumbnail(episodeRepository.save(ep));
         }).orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Episode not found with id: " + id));
     }

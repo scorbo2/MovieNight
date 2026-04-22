@@ -31,6 +31,7 @@ class MovieRepositoryTest {
     @Test
     void saveAndFindMovie() {
         Movie movie = new Movie("Test Movie", 2024, "Drama", "A test movie.", false);
+        movie.setVideoFilePath("/movies/test_movie.mkv");
         movieRepository.save(movie);
 
         List<Movie> all = movieRepository.findAll();
@@ -40,8 +41,12 @@ class MovieRepositoryTest {
 
     @Test
     void findByTitleContainingIgnoreCase() {
-        movieRepository.save(new Movie("Inception", 2010, "Sci-Fi", "Dream heist.", false));
-        movieRepository.save(new Movie("Interstellar", 2014, "Sci-Fi", "Space travel.", false));
+        Movie inception = new Movie("Inception", 2010, "Sci-Fi", "Dream heist.", false);
+        inception.setVideoFilePath("/movies/inception.mkv");
+        movieRepository.save(inception);
+        Movie interstellar = new Movie("Interstellar", 2014, "Sci-Fi", "Space travel.", false);
+        interstellar.setVideoFilePath("/movies/interstellar.mkv");
+        movieRepository.save(interstellar);
 
         List<Movie> results = movieRepository.findByTitleContainingIgnoreCase("inter");
         assertThat(results).hasSize(1);
@@ -50,8 +55,12 @@ class MovieRepositoryTest {
 
     @Test
     void findByWatched() {
-        movieRepository.save(new Movie("Watched Movie", 2020, "Comedy", "Seen it.", true));
-        movieRepository.save(new Movie("Unwatched Movie", 2021, "Thriller", "Not yet.", false));
+        Movie watchedMovie = new Movie("Watched Movie", 2020, "Comedy", "Seen it.", true);
+        watchedMovie.setVideoFilePath("/movies/watched_movie.mkv");
+        movieRepository.save(watchedMovie);
+        Movie unwatchedMovie = new Movie("Unwatched Movie", 2021, "Thriller", "Not yet.", false);
+        unwatchedMovie.setVideoFilePath("/movies/unwatched_movie.mkv");
+        movieRepository.save(unwatchedMovie);
 
         List<Movie> watched = movieRepository.findByWatched(true);
         assertThat(watched).hasSize(1);
@@ -61,6 +70,7 @@ class MovieRepositoryTest {
     @Test
     void saveAndFindMovieWithTags() {
         Movie movie = new Movie("Tagged Movie", 2023, "Action", "Has tags.", false);
+        movie.setVideoFilePath("/movies/tagged_movie.mkv");
         movie.setTags(List.of("Action", "Thriller", "Must-See"));
         movieRepository.save(movie);
 
@@ -72,9 +82,11 @@ class MovieRepositoryTest {
     @Test
     void findByTagsContainingIgnoreCase() {
         Movie movie1 = new Movie("Movie One", 2021, "Drama", "First.", false);
+        movie1.setVideoFilePath("/movies/movie_one.mkv");
         movie1.setTags(List.of("drama", "award-winner"));
 
         Movie movie2 = new Movie("Movie Two", 2022, "Comedy", "Second.", false);
+        movie2.setVideoFilePath("/movies/movie_two.mkv");
         movie2.setTags(List.of("comedy", "family"));
 
         movieRepository.save(movie1);
@@ -88,6 +100,7 @@ class MovieRepositoryTest {
     @Test
     void tagsAreNormalizedToLowercase() {
         Movie movie = new Movie("Case Test", 2020, "Action", "Test normalization.", false);
+        movie.setVideoFilePath("/movies/case_test.mkv");
         movie.setTags(List.of("Action", "ACTION", "action", "  Action  "));
         movieRepository.save(movie);
 
@@ -98,12 +111,15 @@ class MovieRepositoryTest {
     @Test
     void combinedFilterTitleAndWatchedAndTag() {
         Movie m1 = new Movie("Action Hero", 2020, "Action", "Hero stuff.", true);
+        m1.setVideoFilePath("/movies/action_hero.mkv");
         m1.setTags(List.of("action", "blockbuster"));
 
         Movie m2 = new Movie("Action Zero", 2021, "Action", "Zero stuff.", false);
+        m2.setVideoFilePath("/movies/action_zero.mkv");
         m2.setTags(List.of("action", "blockbuster"));
 
         Movie m3 = new Movie("Comedy King", 2022, "Comedy", "Funny stuff.", true);
+        m3.setVideoFilePath("/movies/comedy_king.mkv");
         m3.setTags(List.of("comedy"));
 
         movieRepository.saveAll(List.of(m1, m2, m3));

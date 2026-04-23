@@ -34,6 +34,7 @@ export default function EpisodeList({ episodes, onEdit, onDelete, onTagClick, re
 
 function EpisodeCard({ episode, onEdit, onDelete, onTagClick, readOnly }) {
   const [showPlayer, setShowPlayer] = useState(false)
+  const seriesLabel = typeof episode.series === 'string' ? episode.series : episode.series?.name
 
   const seasonEpisodeLabel = [
     episode.season != null ? `S${episode.season}` : null,
@@ -45,7 +46,7 @@ function EpisodeCard({ episode, onEdit, onDelete, onTagClick, readOnly }) {
       {episode.hasThumbnail && !showPlayer && (
         <img
           src={`${EPISODES_API}/${episode.id}/thumbnail`}
-          alt={`${episode.seriesName} thumbnail`}
+          alt={`${seriesLabel} thumbnail`}
           className="w-full h-48 object-cover"
         />
       )}
@@ -59,7 +60,7 @@ function EpisodeCard({ episode, onEdit, onDelete, onTagClick, readOnly }) {
       <div className="p-5 flex flex-col gap-3 flex-1">
       <div className="flex items-start justify-between gap-2">
         <div className="flex flex-col gap-0.5">
-          <h2 className="text-lg font-semibold text-white leading-tight">{episode.seriesName}</h2>
+          <h2 className="text-lg font-semibold text-white leading-tight">{seriesLabel}</h2>
           {episode.episodeTitle && (
             <p className="text-sm text-gray-300 leading-tight">{episode.episodeTitle}</p>
           )}

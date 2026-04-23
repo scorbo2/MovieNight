@@ -4,7 +4,7 @@ import FileBrowserModal from './FileBrowserModal'
 const EPISODES_API = '/api/episodes'
 
 const EMPTY_FORM = {
-  seriesName: '',
+  seriesId: '',
   episodeTitle: '',
   season: '',
   episode: '',
@@ -16,6 +16,9 @@ const EMPTY_FORM = {
 
 export default function EpisodeForm({ episode, onSave, onCancel }) {
   const [form, setForm] = useState(EMPTY_FORM)
+  const [series, setSeries] = useState([])
+  const [seriesLoading, setSeriesLoading] = useState(true)
+  const [seriesError, setSeriesError] = useState(null)
   const [errors, setErrors] = useState({})
   const [tagInput, setTagInput] = useState('')
   const [thumbnailFile, setThumbnailFile] = useState(null)
@@ -35,6 +38,36 @@ export default function EpisodeForm({ episode, onSave, onCancel }) {
   }, [])
 
   useEffect(() => {
+    let ignore = false
+
+    const fetchSeries = async () => {
+      try {
+        setSeriesLoading(true)
+        const res = await fetch(SERIES_API)
+        if (!res.ok) throw new Error('Failed to fetch series')
+        const data = await res.json()
+        if (!ignore) {
+          const sortedSeries = Array.isArray(data)
+            ? [...data].sort((a, b) => a.name.localeCompare(b.name))
+            : []
+          setSeries(sortedSeries)
+          setSeriesError(null)
+        }
+      } catch {
+        if (!ignore) setSeriesError('Failed to load series.')
+      } finally {
+        if (!ignore) setSeriesLoading(false)
+      }
+    }
+
+    fetchSeries()
+
+    return () => {
+      ignore = true
+    }
+  }, [])
+
+  useEffect(() => {
     // Revoke any existing object URL when the episode prop changes (form reset)
     if (objectUrlRef.current) {
       URL.revokeObjectURL(objectUrlRef.current)
@@ -42,7 +75,12 @@ export default function EpisodeForm({ episode, onSave, onCancel }) {
     }
     if (episode) {
       setForm({
-        ...episode,
+        id: episode.id,
+        episodeTitle: episode.episodeTitle ?? '',
+        description: episode.description ?? '',
+        videoFilePath: episode.videoFilePath ?? '',
+        watched: episode.watched ?? false,
+        seriesId: episode.series?.id != null ? String(episode.series.id) : '',
         season: episode.season ?? '',
         episode: episode.episode ?? '',
         tags: episode.tags ?? [],
@@ -60,7 +98,7 @@ export default function EpisodeForm({ episode, onSave, onCancel }) {
 
   const validate = () => {
     const errs = {}
-    if (!form.seriesName.trim()) errs.seriesName = 'Series name is required.'
+    if (!form.seriesId) errs.seriesId = 'Series is required.'
     if (!form.videoFilePath || !form.videoFilePath.trim()) errs.videoFilePath = 'Video file path is required.'
     return errs
   }
@@ -71,6 +109,9 @@ export default function EpisodeForm({ episode, onSave, onCancel }) {
       ...prev,
       [name]: type === 'checkbox' ? checked : value,
     }))
+    if (errors[name]) {
+      setErrors((prev) => ({ ...prev, [name]: undefined }))
+    }
   }
 
   const handleSubmit = (e) => {
@@ -84,7 +125,12 @@ export default function EpisodeForm({ episode, onSave, onCancel }) {
       ? [...form.tags, ...tagInput.split(',').map(t => t.trim()).filter(Boolean)]
       : form.tags
     onSave({
-      ...form,
+        id: form.id,
+        seriesId: { id: Number(form.seriesId) },
+        episodeTitle: form.episodeTitle.trim() || null,
+        description: form.description.trim() || null,
+        videoFilePath: form.videoFilePath.trim(),
+        watched: form.watched,
       season: form.season !== '' ? Number(form.season) : null,
       episode: form.episode !== '' ? Number(form.episode) : null,
       tags: pendingTags,
@@ -94,6 +140,8 @@ export default function EpisodeForm({ episode, onSave, onCancel }) {
   }
 
   const isEditing = episode != null
+  const hasMissingSelectedSeries = form.seriesId && !series.some((g) => String(g.id) === String(form.seriesId))
+  const noSeriesAvailable = !seriesLoading && series.length === 0
 
   return (
     <>
@@ -102,15 +150,29 @@ export default function EpisodeForm({ episode, onSave, onCancel }) {
 
       {/* Series Name */}
       <div>
-        <label className="block text-sm text-gray-400 mb-1">Series Name *</label>
-        <input
-          name="seriesName"
-          value={form.seriesName}
+        <label className="block text-sm text-gray-400 mb-1">Series *</label>
+        <select
+          name="seriesId"
+          value={form.seriesId}
           onChange={handleChange}
-          placeholder="e.g. Dexter"
-          className={`w-full bg-gray-800 border rounded-lg px-3 py-2 text-gray-100 focus:outline-none focus:border-indigo-500 ${errors.seriesName ? 'border-red-500' : 'border-gray-700'}`}
-        />
-        {errors.seriesName && <p className="text-red-400 text-xs mt-1">{errors.seriesName}</p>}
+          disabled={seriesLoading || series.length === 0}
+          className={`w-full bg-gray-800 border rounded-lg px-3 py-2 text-gray-100 focus:outline-none focus:border-indigo-500 ${errors.seriesId ? 'border-red-500' : 'border-gray-700'}`}
+         >
+              <option value="">{seriesLoading ? 'Loading series…' : 'Select a series'}</option>
+              {series.map((series) => (
+                <option key={series.id} value={String(series.id)}>
+                  {series.name}
+                </option>
+              ))}
+            </select>
+            {errors.seriesId && <p className="text-red-400 text-xs mt-1">{errors.seriesId}</p>}
+            {hasMissingSelectedSeries && (
+              <p className="text-red-400 text-xs mt-1">The previously selected series no longer exists. Please select a valid series.</p>
+            )}
+            {seriesError && <p className="text-red-400 text-xs mt-1">{seriesError}</p>}
+            {noSeriesAvailable && !seriesError && (
+              <p className="text-amber-300 text-xs mt-1">No series exist yet. Create one first, then add episodes.</p>
+            )}
       </div>
 
       {/* Episode Title */}
@@ -307,7 +369,8 @@ export default function EpisodeForm({ episode, onSave, onCancel }) {
       <div className="flex gap-3 pt-2">
         <button
           type="submit"
-          className="flex-1 bg-indigo-600 hover:bg-indigo-500 text-white font-medium py-2 rounded-lg transition-colors"
+            disabled={noSeriesAvailable || seriesLoading || Boolean(seriesError) || Boolean(hasMissingSelectedSeries)}
+          className="flex-1 bg-indigo-600 hover:bg-indigo-500 disabled:bg-gray-700 disabled:text-gray-400 disabled:cursor-not-allowed text-white font-medium py-2 rounded-lg transition-colors"
         >
           {isEditing ? 'Save Changes' : 'Add Episode'}
         </button>

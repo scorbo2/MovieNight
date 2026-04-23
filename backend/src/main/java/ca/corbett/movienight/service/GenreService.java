@@ -1,7 +1,6 @@
 package ca.corbett.movienight.service;
 
 import ca.corbett.movienight.model.Genre;
-import ca.corbett.movienight.model.Movie;
 import ca.corbett.movienight.repository.GenreRepository;
 import ca.corbett.movienight.repository.MovieRepository;
 import org.springframework.http.HttpStatus;

@@ -33,8 +33,13 @@ public class EpisodeService {
     }
 
     public Episode updateEpisode(Long id, Episode updatedEpisode) {
+        // Reject request if the episode's series is null:
+        if (updatedEpisode.getSeries() == null) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Episode series is required.");
+        }
+
         return episodeRepository.findById(id).map(ep -> {
-            ep.setSeriesName(updatedEpisode.getSeriesName());
+            ep.setSeries(updatedEpisode.getSeries());
             ep.setEpisodeTitle(updatedEpisode.getEpisodeTitle());
             ep.setSeason(updatedEpisode.getSeason());
             ep.setEpisode(updatedEpisode.getEpisode());

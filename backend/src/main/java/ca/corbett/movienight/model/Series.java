@@ -105,7 +105,7 @@ public class Series {
         return episodeCount;
     }
 
-    public void setEpisodeCount(long movieCount) {
-        this.episodeCount = movieCount;
+    public void setEpisodeCount(long episodeCount) {
+        this.episodeCount = episodeCount;
     }
 }

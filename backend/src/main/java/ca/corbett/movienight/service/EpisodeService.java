@@ -63,15 +63,17 @@ public class EpisodeService {
                                                                "Episode not found with id: " + id));
     }
 
-    public List<Episode> searchEpisodes(Long seriesId, Integer season, Integer episode,
+    public List<Episode> searchEpisodes(Long seriesId, String seriesName, Integer season, Integer episode,
                                         Boolean watched, String tag) {
         Specification<Episode> spec = Specification.where(seasonEquals(season)).and(episodeEquals(episode))
                                                    .and(watchedEquals(watched)).and(tagContains(tag))
-                                                   .and(seriesEquals(seriesId));
+                                                   .and(seriesEquals(seriesId))
+                                                   .and(seriesNameContains(seriesName));
         Sort sort = Sort.by(
                 Sort.Order.asc("series.name"),
                 Sort.Order.asc("season").nullsLast(),
-                Sort.Order.asc("episode")
+                Sort.Order.asc("episode").nullsLast(),
+                Sort.Order.asc("episodeTitle").nullsLast()
         );
         return populateHasThumbnail(episodeRepository.findAll(spec, sort));
     }
@@ -92,6 +94,14 @@ public class EpisodeService {
 
     private static Specification<Episode> seriesEquals(Long seriesId) {
         return (root, query, cb) -> seriesId == null ? null : cb.equal(root.get("series").get("id"), seriesId);
+    }
+
+    private static Specification<Episode> seriesNameContains(String seriesName) {
+        return (root, query, cb) -> {
+            if (seriesName == null || seriesName.isBlank()) return null;
+            return cb.like(cb.lower(root.get("series").get("name")),
+                           "%" + seriesName.trim().toLowerCase() + "%");
+        };
     }
 
     private static Specification<Episode> episodeEquals(Integer episode) {

@@ -67,6 +67,12 @@ public class GenreService {
     }
 
     public Genre updateGenre(Long id, Genre updatedGenre) {
+        Genre existingName = genreRepository.findByNameIgnoreCase(updatedGenre.getName()).orElse(null);
+        if (existingName != null && !existingName.getId().equals(id)) {
+            // Throw a 409 Conflict if another genre with the same name already exists
+            throw new ResponseStatusException(HttpStatus.CONFLICT,
+                                              "Genre with name '" + updatedGenre.getName() + "' already exists.");
+        }
         Genre existingGenre = requireGenre(id);
         existingGenre.setName(updatedGenre.getName());
         existingGenre.setDescription(updatedGenre.getDescription());

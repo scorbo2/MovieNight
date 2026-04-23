@@ -55,7 +55,7 @@ public class SeriesService {
                                                       + " because it is referenced by existing episodes.");
         }
 
-        thumbnailService.deleteThumbnail("genres", id);
+        thumbnailService.deleteThumbnail("series", id);
         seriesRepository.deleteById(id);
     }
 

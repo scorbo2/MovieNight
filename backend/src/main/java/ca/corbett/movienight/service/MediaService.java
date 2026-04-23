@@ -13,17 +13,21 @@ public class MediaService {
 
     private final MovieService movieService;
     private final EpisodeService episodeService;
+    private final MusicVideoService musicVideoService;
 
-    public MediaService(MovieService movieService, EpisodeService episodeService) {
+    public MediaService(MovieService movieService, EpisodeService episodeService,
+                        MusicVideoService musicVideoService) {
         this.movieService = movieService;
         this.episodeService = episodeService;
+        this.musicVideoService = musicVideoService;
     }
 
     /**
      * Returns the absolute video file path for an encoded media ID.
-     * The id must be "M" followed by a numeric movie ID, or "E" followed by a numeric episode ID.
+     * The id must be "M" followed by a numeric movie ID, "E" followed by a numeric episode ID,
+     * or "V" followed by a numeric music video ID.
      *
-     * @param encodedId encoded media ID, e.g. "M31" or "E77"
+     * @param encodedId encoded media ID, e.g. "M31", "E77", or "V12"
      * @return absolute path to the video file
      * @throws ResponseStatusException 400 if the ID format is invalid, 404 if the entity is not found
      */
@@ -50,6 +54,10 @@ public class MediaService {
         } else if (type == 'E') {
             String path = episodeService.requireEpisode(numericId).getVideoFilePath();
             logger.debug("Resolved media id {} to episode file path: {}", encodedId, path);
+            return path;
+        } else if (type == 'V') {
+            String path = musicVideoService.requireMusicVideo(numericId).getVideoFilePath();
+            logger.debug("Resolved media id {} to music video file path: {}", encodedId, path);
             return path;
         } else {
             logger.warn("Unknown media type prefix '{}' in id: {}", type, encodedId);

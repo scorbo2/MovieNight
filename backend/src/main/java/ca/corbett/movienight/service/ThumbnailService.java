@@ -52,6 +52,8 @@ public class ThumbnailService {
             Files.createDirectories(dir.resolve("episodes"));
             Files.createDirectories(dir.resolve("genres"));
             Files.createDirectories(dir.resolve("series"));
+            Files.createDirectories(dir.resolve("artists"));
+            Files.createDirectories(dir.resolve("music-videos"));
             enabled = true;
             logger.info("Thumbnail support enabled using {}", dir);
         } catch (IOException e) {

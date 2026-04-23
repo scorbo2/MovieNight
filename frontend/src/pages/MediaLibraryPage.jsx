@@ -7,11 +7,17 @@ import GenreList from '../components/GenreList'
 import GenreForm from '../components/GenreForm'
 import SeriesList from '../components/SeriesList'
 import SeriesForm from '../components/SeriesForm'
+import ArtistList from '../components/ArtistList'
+import ArtistForm from '../components/ArtistForm'
+import MusicVideoList from '../components/MusicVideoList'
+import MusicVideoForm from '../components/MusicVideoForm'
 
 const MOVIES_API = '/api/movies'
 const EPISODES_API = '/api/episodes'
 const GENRES_API = '/api/genres'
 const SERIES_API = '/api/series'
+const ARTISTS_API = '/api/artists'
+const MUSIC_VIDEOS_API = '/api/music-videos'
 
 export default function MediaLibraryPage({ mode }) {
   const isAdmin = mode === 'admin'
@@ -51,6 +57,22 @@ export default function MediaLibraryPage({ mode }) {
   const [editingSeries, setEditingSeries] = useState(null)
   const [seriesSearchQuery, setSeriesSearchQuery] = useState('')
   const [selectedSeries, setSelectedSeries] = useState(null)
+
+  const [artists, setArtists] = useState([])
+  const [artistsLoading, setArtistsLoading] = useState(true)
+  const [artistsError, setArtistsError] = useState(null)
+  const [showArtistForm, setShowArtistForm] = useState(false)
+  const [editingArtist, setEditingArtist] = useState(null)
+  const [artistSearchQuery, setArtistSearchQuery] = useState('')
+  const [selectedArtist, setSelectedArtist] = useState(null)
+
+  const [musicVideos, setMusicVideos] = useState([])
+  const [musicVideosLoading, setMusicVideosLoading] = useState(true)
+  const [musicVideosError, setMusicVideosError] = useState(null)
+  const [showMusicVideoForm, setShowMusicVideoForm] = useState(false)
+  const [editingMusicVideo, setEditingMusicVideo] = useState(null)
+  const [musicVideoTitleQuery, setMusicVideoTitleQuery] = useState('')
+  const [musicVideoTagQuery, setMusicVideoTagQuery] = useState('')
 
   const getErrorMessage = async (response, fallbackMessage) => {
     const body = await response.text()
@@ -163,6 +185,58 @@ export default function MediaLibraryPage({ mode }) {
     if (activeTab !== 'genres' && activeTab !== 'movies') return
     fetchGenres()
   }, [activeTab])
+
+  const fetchArtists = async () => {
+    try {
+      setArtistsLoading(true)
+      const res = await fetch(ARTISTS_API)
+      if (!res.ok) throw new Error('Failed to fetch artists')
+      const data = await res.json()
+      const sortedArtists = Array.isArray(data)
+        ? [...data].sort((a, b) => a.name.localeCompare(b.name))
+        : []
+      setArtists(sortedArtists)
+      setArtistsError(null)
+    } catch (err) {
+      setArtistsError(err.message)
+    } finally {
+      setArtistsLoading(false)
+    }
+  }
+
+  useEffect(() => {
+    if (activeTab !== 'artists' && activeTab !== 'musicvideos') return
+    fetchArtists()
+  }, [activeTab])
+
+  const isMusicVideoSearchActive = !!(musicVideoTitleQuery || musicVideoTagQuery)
+
+  const fetchMusicVideos = async () => {
+    try {
+      setMusicVideosLoading(true)
+      const params = new URLSearchParams()
+      if (selectedArtist) {
+        params.append('artistId', selectedArtist.id)
+      } else if (musicVideoTitleQuery) {
+        params.append('title', musicVideoTitleQuery)
+      }
+      if (musicVideoTagQuery) params.append('tag', musicVideoTagQuery)
+      const res = await fetch(`${MUSIC_VIDEOS_API}?${params}`)
+      if (!res.ok) throw new Error('Failed to fetch music videos')
+      setMusicVideos(await res.json())
+      setMusicVideosError(null)
+    } catch (err) {
+      setMusicVideosError(err.message)
+    } finally {
+      setMusicVideosLoading(false)
+    }
+  }
+
+  useEffect(() => {
+    if (activeTab !== 'musicvideos') return
+    if (!selectedArtist && !isMusicVideoSearchActive) return
+    fetchMusicVideos()
+  }, [activeTab, selectedArtist, musicVideoTitleQuery, musicVideoTagQuery])
 
   const handleSaveMovie = async (movieData) => {
     try {
@@ -292,7 +366,11 @@ export default function MediaLibraryPage({ mode }) {
       ? '+ Add Episode'
       : activeTab === 'genres'
       ? '+ Add Genre'
-      : '+ Add Series'
+      : activeTab === 'series'
+      ? '+ Add Series'
+      : activeTab === 'musicvideos'
+      ? '+ Add Music Video'
+      : '+ Add Artist'
 
   const filteredGenres = genres.filter((genre) => {
     const q = genreSearchQuery.trim().toLowerCase()
@@ -350,6 +428,95 @@ export default function MediaLibraryPage({ mode }) {
       || (series.description || '').toLowerCase().includes(q)
   })
 
+  const handleSaveArtist = async (artistData) => {
+    try {
+      const { _thumbnail, _clearThumbnail, ...data } = artistData
+      const isEdit = data.id != null
+      const url = isEdit ? `${ARTISTS_API}/${data.id}` : ARTISTS_API
+      const res = await fetch(url, {
+        method: isEdit ? 'PUT' : 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data),
+      })
+      if (!res.ok) throw new Error(await getErrorMessage(res, 'Failed to save artist'))
+
+      const saved = await res.json()
+      if (_clearThumbnail) {
+        const thumbnailRes = await fetch(`${ARTISTS_API}/${saved.id}/thumbnail`, { method: 'DELETE' })
+        if (!thumbnailRes.ok) throw new Error('Failed to delete artist thumbnail')
+      } else if (_thumbnail) {
+        const formData = new FormData()
+        formData.append('file', _thumbnail)
+        const thumbnailRes = await fetch(`${ARTISTS_API}/${saved.id}/thumbnail`, { method: 'POST', body: formData })
+        if (!thumbnailRes.ok) throw new Error('Failed to upload artist thumbnail')
+      }
+
+      setShowArtistForm(false)
+      setEditingArtist(null)
+      fetchArtists()
+    } catch (err) {
+      setArtistsError(err.message)
+    }
+  }
+
+  const handleDeleteArtist = async (id) => {
+    if (!confirm('Delete this artist?')) return
+    try {
+      const res = await fetch(`${ARTISTS_API}/${id}`, { method: 'DELETE' })
+      if (!res.ok) throw new Error(await getErrorMessage(res, 'Failed to delete artist'))
+      fetchArtists()
+    } catch (err) {
+      setArtistsError(err.message)
+    }
+  }
+
+  const handleSaveMusicVideo = async (musicVideoData) => {
+    try {
+      const { _thumbnail, _clearThumbnail, ...data } = musicVideoData
+      const isEdit = data.id != null
+      const url = isEdit ? `${MUSIC_VIDEOS_API}/${data.id}` : MUSIC_VIDEOS_API
+      const res = await fetch(url, {
+        method: isEdit ? 'PUT' : 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data),
+      })
+      if (!res.ok) throw new Error(await getErrorMessage(res, 'Failed to save music video'))
+      const saved = await res.json()
+      if (_clearThumbnail) {
+        const thumbnailRes = await fetch(`${MUSIC_VIDEOS_API}/${saved.id}/thumbnail`, { method: 'DELETE' })
+        if (!thumbnailRes.ok) throw new Error('Failed to delete music video thumbnail')
+      } else if (_thumbnail) {
+        const formData = new FormData()
+        formData.append('file', _thumbnail)
+        const thumbnailRes = await fetch(`${MUSIC_VIDEOS_API}/${saved.id}/thumbnail`, { method: 'POST', body: formData })
+        if (!thumbnailRes.ok) throw new Error('Failed to upload music video thumbnail')
+      }
+      setShowMusicVideoForm(false)
+      setEditingMusicVideo(null)
+      fetchMusicVideos()
+    } catch (err) {
+      setMusicVideosError(err.message)
+    }
+  }
+
+  const handleDeleteMusicVideo = async (id) => {
+    if (!confirm('Delete this music video?')) return
+    try {
+      const res = await fetch(`${MUSIC_VIDEOS_API}/${id}`, { method: 'DELETE' })
+      if (!res.ok) throw new Error(await getErrorMessage(res, 'Failed to delete music video'))
+      fetchMusicVideos()
+    } catch (err) {
+      setMusicVideosError(err.message)
+    }
+  }
+
+  const filteredArtists = artists.filter((artist) => {
+    const q = artistSearchQuery.trim().toLowerCase()
+    if (!q) return true
+    return (artist.name || '').toLowerCase().includes(q)
+      || (artist.description || '').toLowerCase().includes(q)
+  })
+
   return (
     <>
       <section className="mb-6 rounded-xl border border-gray-800 bg-gray-900 px-5 py-4">
@@ -382,6 +549,12 @@ export default function MediaLibraryPage({ mode }) {
                 } else if (activeTab === 'series') {
                     setEditingSeries(null)
                     setShowSeriesForm(true)
+                } else if (activeTab === 'musicvideos') {
+                  setEditingMusicVideo(null)
+                  setShowMusicVideoForm(true)
+                } else if (activeTab === 'artists') {
+                  setEditingArtist(null)
+                  setShowArtistForm(true)
                 }
               }}
               className="bg-indigo-600 hover:bg-indigo-500 text-white px-4 py-2 rounded-lg font-medium transition-colors"
@@ -392,7 +565,7 @@ export default function MediaLibraryPage({ mode }) {
         </div>
       </section>
 
-      <div className="flex gap-1 mb-6 bg-gray-900 border border-gray-800 rounded-lg p-1 w-fit">
+      <div className="flex flex-wrap gap-1 mb-6 bg-gray-900 border border-gray-800 rounded-lg p-1 w-fit">
         <button
           onClick={() => {
             setActiveTab('movies')
@@ -402,6 +575,10 @@ export default function MediaLibraryPage({ mode }) {
             setEditingGenre(null)
             setShowSeriesForm(false)
             setEditingSeries(null)
+            setShowArtistForm(false)
+            setEditingArtist(null)
+            setShowMusicVideoForm(false)
+            setEditingMusicVideo(null)
           }}
           className={`px-5 py-2 rounded-md text-sm font-medium transition-colors ${
             activeTab === 'movies'
@@ -420,6 +597,10 @@ export default function MediaLibraryPage({ mode }) {
             setEditingGenre(null)
             setShowSeriesForm(false)
             setEditingSeries(null)
+            setShowArtistForm(false)
+            setEditingArtist(null)
+            setShowMusicVideoForm(false)
+            setEditingMusicVideo(null)
           }}
           className={`px-5 py-2 rounded-md text-sm font-medium transition-colors ${
             activeTab === 'episodes'
@@ -428,6 +609,28 @@ export default function MediaLibraryPage({ mode }) {
           }`}
         >
           📺 Episodes
+        </button>
+        <button
+          onClick={() => {
+            setActiveTab('musicvideos')
+            setShowMovieForm(false)
+            setEditingMovie(null)
+            setShowEpisodeForm(false)
+            setEditingEpisode(null)
+            setShowGenreForm(false)
+            setEditingGenre(null)
+            setShowSeriesForm(false)
+            setEditingSeries(null)
+            setShowArtistForm(false)
+            setEditingArtist(null)
+          }}
+          className={`px-5 py-2 rounded-md text-sm font-medium transition-colors ${
+            activeTab === 'musicvideos'
+              ? 'bg-indigo-600 text-white'
+              : 'text-gray-400 hover:text-gray-200'
+          }`}
+        >
+          🎵 Music Videos
         </button>
         {isAdmin && (
           <>
@@ -440,6 +643,10 @@ export default function MediaLibraryPage({ mode }) {
                 setEditingEpisode(null)
                 setShowSeriesForm(false)
                 setEditingSeries(null)
+                setShowArtistForm(false)
+                setEditingArtist(null)
+                setShowMusicVideoForm(false)
+                setEditingMusicVideo(null)
               }}
               className={`px-5 py-2 rounded-md text-sm font-medium transition-colors ${
                 activeTab === 'genres'
@@ -458,6 +665,10 @@ export default function MediaLibraryPage({ mode }) {
                 setEditingEpisode(null)
                 setShowGenreForm(false)
                 setEditingGenre(null)
+                setShowArtistForm(false)
+                setEditingArtist(null)
+                setShowMusicVideoForm(false)
+                setEditingMusicVideo(null)
               }}
               className={`px-5 py-2 rounded-md text-sm font-medium transition-colors ${
                 activeTab === 'series'
@@ -466,6 +677,28 @@ export default function MediaLibraryPage({ mode }) {
               }`}
             >
               Series
+            </button>
+            <button
+              onClick={() => {
+                setActiveTab('artists')
+                setShowMovieForm(false)
+                setEditingMovie(null)
+                setShowEpisodeForm(false)
+                setEditingEpisode(null)
+                setShowGenreForm(false)
+                setEditingGenre(null)
+                setShowSeriesForm(false)
+                setEditingSeries(null)
+                setShowMusicVideoForm(false)
+                setEditingMusicVideo(null)
+              }}
+              className={`px-5 py-2 rounded-md text-sm font-medium transition-colors ${
+                activeTab === 'artists'
+                  ? 'bg-indigo-600 text-white'
+                  : 'text-gray-400 hover:text-gray-200'
+              }`}
+            >
+              🎤 Artists
             </button>
           </>
         )}
@@ -839,6 +1072,178 @@ export default function MediaLibraryPage({ mode }) {
                 setShowSeriesForm(true)
               }}
               onDelete={handleDeleteSeries}
+              readOnly={!isAdmin}
+            />
+          )}
+        </>
+      )}
+
+      {activeTab === 'musicvideos' && (
+        <>
+          <div className="flex flex-col sm:flex-row gap-3 mb-6">
+            <input
+              type="text"
+              placeholder="Search by title…"
+              value={musicVideoTitleQuery}
+              onChange={(e) => {
+                setMusicVideoTitleQuery(e.target.value)
+                if (e.target.value) setSelectedArtist(null)
+              }}
+              className="flex-1 bg-gray-800 border border-gray-700 rounded-lg px-4 py-2 text-gray-100 placeholder-gray-500 focus:outline-none focus:border-indigo-500"
+            />
+          </div>
+
+          {selectedArtist && !musicVideoTitleQuery && (
+            <div className="flex items-center gap-3 mb-4">
+              <button
+                type="button"
+                onClick={() => setSelectedArtist(null)}
+                className="flex items-center gap-1 text-sm text-indigo-400 hover:text-indigo-200 transition-colors"
+              >
+                ← All artists
+              </button>
+              <span className="text-gray-500">|</span>
+              <span className="text-white font-medium">🎤 {selectedArtist.name}</span>
+            </div>
+          )}
+
+          {musicVideoTitleQuery && (
+            <div className="flex items-center gap-2 mb-4">
+              <span className="text-sm text-gray-400">Title search:</span>
+              <span className="flex items-center gap-1 text-xs bg-indigo-800/40 text-indigo-300 px-2 py-0.5 rounded-full">
+                {musicVideoTitleQuery}
+                <button
+                  type="button"
+                  onClick={() => setMusicVideoTitleQuery('')}
+                  className="hover:text-white ml-0.5"
+                  aria-label="Clear title search"
+                >
+                  ×
+                </button>
+              </span>
+            </div>
+          )}
+
+          {musicVideoTagQuery && (
+            <div className="flex items-center gap-2 mb-4">
+              <span className="text-sm text-gray-400">Tag filter:</span>
+              <span className="flex items-center gap-1 text-xs bg-indigo-800/40 text-indigo-300 px-2 py-0.5 rounded-full">
+                {musicVideoTagQuery}
+                <button
+                  type="button"
+                  onClick={() => setMusicVideoTagQuery('')}
+                  className="hover:text-white ml-0.5"
+                  aria-label={`Remove tag filter ${musicVideoTagQuery}`}
+                >
+                  ×
+                </button>
+              </span>
+            </div>
+          )}
+
+          {musicVideosError && (
+            <div className="bg-red-900/50 border border-red-700 text-red-300 px-4 py-3 rounded-lg mb-6">
+              {musicVideosError}
+            </div>
+          )}
+
+          {isAdmin && showMusicVideoForm && (
+            <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4">
+              <div className="bg-gray-900 border border-gray-700 rounded-xl shadow-2xl w-full max-w-lg overflow-y-auto max-h-[90vh]">
+                <MusicVideoForm
+                  musicVideo={editingMusicVideo}
+                  onSave={handleSaveMusicVideo}
+                  onCancel={() => {
+                    setShowMusicVideoForm(false)
+                    setEditingMusicVideo(null)
+                  }}
+                />
+              </div>
+            </div>
+          )}
+
+          {!selectedArtist && !musicVideoTitleQuery && !musicVideoTagQuery ? (
+            artistsLoading ? (
+              <div className="text-center text-gray-400 py-16">Loading…</div>
+            ) : (
+              <>
+                {artistsError && (
+                  <div className="bg-red-900/50 border border-red-700 text-red-300 px-4 py-3 rounded-lg mb-6">
+                    {artistsError}
+                  </div>
+                )}
+                <ArtistList
+                  artists={artists}
+                  onArtistClick={(artist) => {
+                    setSelectedArtist(artist)
+                    setMusicVideoTitleQuery('')
+                  }}
+                  readOnly={true}
+                />
+              </>
+            )
+          ) : (
+            musicVideosLoading ? (
+              <div className="text-center text-gray-400 py-16">Loading…</div>
+            ) : (
+              <MusicVideoList
+                musicVideos={musicVideos}
+                onEdit={(mv) => {
+                  setEditingMusicVideo(mv)
+                  setShowMusicVideoForm(true)
+                }}
+                onDelete={handleDeleteMusicVideo}
+                onTagClick={(tag) => setMusicVideoTagQuery(tag)}
+                readOnly={!isAdmin}
+              />
+            )
+          )}
+        </>
+      )}
+
+      {activeTab === 'artists' && (
+        <>
+          <div className="flex flex-col sm:flex-row gap-3 mb-6">
+            <input
+              type="text"
+              placeholder="Search artists…"
+              value={artistSearchQuery}
+              onChange={(e) => setArtistSearchQuery(e.target.value)}
+              className="flex-1 bg-gray-800 border border-gray-700 rounded-lg px-4 py-2 text-gray-100 placeholder-gray-500 focus:outline-none focus:border-indigo-500"
+            />
+          </div>
+
+          {artistsError && (
+            <div className="bg-red-900/50 border border-red-700 text-red-300 px-4 py-3 rounded-lg mb-6">
+              {artistsError}
+            </div>
+          )}
+
+          {isAdmin && showArtistForm && (
+            <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4">
+              <div className="bg-gray-900 border border-gray-700 rounded-xl shadow-2xl w-full max-w-lg overflow-y-auto max-h-[90vh]">
+                <ArtistForm
+                  artist={editingArtist}
+                  onSave={handleSaveArtist}
+                  onCancel={() => {
+                    setShowArtistForm(false)
+                    setEditingArtist(null)
+                  }}
+                />
+              </div>
+            </div>
+          )}
+
+          {artistsLoading ? (
+            <div className="text-center text-gray-400 py-16">Loading…</div>
+          ) : (
+            <ArtistList
+              artists={filteredArtists}
+              onEdit={(artist) => {
+                setEditingArtist(artist)
+                setShowArtistForm(true)
+              }}
+              onDelete={handleDeleteArtist}
               readOnly={!isAdmin}
             />
           )}

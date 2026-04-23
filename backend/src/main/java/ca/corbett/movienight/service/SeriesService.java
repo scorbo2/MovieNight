@@ -39,6 +39,10 @@ public class SeriesService {
     }
 
     public Series saveSeries(Series series) {
+        if (seriesRepository.existsByNameIgnoreCase(series.getName())) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT,
+                                              "Series already exists with name: " + series.getName());
+        }
         return populateTransientFields(seriesRepository.save(series));
     }
 

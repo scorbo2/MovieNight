@@ -6,7 +6,6 @@ import ca.corbett.movienight.repository.GenreRepository;
 import ca.corbett.movienight.repository.MovieRepository;
 import jakarta.persistence.criteria.Join;
 import jakarta.persistence.criteria.JoinType;
-import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;

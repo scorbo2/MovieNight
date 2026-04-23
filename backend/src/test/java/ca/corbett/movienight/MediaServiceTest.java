@@ -20,7 +20,6 @@ import static org.mockito.Mockito.when;
 class MediaServiceTest {
 
     private MovieService movieService;
-    private GenreService genreService;
     private EpisodeService episodeService;
     private MediaService mediaService;
 
@@ -28,14 +27,12 @@ class MediaServiceTest {
     void setUp() {
         movieService = mock(MovieService.class);
         episodeService = mock(EpisodeService.class);
-        genreService = mock(GenreService.class);
         mediaService = new MediaService(movieService, episodeService);
     }
 
     @Test
     void resolvesMovieId() {
         Genre drama = new Genre("Drama", "");
-        when(genreService.requireGenre(1L)).thenReturn(drama);
 
         Movie movie = new Movie("Test Movie", 2024, drama, "A test.", false);
         movie.setVideoFilePath("/movies/test_movie.mp4");

@@ -188,9 +188,6 @@ export default function MovieForm({ movie, onSave, onCancel }) {
             className={`w-full bg-gray-800 border rounded-lg px-3 py-2 text-gray-100 focus:outline-none focus:border-indigo-500 ${errors.genreId ? 'border-red-500' : 'border-gray-700'}`}
           >
             <option value="">{genresLoading ? 'Loading genres…' : 'Select a genre'}</option>
-            {hasMissingSelectedGenre && (
-              <option value={form.genreId}>Unknown genre (id: {form.genreId})</option>
-            )}
             {genres.map((genre) => (
               <option key={genre.id} value={String(genre.id)}>
                 {genre.name}
@@ -198,6 +195,9 @@ export default function MovieForm({ movie, onSave, onCancel }) {
             ))}
           </select>
           {errors.genreId && <p className="text-red-400 text-xs mt-1">{errors.genreId}</p>}
+          {hasMissingSelectedGenre && (
+            <p className="text-red-400 text-xs mt-1">The previously selected genre no longer exists. Please select a valid genre.</p>
+          )}
           {genresError && <p className="text-red-400 text-xs mt-1">{genresError}</p>}
           {noGenresAvailable && !genresError && (
             <p className="text-amber-300 text-xs mt-1">No genres exist yet. Create one first, then add movies.</p>
@@ -359,7 +359,7 @@ export default function MovieForm({ movie, onSave, onCancel }) {
       <div className="flex gap-3 pt-2">
         <button
           type="submit"
-          disabled={noGenresAvailable || genresLoading || Boolean(genresError)}
+          disabled={noGenresAvailable || genresLoading || Boolean(genresError) || Boolean(hasMissingSelectedGenre)}
           className="flex-1 bg-indigo-600 hover:bg-indigo-500 disabled:bg-gray-700 disabled:text-gray-400 disabled:cursor-not-allowed text-white font-medium py-2 rounded-lg transition-colors"
         >
           {isEditing ? 'Save Changes' : 'Add Movie'}

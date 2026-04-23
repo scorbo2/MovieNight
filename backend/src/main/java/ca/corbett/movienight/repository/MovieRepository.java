@@ -1,5 +1,6 @@
 package ca.corbett.movienight.repository;
 
+import ca.corbett.movienight.model.Genre;
 import ca.corbett.movienight.model.Movie;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
@@ -14,7 +15,9 @@ public interface MovieRepository extends JpaRepository<Movie, Long>, JpaSpecific
 
     List<Movie> findByWatched(Boolean watched);
 
-    List<Movie> findByGenreIgnoreCase(String genre);
+    List<Movie> findByGenre(Genre genre);
+
+    long countByGenre(Genre genre);
 
     List<Movie> findByTagsContainingIgnoreCase(String tag);
 }

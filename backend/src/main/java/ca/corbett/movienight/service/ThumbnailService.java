@@ -50,6 +50,7 @@ public class ThumbnailService {
         try {
             Files.createDirectories(dir.resolve("movies"));
             Files.createDirectories(dir.resolve("episodes"));
+            Files.createDirectories(dir.resolve("genres"));
             enabled = true;
             logger.info("Thumbnail support enabled using {}", dir);
         } catch (IOException e) {

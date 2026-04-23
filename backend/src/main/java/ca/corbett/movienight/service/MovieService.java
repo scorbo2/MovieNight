@@ -1,5 +1,6 @@
 package ca.corbett.movienight.service;
 
+import ca.corbett.movienight.model.Genre;
 import ca.corbett.movienight.model.Movie;
 import ca.corbett.movienight.repository.MovieRepository;
 import jakarta.persistence.criteria.Join;
@@ -32,10 +33,20 @@ public class MovieService {
     }
 
     public Movie saveMovie(Movie movie) {
+        // Reject request if the movie's genre is null:
+        if (movie.getGenre() == null) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Movie genre is required.");
+        }
+
         return populateHasThumbnail(movieRepository.save(movie));
     }
 
     public Movie updateMovie(Long id, Movie updatedMovie) {
+        // Reject request if the movie's genre is null:
+        if (updatedMovie.getGenre() == null) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Movie genre is required.");
+        }
+
         return movieRepository.findById(id).map(movie -> {
             movie.setTitle(updatedMovie.getTitle());
             movie.setYear(updatedMovie.getYear());
@@ -70,6 +81,10 @@ public class MovieService {
 
     public List<Movie> searchByTag(String tag) {
         return populateHasThumbnail(movieRepository.findByTagsContainingIgnoreCase(tag));
+    }
+
+    public List<Movie> searchMovies(Genre genre) {
+        return populateHasThumbnail(movieRepository.findByGenre(genre));
     }
 
     public List<Movie> searchMovies(String title, Boolean watched, String tag) {

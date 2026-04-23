@@ -2,11 +2,13 @@ import { useState, useEffect, useRef } from 'react'
 import FileBrowserModal from './FileBrowserModal'
 
 const MOVIES_API = '/api/movies'
+const GENRES_API = '/api/genres'
 
 const EMPTY_FORM = {
+  id: null,
   title: '',
   year: '',
-  genre: '',
+  genreId: '',
   description: '',
   watched: false,
   tags: [],
@@ -15,6 +17,9 @@ const EMPTY_FORM = {
 
 export default function MovieForm({ movie, onSave, onCancel }) {
   const [form, setForm] = useState(EMPTY_FORM)
+  const [genres, setGenres] = useState([])
+  const [genresLoading, setGenresLoading] = useState(true)
+  const [genresError, setGenresError] = useState(null)
   const [errors, setErrors] = useState({})
   const [tagInput, setTagInput] = useState('')
   const [thumbnailFile, setThumbnailFile] = useState(null)
@@ -34,6 +39,36 @@ export default function MovieForm({ movie, onSave, onCancel }) {
   }, [])
 
   useEffect(() => {
+    let ignore = false
+
+    const fetchGenres = async () => {
+      try {
+        setGenresLoading(true)
+        const res = await fetch(GENRES_API)
+        if (!res.ok) throw new Error('Failed to fetch genres')
+        const data = await res.json()
+        if (!ignore) {
+          const sortedGenres = Array.isArray(data)
+            ? [...data].sort((a, b) => a.name.localeCompare(b.name))
+            : []
+          setGenres(sortedGenres)
+          setGenresError(null)
+        }
+      } catch {
+        if (!ignore) setGenresError('Failed to load genres.')
+      } finally {
+        if (!ignore) setGenresLoading(false)
+      }
+    }
+
+    fetchGenres()
+
+    return () => {
+      ignore = true
+    }
+  }, [])
+
+  useEffect(() => {
     // Revoke any existing object URL when the movie prop changes (form reset)
     if (objectUrlRef.current) {
       URL.revokeObjectURL(objectUrlRef.current)
@@ -41,9 +76,14 @@ export default function MovieForm({ movie, onSave, onCancel }) {
     }
     if (movie) {
       setForm({
-        ...movie,
+        id: movie.id,
+        title: movie.title ?? '',
         year: movie.year ?? '',
+        genreId: movie.genre?.id != null ? String(movie.genre.id) : '',
+        description: movie.description ?? '',
+        watched: Boolean(movie.watched),
         tags: movie.tags ?? [],
+        videoFilePath: movie.videoFilePath ?? '',
       })
       setThumbnailPreview(movie.hasThumbnail ? `${MOVIES_API}/${movie.id}/thumbnail` : null)
     } else {
@@ -59,6 +99,7 @@ export default function MovieForm({ movie, onSave, onCancel }) {
   const validate = () => {
     const errs = {}
     if (!form.title.trim()) errs.title = 'Title is required.'
+    if (!form.genreId) errs.genreId = 'Genre is required.'
     if (form.year && (isNaN(form.year) || form.year < 1888 || form.year > 2100)) {
       errs.year = 'Enter a valid year (1888–2100).'
     }
@@ -72,6 +113,9 @@ export default function MovieForm({ movie, onSave, onCancel }) {
       ...prev,
       [name]: type === 'checkbox' ? checked : value,
     }))
+    if (errors[name]) {
+      setErrors((prev) => ({ ...prev, [name]: undefined }))
+    }
   }
 
   const handleSubmit = (e) => {
@@ -86,15 +130,22 @@ export default function MovieForm({ movie, onSave, onCancel }) {
       ? [...form.tags, ...tagInput.split(',').map(t => t.trim()).filter(Boolean)]
       : form.tags
     onSave({
-      ...form,
+      id: form.id,
+      title: form.title,
       year: form.year !== '' ? Number(form.year) : null,
+      genre: { id: Number(form.genreId) },
+      description: form.description,
+      watched: form.watched,
       tags: pendingTags,
+      videoFilePath: form.videoFilePath,
       _thumbnail: thumbnailFile,
       _clearThumbnail: clearThumbnail,
     })
   }
 
   const isEditing = movie != null
+  const hasMissingSelectedGenre = form.genreId && !genres.some((g) => String(g.id) === String(form.genreId))
+  const noGenresAvailable = !genresLoading && genres.length === 0
 
   return (
     <>
@@ -128,14 +179,29 @@ export default function MovieForm({ movie, onSave, onCancel }) {
           {errors.year && <p className="text-red-400 text-xs mt-1">{errors.year}</p>}
         </div>
         <div>
-          <label className="block text-sm text-gray-400 mb-1">Genre</label>
-          <input
-            name="genre"
-            value={form.genre}
+          <label className="block text-sm text-gray-400 mb-1">Genre *</label>
+          <select
+            name="genreId"
+            value={form.genreId}
             onChange={handleChange}
-            placeholder="e.g. Drama"
-            className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-gray-100 focus:outline-none focus:border-indigo-500"
-          />
+            disabled={genresLoading || genres.length === 0}
+            className={`w-full bg-gray-800 border rounded-lg px-3 py-2 text-gray-100 focus:outline-none focus:border-indigo-500 ${errors.genreId ? 'border-red-500' : 'border-gray-700'}`}
+          >
+            <option value="">{genresLoading ? 'Loading genres…' : 'Select a genre'}</option>
+            {genres.map((genre) => (
+              <option key={genre.id} value={String(genre.id)}>
+                {genre.name}
+              </option>
+            ))}
+          </select>
+          {errors.genreId && <p className="text-red-400 text-xs mt-1">{errors.genreId}</p>}
+          {hasMissingSelectedGenre && (
+            <p className="text-red-400 text-xs mt-1">The previously selected genre no longer exists. Please select a valid genre.</p>
+          )}
+          {genresError && <p className="text-red-400 text-xs mt-1">{genresError}</p>}
+          {noGenresAvailable && !genresError && (
+            <p className="text-amber-300 text-xs mt-1">No genres exist yet. Create one first, then add movies.</p>
+          )}
         </div>
       </div>
 
@@ -293,7 +359,8 @@ export default function MovieForm({ movie, onSave, onCancel }) {
       <div className="flex gap-3 pt-2">
         <button
           type="submit"
-          className="flex-1 bg-indigo-600 hover:bg-indigo-500 text-white font-medium py-2 rounded-lg transition-colors"
+          disabled={noGenresAvailable || genresLoading || Boolean(genresError) || Boolean(hasMissingSelectedGenre)}
+          className="flex-1 bg-indigo-600 hover:bg-indigo-500 disabled:bg-gray-700 disabled:text-gray-400 disabled:cursor-not-allowed text-white font-medium py-2 rounded-lg transition-colors"
         >
           {isEditing ? 'Save Changes' : 'Add Movie'}
         </button>

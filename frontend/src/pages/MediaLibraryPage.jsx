@@ -3,9 +3,12 @@ import MovieList from '../components/MovieList'
 import MovieForm from '../components/MovieForm'
 import EpisodeList from '../components/EpisodeList'
 import EpisodeForm from '../components/EpisodeForm'
+import GenreList from '../components/GenreList'
+import GenreForm from '../components/GenreForm'
 
 const MOVIES_API = '/api/movies'
 const EPISODES_API = '/api/episodes'
+const GENRES_API = '/api/genres'
 
 export default function MediaLibraryPage({ mode }) {
   const isAdmin = mode === 'admin'
@@ -29,6 +32,25 @@ export default function MediaLibraryPage({ mode }) {
   const [episodeSeasonQuery, setEpisodeSeasonQuery] = useState('')
   const [filterEpisodeWatched, setFilterEpisodeWatched] = useState('')
   const [episodeTagQuery, setEpisodeTagQuery] = useState('')
+
+  const [genres, setGenres] = useState([])
+  const [genresLoading, setGenresLoading] = useState(true)
+  const [genresError, setGenresError] = useState(null)
+  const [showGenreForm, setShowGenreForm] = useState(false)
+  const [editingGenre, setEditingGenre] = useState(null)
+  const [genreSearchQuery, setGenreSearchQuery] = useState('')
+
+  const getErrorMessage = async (response, fallbackMessage) => {
+    const body = await response.text()
+    if (!body) return fallbackMessage
+
+    try {
+      const parsed = JSON.parse(body)
+      return parsed.message || parsed.error || fallbackMessage
+    } catch {
+      return body
+    }
+  }
 
   const fetchMovies = async () => {
     try {
@@ -75,6 +97,29 @@ export default function MediaLibraryPage({ mode }) {
     if (activeTab !== 'episodes') return
     fetchEpisodes()
   }, [activeTab, episodeSeriesQuery, episodeSeasonQuery, filterEpisodeWatched, episodeTagQuery])
+
+  const fetchGenres = async () => {
+    try {
+      setGenresLoading(true)
+      const res = await fetch(GENRES_API)
+      if (!res.ok) throw new Error('Failed to fetch genres')
+      const data = await res.json()
+      const sortedGenres = Array.isArray(data)
+        ? [...data].sort((a, b) => a.name.localeCompare(b.name))
+        : []
+      setGenres(sortedGenres)
+      setGenresError(null)
+    } catch (err) {
+      setGenresError(err.message)
+    } finally {
+      setGenresLoading(false)
+    }
+  }
+
+  useEffect(() => {
+    if (activeTab !== 'genres') return
+    fetchGenres()
+  }, [activeTab])
 
   const handleSaveMovie = async (movieData) => {
     try {
@@ -156,7 +201,60 @@ export default function MediaLibraryPage({ mode }) {
     }
   }
 
-  const adminActionLabel = activeTab === 'movies' ? '+ Add Movie' : '+ Add Episode'
+  const handleSaveGenre = async (genreData) => {
+    try {
+      const { _thumbnail, _clearThumbnail, ...data } = genreData
+      const isEdit = data.id != null
+      const url = isEdit ? `${GENRES_API}/${data.id}` : GENRES_API
+      const res = await fetch(url, {
+        method: isEdit ? 'PUT' : 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data),
+      })
+      if (!res.ok) throw new Error(await getErrorMessage(res, 'Failed to save genre'))
+
+      const saved = await res.json()
+      if (_clearThumbnail) {
+        const thumbnailRes = await fetch(`${GENRES_API}/${saved.id}/thumbnail`, { method: 'DELETE' })
+        if (!thumbnailRes.ok) throw new Error('Failed to delete genre thumbnail')
+      } else if (_thumbnail) {
+        const formData = new FormData()
+        formData.append('file', _thumbnail)
+        const thumbnailRes = await fetch(`${GENRES_API}/${saved.id}/thumbnail`, { method: 'POST', body: formData })
+        if (!thumbnailRes.ok) throw new Error('Failed to upload genre thumbnail')
+      }
+
+      setShowGenreForm(false)
+      setEditingGenre(null)
+      fetchGenres()
+    } catch (err) {
+      setGenresError(err.message)
+    }
+  }
+
+  const handleDeleteGenre = async (id) => {
+    if (!confirm('Delete this genre?')) return
+    try {
+      const res = await fetch(`${GENRES_API}/${id}`, { method: 'DELETE' })
+      if (!res.ok) throw new Error(await getErrorMessage(res, 'Failed to delete genre'))
+      fetchGenres()
+    } catch (err) {
+      setGenresError(err.message)
+    }
+  }
+
+  const adminActionLabel = activeTab === 'movies'
+    ? '+ Add Movie'
+    : activeTab === 'episodes'
+      ? '+ Add Episode'
+      : '+ Add Genre'
+
+  const filteredGenres = genres.filter((genre) => {
+    const q = genreSearchQuery.trim().toLowerCase()
+    if (!q) return true
+    return (genre.name || '').toLowerCase().includes(q)
+      || (genre.description || '').toLowerCase().includes(q)
+  })
 
   return (
     <>
@@ -172,7 +270,7 @@ export default function MediaLibraryPage({ mode }) {
             <p className="mt-1 text-sm text-gray-400">
               {isAdmin
                 ? 'Create, edit, and delete entries from this machine only. Basic auth is required for admin access.'
-                : 'Browse movies and episodes without any write controls.'}
+                : 'Browse movies, episodes, and genres without any write controls.'}
             </p>
           </div>
           {isAdmin && (
@@ -181,9 +279,12 @@ export default function MediaLibraryPage({ mode }) {
                 if (activeTab === 'movies') {
                   setEditingMovie(null)
                   setShowMovieForm(true)
-                } else {
+                } else if (activeTab === 'episodes') {
                   setEditingEpisode(null)
                   setShowEpisodeForm(true)
+                } else {
+                  setEditingGenre(null)
+                  setShowGenreForm(true)
                 }
               }}
               className="bg-indigo-600 hover:bg-indigo-500 text-white px-4 py-2 rounded-lg font-medium transition-colors"
@@ -200,6 +301,8 @@ export default function MediaLibraryPage({ mode }) {
             setActiveTab('movies')
             setShowEpisodeForm(false)
             setEditingEpisode(null)
+            setShowGenreForm(false)
+            setEditingGenre(null)
           }}
           className={`px-5 py-2 rounded-md text-sm font-medium transition-colors ${
             activeTab === 'movies'
@@ -214,6 +317,8 @@ export default function MediaLibraryPage({ mode }) {
             setActiveTab('episodes')
             setShowMovieForm(false)
             setEditingMovie(null)
+            setShowGenreForm(false)
+            setEditingGenre(null)
           }}
           className={`px-5 py-2 rounded-md text-sm font-medium transition-colors ${
             activeTab === 'episodes'
@@ -222,6 +327,22 @@ export default function MediaLibraryPage({ mode }) {
           }`}
         >
           📺 Episodes
+        </button>
+        <button
+          onClick={() => {
+            setActiveTab('genres')
+            setShowMovieForm(false)
+            setEditingMovie(null)
+            setShowEpisodeForm(false)
+            setEditingEpisode(null)
+          }}
+          className={`px-5 py-2 rounded-md text-sm font-medium transition-colors ${
+            activeTab === 'genres'
+              ? 'bg-indigo-600 text-white'
+              : 'text-gray-400 hover:text-gray-200'
+          }`}
+        >
+          🏷️ Genres
         </button>
       </div>
 
@@ -377,6 +498,55 @@ export default function MediaLibraryPage({ mode }) {
               }}
               onDelete={handleDeleteEpisode}
               onTagClick={(tag) => setEpisodeTagQuery(tag)}
+              readOnly={!isAdmin}
+            />
+          )}
+        </>
+      )}
+
+      {activeTab === 'genres' && (
+        <>
+          <div className="flex flex-col sm:flex-row gap-3 mb-6">
+            <input
+              type="text"
+              placeholder="Search genres…"
+              value={genreSearchQuery}
+              onChange={(e) => setGenreSearchQuery(e.target.value)}
+              className="flex-1 bg-gray-800 border border-gray-700 rounded-lg px-4 py-2 text-gray-100 placeholder-gray-500 focus:outline-none focus:border-indigo-500"
+            />
+          </div>
+
+          {genresError && (
+            <div className="bg-red-900/50 border border-red-700 text-red-300 px-4 py-3 rounded-lg mb-6">
+              {genresError}
+            </div>
+          )}
+
+          {isAdmin && showGenreForm && (
+            <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4">
+              <div className="bg-gray-900 border border-gray-700 rounded-xl shadow-2xl w-full max-w-lg overflow-y-auto max-h-[90vh]">
+                <GenreForm
+                  genre={editingGenre}
+                  onSave={handleSaveGenre}
+                  onCancel={() => {
+                    setShowGenreForm(false)
+                    setEditingGenre(null)
+                  }}
+                />
+              </div>
+            </div>
+          )}
+
+          {genresLoading ? (
+            <div className="text-center text-gray-400 py-16">Loading…</div>
+          ) : (
+            <GenreList
+              genres={filteredGenres}
+              onEdit={(genre) => {
+                setEditingGenre(genre)
+                setShowGenreForm(true)
+              }}
+              onDelete={handleDeleteGenre}
               readOnly={!isAdmin}
             />
           )}

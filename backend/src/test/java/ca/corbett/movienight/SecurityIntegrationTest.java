@@ -58,7 +58,7 @@ class SecurityIntegrationTest {
                 {
                   "title": "Secured Movie",
                   "year": 2024,
-                  "genre": "Drama",
+                  "genre": { "id": 1 },
                   "description": "Created through the secured admin API.",
                   "watched": false,
                   "tags": ["security"],

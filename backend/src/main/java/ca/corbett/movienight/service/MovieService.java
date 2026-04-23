@@ -33,10 +33,20 @@ public class MovieService {
     }
 
     public Movie saveMovie(Movie movie) {
+        // Reject request if the movie's genre is null:
+        if (movie.getGenre() == null) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Movie genre is required.");
+        }
+
         return populateHasThumbnail(movieRepository.save(movie));
     }
 
     public Movie updateMovie(Long id, Movie updatedMovie) {
+        // Reject request if the movie's genre is null:
+        if (updatedMovie.getGenre() == null) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Movie genre is required.");
+        }
+
         return movieRepository.findById(id).map(movie -> {
             movie.setTitle(updatedMovie.getTitle());
             movie.setYear(updatedMovie.getYear());

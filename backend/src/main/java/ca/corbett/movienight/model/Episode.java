@@ -1,7 +1,18 @@
 package ca.corbett.movienight.model;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
-import jakarta.persistence.*;
+import jakarta.persistence.CollectionTable;
+import jakarta.persistence.Column;
+import jakarta.persistence.ElementCollection;
+import jakarta.persistence.Entity;
+import jakarta.persistence.FetchType;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
+import jakarta.persistence.Table;
+import jakarta.persistence.Transient;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
 
@@ -9,6 +20,16 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
+/**
+ * Represents a single episode of a TV series (or web series, or any kind of episodic content).
+ * An Episode has a mandatory title, and a mandatory Series association. It can optionally
+ * have a season and episode number, and a description. For additional metadata, use the
+ * tags list, and attach any arbitrary string tags to describe the episode.
+ * <p>
+ * If a data directory is set, a thumbnail image can be associated with an episode.
+ * This is optional. If present, the thumbnail will be presented in the UI.
+ * </p>
+ */
 @Entity
 @Table(name = "episodes")
 public class Episode {
@@ -17,10 +38,9 @@ public class Episode {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @NotBlank
-    @Size(max = 255)
-    @Column(nullable = false)
-    private String seriesName;
+    @ManyToOne(fetch = FetchType.EAGER)
+    @JoinColumn(name = "series_id", nullable = false)
+    private Series series;
 
     @Size(max = 255)
     @Column
@@ -52,11 +72,12 @@ public class Episode {
     @JsonProperty(value = "hasThumbnail", access = JsonProperty.Access.READ_ONLY)
     private boolean hasThumbnail = false;
 
-    public Episode() {}
+    public Episode() {
+    }
 
-    public Episode(String seriesName, String episodeTitle, Integer season, Integer episode,
+    public Episode(Series series, String episodeTitle, Integer season, Integer episode,
                    String description, Boolean watched) {
-        this.seriesName = seriesName;
+        this.series = series;
         this.episodeTitle = episodeTitle;
         this.season = season;
         this.episode = episode;
@@ -66,43 +87,92 @@ public class Episode {
 
     // Getters and setters
 
-    public Long getId() { return id; }
-    public void setId(Long id) { this.id = id; }
+    public Long getId() {
+        return id;
+    }
 
-    public String getSeriesName() { return seriesName; }
-    public void setSeriesName(String seriesName) { this.seriesName = seriesName; }
+    public void setId(Long id) {
+        this.id = id;
+    }
 
-    public String getEpisodeTitle() { return episodeTitle; }
-    public void setEpisodeTitle(String episodeTitle) { this.episodeTitle = episodeTitle; }
+    public Series getSeries() {
+        return series;
+    }
 
-    public Integer getSeason() { return season; }
-    public void setSeason(Integer season) { this.season = season; }
+    public void setSeries(Series series) {
+        this.series = series;
+    }
 
-    public Integer getEpisode() { return episode; }
-    public void setEpisode(Integer episode) { this.episode = episode; }
+    public String getEpisodeTitle() {
+        return episodeTitle;
+    }
 
-    public String getDescription() { return description; }
-    public void setDescription(String description) { this.description = description; }
+    public void setEpisodeTitle(String episodeTitle) {
+        this.episodeTitle = episodeTitle;
+    }
 
-    public Boolean getWatched() { return watched; }
-    public void setWatched(Boolean watched) { this.watched = watched; }
+    public Integer getSeason() {
+        return season;
+    }
 
-    public List<String> getTags() { return tags; }
+    public void setSeason(Integer season) {
+        this.season = season;
+    }
+
+    public Integer getEpisode() {
+        return episode;
+    }
+
+    public void setEpisode(Integer episode) {
+        this.episode = episode;
+    }
+
+    public String getDescription() {
+        return description;
+    }
+
+    public void setDescription(String description) {
+        this.description = description;
+    }
+
+    public Boolean getWatched() {
+        return watched;
+    }
+
+    public void setWatched(Boolean watched) {
+        this.watched = watched;
+    }
+
+    public List<String> getTags() {
+        return tags;
+    }
+
     public void setTags(List<String> tags) {
         if (tags == null) {
             this.tags = new ArrayList<>();
-        } else {
+        }
+        else {
             this.tags = tags.stream()
-                    .filter(t -> t != null && !t.isBlank())
-                    .map(t -> t.trim().toLowerCase())
-                    .distinct()
-                    .collect(Collectors.toCollection(ArrayList::new));
+                            .filter(t -> t != null && !t.isBlank())
+                            .map(t -> t.trim().toLowerCase())
+                            .distinct()
+                            .collect(Collectors.toCollection(ArrayList::new));
         }
     }
 
-    public boolean isHasThumbnail() { return hasThumbnail; }
-    public void setHasThumbnail(boolean hasThumbnail) { this.hasThumbnail = hasThumbnail; }
+    public boolean isHasThumbnail() {
+        return hasThumbnail;
+    }
 
-    public String getVideoFilePath() { return videoFilePath; }
-    public void setVideoFilePath(String videoFilePath) { this.videoFilePath = videoFilePath; }
+    public void setHasThumbnail(boolean hasThumbnail) {
+        this.hasThumbnail = hasThumbnail;
+    }
+
+    public String getVideoFilePath() {
+        return videoFilePath;
+    }
+
+    public void setVideoFilePath(String videoFilePath) {
+        this.videoFilePath = videoFilePath;
+    }
 }

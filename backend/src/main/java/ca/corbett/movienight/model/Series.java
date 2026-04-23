@@ -11,20 +11,20 @@ import jakarta.persistence.Transient;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
 
-import java.util.Locale;
-
 /**
- * Each Movie has a mandatory Genre association. A Genre has a mandatory name, and an optional description.
- * The main Movies tab in the UI starts with a list of Genres, and clicking on a Genre shows the movies in that genre.
+ * An Episode has a mandatory Series association.
+ * A Series has a mandatory name, and an optional description.
+ * The main TV Series tab in the UI starts with a list of Series,
+ * and clicking on a Series shows the episodes in that series.
+ * A Series can optionally have a year associated with it.
  * <p>
- * If a data directory is set, a thumbnail image can be associated with a genre. This is optional.
+ * If a data directory is set, a thumbnail image can be associated with a series. This is optional.
  * If present, the thumbnail will be presented in the UI.
  * </p>
  */
 @Entity
-@Table(name = "genres")
-public class Genre {
-
+@Table(name = "series")
+public class Series {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
@@ -38,22 +38,25 @@ public class Genre {
     @Column(length = 2000)
     private String description;
 
+    @Column
+    private Integer year;
+
     @Transient
     @JsonProperty(value = "hasThumbnail", access = JsonProperty.Access.READ_ONLY)
     private boolean hasThumbnail = false;
 
     @Transient
-    @JsonProperty(value = "movieCount", access = JsonProperty.Access.READ_ONLY)
-    private long movieCount = 0;
+    @JsonProperty(value = "episodeCount", access = JsonProperty.Access.READ_ONLY)
+    private long episodeCount = 0;
 
-    public Genre() {
+    public Series() {
     }
 
-    public Genre(String name) {
+    public Series(String name) {
         this(name, null);
     }
 
-    public Genre(String name, String description) {
+    public Series(String name, String description) {
         setName(name);
         this.description = description;
     }
@@ -66,13 +69,20 @@ public class Genre {
         this.id = id;
     }
 
+    public Integer getYear() {
+        return year;
+    }
+
+    public void setYear(Integer year) {
+        this.year = year;
+    }
+
     public String getName() {
         return name;
     }
 
     public void setName(String name) {
-        // Normalize:
-        this.name = name == null ? null : name.trim().toLowerCase(Locale.ROOT);
+        this.name = name;
     }
 
     public String getDescription() {
@@ -91,12 +101,11 @@ public class Genre {
         this.hasThumbnail = hasThumbnail;
     }
 
-    public long getMovieCount() {
-        return movieCount;
+    public long getEpisodeCount() {
+        return episodeCount;
     }
 
-    public void setMovieCount(long movieCount) {
-        this.movieCount = movieCount;
+    public void setEpisodeCount(long episodeCount) {
+        this.episodeCount = episodeCount;
     }
-
 }

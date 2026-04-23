@@ -5,10 +5,13 @@ import EpisodeList from '../components/EpisodeList'
 import EpisodeForm from '../components/EpisodeForm'
 import GenreList from '../components/GenreList'
 import GenreForm from '../components/GenreForm'
+import SeriesList from '../components/SeriesList'
+import SeriesForm from '../components/SeriesForm'
 
 const MOVIES_API = '/api/movies'
 const EPISODES_API = '/api/episodes'
 const GENRES_API = '/api/genres'
+const SERIES_API = '/api/series'
 
 export default function MediaLibraryPage({ mode }) {
   const isAdmin = mode === 'admin'
@@ -40,6 +43,14 @@ export default function MediaLibraryPage({ mode }) {
   const [editingGenre, setEditingGenre] = useState(null)
   const [genreSearchQuery, setGenreSearchQuery] = useState('')
   const [selectedGenre, setSelectedGenre] = useState(null)
+
+  const [series, setSeries] = useState([])
+  const [seriesLoading, setSeriesLoading] = useState(true)
+  const [seriesError, setSeriesError] = useState(null)
+  const [showSeriesForm, setShowSeriesForm] = useState(false)
+  const [editingSeries, setEditingSeries] = useState(null)
+  const [seriesSearchQuery, setSeriesSearchQuery] = useState('')
+  const [selectedSeries, setSelectedSeries] = useState(null)
 
   const getErrorMessage = async (response, fallbackMessage) => {
     const body = await response.text()
@@ -80,7 +91,7 @@ export default function MediaLibraryPage({ mode }) {
     try {
       setEpisodesLoading(true)
       const params = new URLSearchParams()
-      if (episodeSeriesQuery) params.append('seriesName', episodeSeriesQuery)
+      if (episodeSeriesQuery) params.append('seriesId', episodeSeriesQuery)
       if (episodeSeasonQuery !== '') params.append('season', episodeSeasonQuery)
       if (filterEpisodeWatched !== '') params.append('watched', filterEpisodeWatched)
       if (episodeTagQuery) params.append('tag', episodeTagQuery)
@@ -99,6 +110,29 @@ export default function MediaLibraryPage({ mode }) {
     if (activeTab !== 'episodes') return
     fetchEpisodes()
   }, [activeTab, episodeSeriesQuery, episodeSeasonQuery, filterEpisodeWatched, episodeTagQuery])
+
+  const fetchSeries = async () => {
+    try {
+      setSeriesLoading(true)
+      const res = await fetch(SERIES_API)
+      if (!res.ok) throw new Error('Failed to fetch series')
+      const data = await res.json()
+      const sortedSeries = Array.isArray(data)
+        ? [...data].sort((a, b) => a.name.localeCompare(b.name))
+        : []
+      setSeries(sortedSeries)
+      setSeriesError(null)
+    } catch (err) {
+      setSeriesError(err.message)
+    } finally {
+      setSeriesLoading(false)
+    }
+  }
+
+  useEffect(() => {
+    if (activeTab !== 'series' && activeTab !== 'episodes') return
+    fetchSeries()
+  }, [activeTab])
 
   const fetchGenres = async () => {
     try {
@@ -249,13 +283,64 @@ export default function MediaLibraryPage({ mode }) {
     ? '+ Add Movie'
     : activeTab === 'episodes'
       ? '+ Add Episode'
-      : '+ Add Genre'
+      : activeTab === 'genres'
+      ? '+ Add Genre'
+      : '+ Add Series'
 
   const filteredGenres = genres.filter((genre) => {
     const q = genreSearchQuery.trim().toLowerCase()
     if (!q) return true
     return (genre.name || '').toLowerCase().includes(q)
       || (genre.description || '').toLowerCase().includes(q)
+  })
+
+  const handleSaveSeries = async (seriesData) => {
+    try {
+      const { _thumbnail, _clearThumbnail, ...data } = seriesData
+      const isEdit = data.id != null
+      const url = isEdit ? `${SERIES_API}/${data.id}` : SERIES_API
+      const res = await fetch(url, {
+        method: isEdit ? 'PUT' : 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data),
+      })
+      if (!res.ok) throw new Error(await getErrorMessage(res, 'Failed to save series'))
+
+      const saved = await res.json()
+      if (_clearThumbnail) {
+        const thumbnailRes = await fetch(`${SERIES_API}/${saved.id}/thumbnail`, { method: 'DELETE' })
+        if (!thumbnailRes.ok) throw new Error('Failed to delete series thumbnail')
+      } else if (_thumbnail) {
+        const formData = new FormData()
+        formData.append('file', _thumbnail)
+        const thumbnailRes = await fetch(`${SERIES_API}/${saved.id}/thumbnail`, { method: 'POST', body: formData })
+        if (!thumbnailRes.ok) throw new Error('Failed to upload series thumbnail')
+      }
+
+      setShowSeriesForm(false)
+      setEditingSeries(null)
+      fetchSeries()
+    } catch (err) {
+      setSeriesError(err.message)
+    }
+  }
+
+  const handleDeleteSeries = async (id) => {
+    if (!confirm('Delete this series?')) return
+    try {
+      const res = await fetch(`${SERIES_API}/${id}`, { method: 'DELETE' })
+      if (!res.ok) throw new Error(await getErrorMessage(res, 'Failed to delete series'))
+      fetchSeries()
+    } catch (err) {
+      setSeriesError(err.message)
+    }
+  }
+
+  const filteredSeries = series.filter((series) => {
+    const q = seriesSearchQuery.trim().toLowerCase()
+    if (!q) return true
+    return (series.name || '').toLowerCase().includes(q)
+      || (series.description || '').toLowerCase().includes(q)
   })
 
   return (
@@ -284,9 +369,12 @@ export default function MediaLibraryPage({ mode }) {
                 } else if (activeTab === 'episodes') {
                   setEditingEpisode(null)
                   setShowEpisodeForm(true)
-                } else {
+                } else if (activeTab === 'genres') {
                   setEditingGenre(null)
                   setShowGenreForm(true)
+                } else if (activeTab === 'series') {
+                    setEditingSeries(null)
+                    setShowSeriesForm(true)
                 }
               }}
               className="bg-indigo-600 hover:bg-indigo-500 text-white px-4 py-2 rounded-lg font-medium transition-colors"
@@ -305,6 +393,8 @@ export default function MediaLibraryPage({ mode }) {
             setEditingEpisode(null)
             setShowGenreForm(false)
             setEditingGenre(null)
+            setShowSeriesForm(false)
+            setEditingSeries(null)
           }}
           className={`px-5 py-2 rounded-md text-sm font-medium transition-colors ${
             activeTab === 'movies'
@@ -321,6 +411,8 @@ export default function MediaLibraryPage({ mode }) {
             setEditingMovie(null)
             setShowGenreForm(false)
             setEditingGenre(null)
+            setShowSeriesForm(false)
+            setEditingSeries(null)
           }}
           className={`px-5 py-2 rounded-md text-sm font-medium transition-colors ${
             activeTab === 'episodes'
@@ -331,22 +423,44 @@ export default function MediaLibraryPage({ mode }) {
           📺 Episodes
         </button>
         {isAdmin && (
-          <button
-            onClick={() => {
-              setActiveTab('genres')
-              setShowMovieForm(false)
-              setEditingMovie(null)
-              setShowEpisodeForm(false)
-              setEditingEpisode(null)
-            }}
-            className={`px-5 py-2 rounded-md text-sm font-medium transition-colors ${
-              activeTab === 'genres'
-                ? 'bg-indigo-600 text-white'
-                : 'text-gray-400 hover:text-gray-200'
-            }`}
-          >
-            🏷️ Genres
-          </button>
+          <>
+            <button
+              onClick={() => {
+                setActiveTab('genres')
+                setShowMovieForm(false)
+                setEditingMovie(null)
+                setShowEpisodeForm(false)
+                setEditingEpisode(null)
+                setShowSeriesForm(false)
+                setEditingSeries(null)
+              }}
+              className={`px-5 py-2 rounded-md text-sm font-medium transition-colors ${
+                activeTab === 'genres'
+                  ? 'bg-indigo-600 text-white'
+                  : 'text-gray-400 hover:text-gray-200'
+              }`}
+            >
+              🏷️ Genres
+            </button>
+            <button
+              onClick={() => {
+                setActiveTab('series')
+                setShowMovieForm(false)
+                setEditingMovie(null)
+                setShowEpisodeForm(false)
+                setEditingEpisode(null)
+                setShowGenreForm(false)
+                setEditingGenre(null)
+              }}
+              className={`px-5 py-2 rounded-md text-sm font-medium transition-colors ${
+                activeTab === 'series'
+                  ? 'bg-indigo-600 text-white'
+                  : 'text-gray-400 hover:text-gray-200'
+              }`}
+            >
+              Series
+            </button>
+          </>
         )}
       </div>
 
@@ -489,7 +603,7 @@ export default function MediaLibraryPage({ mode }) {
           <div className="flex flex-col sm:flex-row gap-3 mb-6">
             <input
               type="text"
-              placeholder="Search by series name…"
+              placeholder="Search by series…"
               value={episodeSeriesQuery}
               onChange={(e) => setEpisodeSeriesQuery(e.target.value)}
               className="flex-1 bg-gray-800 border border-gray-700 rounded-lg px-4 py-2 text-gray-100 placeholder-gray-500 focus:outline-none focus:border-indigo-500"
@@ -610,6 +724,54 @@ export default function MediaLibraryPage({ mode }) {
                 setShowGenreForm(true)
               }}
               onDelete={handleDeleteGenre}
+              readOnly={!isAdmin}
+            />
+          )}
+        </>
+      )}
+      {activeTab === 'series' && (
+        <>
+          <div className="flex flex-col sm:flex-row gap-3 mb-6">
+            <input
+              type="text"
+              placeholder="Search series…"
+              value={seriesSearchQuery}
+              onChange={(e) => setSeriesSearchQuery(e.target.value)}
+              className="flex-1 bg-gray-800 border border-gray-700 rounded-lg px-4 py-2 text-gray-100 placeholder-gray-500 focus:outline-none focus:border-indigo-500"
+            />
+          </div>
+
+          {seriesError && (
+            <div className="bg-red-900/50 border border-red-700 text-red-300 px-4 py-3 rounded-lg mb-6">
+              {seriesError}
+            </div>
+          )}
+
+          {isAdmin && showSeriesForm && (
+            <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4">
+              <div className="bg-gray-900 border border-gray-700 rounded-xl shadow-2xl w-full max-w-lg overflow-y-auto max-h-[90vh]">
+                <SeriesForm
+                  series={editingSeries}
+                  onSave={handleSaveSeries}
+                  onCancel={() => {
+                    setShowSeriesForm(false)
+                    setEditingSeries(null)
+                  }}
+                />
+              </div>
+            </div>
+          )}
+
+          {seriesLoading ? (
+            <div className="text-center text-gray-400 py-16">Loading…</div>
+          ) : (
+            <SeriesList
+              series={filteredSeries}
+              onEdit={(series) => {
+                setEditingSeries(series)
+                setShowSeriesForm(true)
+              }}
+              onDelete={handleDeleteSeries}
               readOnly={!isAdmin}
             />
           )}

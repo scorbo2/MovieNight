@@ -3,8 +3,8 @@ package ca.corbett.movienight;
 import ca.corbett.movienight.model.Episode;
 import ca.corbett.movienight.model.Genre;
 import ca.corbett.movienight.model.Movie;
+import ca.corbett.movienight.model.Series;
 import ca.corbett.movienight.service.EpisodeService;
-import ca.corbett.movienight.service.GenreService;
 import ca.corbett.movienight.service.MediaService;
 import ca.corbett.movienight.service.MovieService;
 import org.junit.jupiter.api.BeforeEach;
@@ -44,7 +44,8 @@ class MediaServiceTest {
 
     @Test
     void resolvesEpisodeId() {
-        Episode episode = new Episode("Test Series", "Pilot", 1, 1, "First episode.", false);
+        Series series = new Series("Test Series", "A test series.");
+        Episode episode = new Episode(series, "Pilot", 1, 1, "First episode.", false);
         episode.setVideoFilePath("/episodes/s01e01.mp4");
         when(episodeService.requireEpisode(7L)).thenReturn(episode);
 

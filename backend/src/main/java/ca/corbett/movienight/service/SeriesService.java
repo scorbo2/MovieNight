@@ -65,8 +65,18 @@ public class SeriesService {
 
     public Series updateSeries(Long id, Series updatedSeries) {
         Series existingSeries = requireSeries(id);
+
+        seriesRepository.findByNameIgnoreCase(updatedSeries.getName())
+                .filter(series -> !series.getId().equals(id))
+                .ifPresent(series -> {
+                    throw new ResponseStatusException(HttpStatus.CONFLICT,
+                                                      "Series already exists with name: "
+                                                              + updatedSeries.getName());
+                });
+
         existingSeries.setName(updatedSeries.getName());
         existingSeries.setDescription(updatedSeries.getDescription());
+        existingSeries.setYear(updatedSeries.getYear());
         return populateTransientFields(seriesRepository.save(existingSeries));
     }
 

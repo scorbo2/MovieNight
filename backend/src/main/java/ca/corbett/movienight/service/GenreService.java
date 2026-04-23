@@ -81,6 +81,7 @@ public class GenreService {
 
     private Genre populateHasThumbnail(Genre genre) {
         genre.setHasThumbnail(thumbnailService.hasThumbnail("genres", genre.getId()));
+        genre.setMovieCount(movieRepository.countByGenre(genre));
         return genre;
     }
 

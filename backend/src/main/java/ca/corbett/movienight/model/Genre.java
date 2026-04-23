@@ -28,6 +28,10 @@ public class Genre {
     @JsonProperty(value = "hasThumbnail", access = JsonProperty.Access.READ_ONLY)
     private boolean hasThumbnail = false;
 
+    @Transient
+    @JsonProperty(value = "movieCount", access = JsonProperty.Access.READ_ONLY)
+    private long movieCount = 0;
+
     public Genre() {}
 
     public Genre(String name) {
@@ -53,5 +57,8 @@ public class Genre {
 
     public boolean isHasThumbnail() { return hasThumbnail; }
     public void setHasThumbnail(boolean hasThumbnail) { this.hasThumbnail = hasThumbnail; }
+
+    public long getMovieCount() { return movieCount; }
+    public void setMovieCount(long movieCount) { this.movieCount = movieCount; }
 
 }

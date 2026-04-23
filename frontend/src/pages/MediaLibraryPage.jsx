@@ -91,7 +91,7 @@ export default function MediaLibraryPage({ mode }) {
     try {
       setEpisodesLoading(true)
       const params = new URLSearchParams()
-      if (episodeSeriesQuery) params.append('seriesName', episodeSeriesQuery)
+      if (episodeSeriesQuery) params.append('seriesId', episodeSeriesQuery)
       if (episodeSeasonQuery !== '') params.append('season', episodeSeasonQuery)
       if (filterEpisodeWatched !== '') params.append('watched', filterEpisodeWatched)
       if (episodeTagQuery) params.append('tag', episodeTagQuery)
@@ -603,7 +603,7 @@ export default function MediaLibraryPage({ mode }) {
           <div className="flex flex-col sm:flex-row gap-3 mb-6">
             <input
               type="text"
-              placeholder="Search by series name…"
+              placeholder="Search by series…"
               value={episodeSeriesQuery}
               onChange={(e) => setEpisodeSeriesQuery(e.target.value)}
               className="flex-1 bg-gray-800 border border-gray-700 rounded-lg px-4 py-2 text-gray-100 placeholder-gray-500 focus:outline-none focus:border-indigo-500"

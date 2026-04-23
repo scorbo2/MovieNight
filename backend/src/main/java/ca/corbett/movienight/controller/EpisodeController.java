@@ -9,11 +9,21 @@ import org.springframework.core.io.Resource;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.CrossOrigin;
+import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
+import org.springframework.web.server.ResponseStatusException;
+
 import java.nio.file.Path;
 import java.util.List;
-import org.springframework.web.server.ResponseStatusException;
 
 @RestController
 @RequestMapping("/api/episodes")
@@ -29,12 +39,12 @@ public class EpisodeController {
     }
 
     @GetMapping
-    public List<Episode> getAllEpisodes(@RequestParam(required = false) String seriesName,
+    public List<Episode> getAllEpisodes(@RequestParam(required = false) Long seriesId,
                                         @RequestParam(required = false) Integer season,
                                         @RequestParam(required = false) Integer episode,
                                         @RequestParam(required = false) Boolean watched,
                                         @RequestParam(required = false) String tag) {
-        return episodeService.searchEpisodes(seriesName, season, episode, watched, tag);
+        return episodeService.searchEpisodes(seriesId, season, episode, watched, tag);
     }
 
     @GetMapping("/{id}")

@@ -87,11 +87,17 @@ export default function MediaLibraryPage({ mode }) {
     fetchMovies()
   }, [movieSearchQuery, filterWatched, movieTagQuery, selectedGenre])
 
+  const isEpisodeSearchActive = !!(episodeSeriesQuery || episodeSeasonQuery || filterEpisodeWatched || episodeTagQuery)
+
   const fetchEpisodes = async () => {
     try {
       setEpisodesLoading(true)
       const params = new URLSearchParams()
-      if (episodeSeriesQuery) params.append('seriesId', episodeSeriesQuery)
+      if (selectedSeries) {
+        params.append('seriesId', selectedSeries.id)
+      } else if (episodeSeriesQuery) {
+        params.append('seriesName', episodeSeriesQuery)
+      }
       if (episodeSeasonQuery !== '') params.append('season', episodeSeasonQuery)
       if (filterEpisodeWatched !== '') params.append('watched', filterEpisodeWatched)
       if (episodeTagQuery) params.append('tag', episodeTagQuery)
@@ -108,8 +114,9 @@ export default function MediaLibraryPage({ mode }) {
 
   useEffect(() => {
     if (activeTab !== 'episodes') return
+    if (!selectedSeries && !isEpisodeSearchActive) return
     fetchEpisodes()
-  }, [activeTab, episodeSeriesQuery, episodeSeasonQuery, filterEpisodeWatched, episodeTagQuery])
+  }, [activeTab, selectedSeries, episodeSeriesQuery, episodeSeasonQuery, filterEpisodeWatched, episodeTagQuery])
 
   const fetchSeries = async () => {
     try {
@@ -605,7 +612,10 @@ export default function MediaLibraryPage({ mode }) {
               type="text"
               placeholder="Search by series…"
               value={episodeSeriesQuery}
-              onChange={(e) => setEpisodeSeriesQuery(e.target.value)}
+              onChange={(e) => {
+                setEpisodeSeriesQuery(e.target.value)
+                if (e.target.value) setSelectedSeries(null)
+              }}
               className="flex-1 bg-gray-800 border border-gray-700 rounded-lg px-4 py-2 text-gray-100 placeholder-gray-500 focus:outline-none focus:border-indigo-500"
             />
             <input
@@ -626,6 +636,38 @@ export default function MediaLibraryPage({ mode }) {
               <option value="false">Unwatched</option>
             </select>
           </div>
+
+          {selectedSeries && !episodeSeriesQuery && (
+            <div className="flex items-center gap-3 mb-4">
+              <button
+                type="button"
+                onClick={() => setSelectedSeries(null)}
+                className="flex items-center gap-1 text-sm text-indigo-400 hover:text-indigo-200 transition-colors"
+              >
+                ← All series
+              </button>
+              <span className="text-gray-500">|</span>
+              <span className="text-white font-medium">📺 {selectedSeries.name}</span>
+            </div>
+          )}
+
+          {episodeSeriesQuery && (
+            <div className="flex items-center gap-2 mb-4">
+              <span className="text-sm text-gray-400">Series search:</span>
+              <span className="flex items-center gap-1 text-xs bg-indigo-800/40 text-indigo-300 px-2 py-0.5 rounded-full">
+                {episodeSeriesQuery}
+                <button
+                  type="button"
+                  onClick={() => setEpisodeSeriesQuery('')}
+                  className="hover:text-white ml-0.5"
+                  aria-label="Clear series search"
+                >
+                  ×
+                </button>
+              </span>
+            </div>
+          )}
+
           {episodeTagQuery && (
             <div className="flex items-center gap-2 mb-4">
               <span className="text-sm text-gray-400">Tag filter:</span>
@@ -664,19 +706,44 @@ export default function MediaLibraryPage({ mode }) {
             </div>
           )}
 
-          {episodesLoading ? (
-            <div className="text-center text-gray-400 py-16">Loading…</div>
+          {!selectedSeries && !isEpisodeSearchActive ? (
+            seriesLoading ? (
+              <div className="text-center text-gray-400 py-16">Loading…</div>
+            ) : (
+              <>
+                {seriesError && (
+                  <div className="bg-red-900/50 border border-red-700 text-red-300 px-4 py-3 rounded-lg mb-6">
+                    {seriesError}
+                  </div>
+                )}
+                <SeriesList
+                  series={series}
+                  onSeriesClick={(s) => {
+                    setSelectedSeries(s)
+                    setEpisodeSeriesQuery('')
+                    setEpisodeSeasonQuery('')
+                    setFilterEpisodeWatched('')
+                    setEpisodeTagQuery('')
+                  }}
+                  readOnly={true}
+                />
+              </>
+            )
           ) : (
-            <EpisodeList
-              episodes={episodes}
-              onEdit={(episode) => {
-                setEditingEpisode(episode)
-                setShowEpisodeForm(true)
-              }}
-              onDelete={handleDeleteEpisode}
-              onTagClick={(tag) => setEpisodeTagQuery(tag)}
-              readOnly={!isAdmin}
-            />
+            episodesLoading ? (
+              <div className="text-center text-gray-400 py-16">Loading…</div>
+            ) : (
+              <EpisodeList
+                episodes={episodes}
+                onEdit={(episode) => {
+                  setEditingEpisode(episode)
+                  setShowEpisodeForm(true)
+                }}
+                onDelete={handleDeleteEpisode}
+                onTagClick={(tag) => setEpisodeTagQuery(tag)}
+                readOnly={!isAdmin}
+              />
+            )
           )}
         </>
       )}

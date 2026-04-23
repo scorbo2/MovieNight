@@ -40,11 +40,12 @@ public class EpisodeController {
 
     @GetMapping
     public List<Episode> getAllEpisodes(@RequestParam(required = false) Long seriesId,
+                                        @RequestParam(required = false) String seriesName,
                                         @RequestParam(required = false) Integer season,
                                         @RequestParam(required = false) Integer episode,
                                         @RequestParam(required = false) Boolean watched,
                                         @RequestParam(required = false) String tag) {
-        return episodeService.searchEpisodes(seriesId, season, episode, watched, tag);
+        return episodeService.searchEpisodes(seriesId, seriesName, season, episode, watched, tag);
     }
 
     @GetMapping("/{id}")

@@ -127,7 +127,7 @@ export default function EpisodeForm({ episode, onSave, onCancel }) {
       : form.tags
     onSave({
         id: form.id,
-        seriesId: { id: Number(form.seriesId) },
+        series: { id: Number(form.seriesId) },
         episodeTitle: form.episodeTitle.trim() || null,
         description: form.description.trim() || null,
         videoFilePath: form.videoFilePath.trim(),

@@ -39,6 +39,7 @@ export default function MediaLibraryPage({ mode }) {
   const [showGenreForm, setShowGenreForm] = useState(false)
   const [editingGenre, setEditingGenre] = useState(null)
   const [genreSearchQuery, setGenreSearchQuery] = useState('')
+  const [selectedGenre, setSelectedGenre] = useState(null)
 
   const getErrorMessage = async (response, fallbackMessage) => {
     const body = await response.text()
@@ -59,6 +60,7 @@ export default function MediaLibraryPage({ mode }) {
       if (movieSearchQuery) params.append('title', movieSearchQuery)
       if (filterWatched !== '') params.append('watched', filterWatched)
       if (movieTagQuery) params.append('tag', movieTagQuery)
+      if (selectedGenre) params.append('genreId', selectedGenre.id)
       const res = await fetch(`${MOVIES_API}?${params}`)
       if (!res.ok) throw new Error('Failed to fetch movies')
       setMovies(await res.json())
@@ -72,7 +74,7 @@ export default function MediaLibraryPage({ mode }) {
 
   useEffect(() => {
     fetchMovies()
-  }, [movieSearchQuery, filterWatched, movieTagQuery])
+  }, [movieSearchQuery, filterWatched, movieTagQuery, selectedGenre])
 
   const fetchEpisodes = async () => {
     try {
@@ -117,7 +119,7 @@ export default function MediaLibraryPage({ mode }) {
   }
 
   useEffect(() => {
-    if (activeTab !== 'genres') return
+    if (activeTab !== 'genres' && activeTab !== 'movies') return
     fetchGenres()
   }, [activeTab])
 
@@ -328,22 +330,24 @@ export default function MediaLibraryPage({ mode }) {
         >
           📺 Episodes
         </button>
-        <button
-          onClick={() => {
-            setActiveTab('genres')
-            setShowMovieForm(false)
-            setEditingMovie(null)
-            setShowEpisodeForm(false)
-            setEditingEpisode(null)
-          }}
-          className={`px-5 py-2 rounded-md text-sm font-medium transition-colors ${
-            activeTab === 'genres'
-              ? 'bg-indigo-600 text-white'
-              : 'text-gray-400 hover:text-gray-200'
-          }`}
-        >
-          🏷️ Genres
-        </button>
+        {isAdmin && (
+          <button
+            onClick={() => {
+              setActiveTab('genres')
+              setShowMovieForm(false)
+              setEditingMovie(null)
+              setShowEpisodeForm(false)
+              setEditingEpisode(null)
+            }}
+            className={`px-5 py-2 rounded-md text-sm font-medium transition-colors ${
+              activeTab === 'genres'
+                ? 'bg-indigo-600 text-white'
+                : 'text-gray-400 hover:text-gray-200'
+            }`}
+          >
+            🏷️ Genres
+          </button>
+        )}
       </div>
 
       {activeTab === 'movies' && (
@@ -353,19 +357,56 @@ export default function MediaLibraryPage({ mode }) {
               type="text"
               placeholder="Search by title…"
               value={movieSearchQuery}
-              onChange={(e) => setMovieSearchQuery(e.target.value)}
+              onChange={(e) => {
+                setMovieSearchQuery(e.target.value)
+                if (e.target.value) setSelectedGenre(null)
+              }}
               className="flex-1 bg-gray-800 border border-gray-700 rounded-lg px-4 py-2 text-gray-100 placeholder-gray-500 focus:outline-none focus:border-indigo-500"
             />
-            <select
-              value={filterWatched}
-              onChange={(e) => setFilterWatched(e.target.value)}
-              className="bg-gray-800 border border-gray-700 rounded-lg px-4 py-2 text-gray-100 focus:outline-none focus:border-indigo-500"
-            >
-              <option value="">All movies</option>
-              <option value="true">Watched</option>
-              <option value="false">Unwatched</option>
-            </select>
+            {(selectedGenre || movieSearchQuery || movieTagQuery) && (
+              <select
+                value={filterWatched}
+                onChange={(e) => setFilterWatched(e.target.value)}
+                className="bg-gray-800 border border-gray-700 rounded-lg px-4 py-2 text-gray-100 focus:outline-none focus:border-indigo-500"
+              >
+                <option value="">All movies</option>
+                <option value="true">Watched</option>
+                <option value="false">Unwatched</option>
+              </select>
+            )}
           </div>
+
+          {selectedGenre && !movieSearchQuery && (
+            <div className="flex items-center gap-3 mb-4">
+              <button
+                type="button"
+                onClick={() => setSelectedGenre(null)}
+                className="flex items-center gap-1 text-sm text-indigo-400 hover:text-indigo-200 transition-colors"
+              >
+                ← All genres
+              </button>
+              <span className="text-gray-500">|</span>
+              <span className="text-white font-medium">🎭 {selectedGenre.name}</span>
+            </div>
+          )}
+
+          {movieSearchQuery && (
+            <div className="flex items-center gap-2 mb-4">
+              <span className="text-sm text-gray-400">Title search:</span>
+              <span className="flex items-center gap-1 text-xs bg-indigo-800/40 text-indigo-300 px-2 py-0.5 rounded-full">
+                {movieSearchQuery}
+                <button
+                  type="button"
+                  onClick={() => setMovieSearchQuery('')}
+                  className="hover:text-white ml-0.5"
+                  aria-label="Clear title search"
+                >
+                  ×
+                </button>
+              </span>
+            </div>
+          )}
+
           {movieTagQuery && (
             <div className="flex items-center gap-2 mb-4">
               <span className="text-sm text-gray-400">Tag filter:</span>
@@ -404,19 +445,41 @@ export default function MediaLibraryPage({ mode }) {
             </div>
           )}
 
-          {moviesLoading ? (
-            <div className="text-center text-gray-400 py-16">Loading…</div>
+          {!selectedGenre && !movieSearchQuery && !movieTagQuery ? (
+            genresLoading ? (
+              <div className="text-center text-gray-400 py-16">Loading…</div>
+            ) : (
+              <>
+                {genresError && (
+                  <div className="bg-red-900/50 border border-red-700 text-red-300 px-4 py-3 rounded-lg mb-6">
+                    {genresError}
+                  </div>
+                )}
+                <GenreList
+                  genres={genres}
+                  onGenreClick={(genre) => {
+                    setSelectedGenre(genre)
+                    setMovieSearchQuery('')
+                  }}
+                  readOnly={true}
+                />
+              </>
+            )
           ) : (
-            <MovieList
-              movies={movies}
-              onEdit={(movie) => {
-                setEditingMovie(movie)
-                setShowMovieForm(true)
-              }}
-              onDelete={handleDeleteMovie}
-              onTagClick={(tag) => setMovieTagQuery(tag)}
-              readOnly={!isAdmin}
-            />
+            moviesLoading ? (
+              <div className="text-center text-gray-400 py-16">Loading…</div>
+            ) : (
+              <MovieList
+                movies={movies}
+                onEdit={(movie) => {
+                  setEditingMovie(movie)
+                  setShowMovieForm(true)
+                }}
+                onDelete={handleDeleteMovie}
+                onTagClick={(tag) => setMovieTagQuery(tag)}
+                readOnly={!isAdmin}
+              />
+            )
           )}
         </>
       )}

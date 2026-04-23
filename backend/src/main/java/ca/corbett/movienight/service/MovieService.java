@@ -87,10 +87,11 @@ public class MovieService {
         return populateHasThumbnail(movieRepository.findByGenre(genre));
     }
 
-    public List<Movie> searchMovies(String title, Boolean watched, String tag) {
+    public List<Movie> searchMovies(String title, Boolean watched, String tag, Long genreId) {
         Specification<Movie> spec = Specification.where(titleContains(title))
                 .and(watchedEquals(watched))
-                .and(tagContains(tag));
+                .and(tagContains(tag))
+                .and(genreEquals(genreId));
         return populateHasThumbnail(movieRepository.findAll(spec));
     }
 
@@ -122,5 +123,9 @@ public class MovieService {
             Join<Movie, String> tagsJoin = root.join("tags", JoinType.INNER);
             return cb.like(cb.lower(tagsJoin.as(String.class)), "%" + tag.trim().toLowerCase() + "%");
         };
+    }
+
+    private static Specification<Movie> genreEquals(Long genreId) {
+        return (root, query, cb) -> genreId == null ? null : cb.equal(root.get("genre").get("id"), genreId);
     }
 }

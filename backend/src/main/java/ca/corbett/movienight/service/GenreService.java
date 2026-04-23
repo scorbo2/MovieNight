@@ -27,11 +27,11 @@ public class GenreService {
     }
 
     public List<Genre> getAllGenres() {
-        return populateHasThumbnail(genreRepository.findAll());
+        return populateTransientFields(genreRepository.findAll());
     }
 
     public Optional<Genre> getGenreById(Long id) {
-        return genreRepository.findById(id).map(this::populateHasThumbnail);
+        return genreRepository.findById(id).map(this::populateTransientFields);
     }
 
     public Genre requireGenre(Long id) {
@@ -46,7 +46,7 @@ public class GenreService {
             throw new ResponseStatusException(HttpStatus.CONFLICT,
                                               "Genre with name '" + genre.getName() + "' already exists.");
         }
-        return populateHasThumbnail(genreRepository.save(genre));
+        return populateTransientFields(genreRepository.save(genre));
     }
 
     public void deleteGenre(Long id) {
@@ -76,7 +76,7 @@ public class GenreService {
         Genre existingGenre = requireGenre(id);
         existingGenre.setName(updatedGenre.getName());
         existingGenre.setDescription(updatedGenre.getDescription());
-        return populateHasThumbnail(genreRepository.save(existingGenre));
+        return populateTransientFields(genreRepository.save(existingGenre));
     }
 
     private Genre populateHasThumbnail(Genre genre) {
@@ -84,8 +84,19 @@ public class GenreService {
         return genre;
     }
 
-    private List<Genre> populateHasThumbnail(List<Genre> genres) {
-        genres.forEach(this::populateHasThumbnail);
+    private Genre populateMovieCount(Genre genre) {
+        genre.setMovieCount(movieRepository.countByGenre(genre));
+        return genre;
+    }
+
+    private Genre populateTransientFields(Genre genre) {
+        populateHasThumbnail(genre);
+        populateMovieCount(genre);
+        return genre;
+    }
+
+    private List<Genre> populateTransientFields(List<Genre> genres) {
+        genres.forEach(this::populateTransientFields);
         return genres;
     }
 }

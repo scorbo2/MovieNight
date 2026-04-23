@@ -1,6 +1,6 @@
 const GENRES_API = '/api/genres'
 
-export default function GenreList({ genres, onEdit, onDelete, readOnly = false }) {
+export default function GenreList({ genres, onEdit, onDelete, onGenreClick, readOnly = false }) {
   if (genres.length === 0) {
     return (
       <div className="text-center text-gray-500 py-16">
@@ -21,6 +21,7 @@ export default function GenreList({ genres, onEdit, onDelete, readOnly = false }
           genre={genre}
           onEdit={onEdit}
           onDelete={onDelete}
+          onGenreClick={onGenreClick}
           readOnly={readOnly}
         />
       ))}
@@ -28,9 +29,16 @@ export default function GenreList({ genres, onEdit, onDelete, readOnly = false }
   )
 }
 
-function GenreCard({ genre, onEdit, onDelete, readOnly }) {
+function GenreCard({ genre, onEdit, onDelete, onGenreClick, readOnly }) {
+  const isClickable = typeof onGenreClick === 'function'
+
   return (
-    <div className="bg-gray-900 border border-gray-800 rounded-xl overflow-hidden flex flex-col hover:border-gray-600 transition-colors">
+    <div
+      className={`bg-gray-900 border border-gray-800 rounded-xl overflow-hidden flex flex-col transition-colors ${
+        isClickable ? 'cursor-pointer hover:border-indigo-500 hover:bg-gray-800/60' : 'hover:border-gray-600'
+      }`}
+      onClick={isClickable ? () => onGenreClick(genre) : undefined}
+    >
       {genre.hasThumbnail && (
         <img
           src={`${GENRES_API}/${genre.id}/thumbnail`}
@@ -40,7 +48,17 @@ function GenreCard({ genre, onEdit, onDelete, readOnly }) {
       )}
 
       <div className="p-5 flex flex-col gap-3 flex-1">
-        <h2 className="text-lg font-semibold text-white leading-tight">{genre.name}</h2>
+        <div className="flex items-start justify-between gap-2">
+          <h2 className="text-lg font-semibold text-white leading-tight">{genre.name}</h2>
+          {genre.movieCount > 0 && (
+            <span
+              className="shrink-0 text-xs bg-indigo-800/40 text-indigo-300 px-2 py-0.5 rounded-full"
+              aria-label={`${genre.movieCount} ${genre.movieCount === 1 ? 'movie' : 'movies'} in this genre`}
+            >
+              {genre.movieCount} {genre.movieCount === 1 ? 'movie' : 'movies'}
+            </span>
+          )}
+        </div>
 
         {genre.description ? (
           <p className="text-sm text-gray-400 line-clamp-3">{genre.description}</p>
@@ -49,7 +67,7 @@ function GenreCard({ genre, onEdit, onDelete, readOnly }) {
         )}
 
         {!readOnly && (
-          <div className="flex gap-2 mt-auto pt-2">
+          <div className="flex gap-2 mt-auto pt-2" onClick={(e) => e.stopPropagation()}>
             <button
               onClick={() => onEdit(genre)}
               className="flex-1 bg-gray-800 hover:bg-gray-700 text-gray-200 text-sm px-3 py-1.5 rounded-lg transition-colors"

@@ -56,7 +56,7 @@ export default function SeriesForm({ series, onSave, onCancel }) {
       nextErrors.name = 'Name is required.'
     }
     if (form.year && (isNaN(form.year) || form.year < 1888 || form.year > 2100)) {
-      errs.year = 'Enter a valid year (1888–2100).'
+      nextErrors.year = 'Enter a valid year (1888–2100).'
     }
     return nextErrors
   }

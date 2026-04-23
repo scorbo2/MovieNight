@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from 'react'
 import FileBrowserModal from './FileBrowserModal'
 
 const EPISODES_API = '/api/episodes'
+const SERIES_API = '/api/series'
 
 const EMPTY_FORM = {
   seriesId: '',

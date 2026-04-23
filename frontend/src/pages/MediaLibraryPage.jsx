@@ -369,7 +369,7 @@ export default function MediaLibraryPage({ mode }) {
                 } else if (activeTab === 'episodes') {
                   setEditingEpisode(null)
                   setShowEpisodeForm(true)
-                } else if (activeTab == 'genres') {
+                } else if (activeTab === 'genres') {
                   setEditingGenre(null)
                   setShowGenreForm(true)
                 } else if (activeTab === 'series') {

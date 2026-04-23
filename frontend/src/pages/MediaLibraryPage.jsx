@@ -565,7 +565,7 @@ export default function MediaLibraryPage({ mode }) {
         </div>
       </section>
 
-      <div className="flex flex-wrap gap-1 mb-6 bg-gray-900 border border-gray-800 rounded-lg p-1 w-fit">
+      <div className="flex gap-1 mb-6 bg-gray-900 border border-gray-800 rounded-lg p-1 overflow-x-auto">
         <button
           onClick={() => {
             setActiveTab('movies')

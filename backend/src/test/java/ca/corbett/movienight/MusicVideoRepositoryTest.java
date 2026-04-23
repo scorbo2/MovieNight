@@ -162,8 +162,8 @@ class MusicVideoRepositoryTest {
         mv1.setVideoFilePath("/music-videos/beatles/come_together.mp4");
         mv1.setTags(List.of("classic", "rock"));
 
-        MusicVideo mv2 = new MusicVideo("Come As You Are", radiohead, null, 1992, null);
-        mv2.setVideoFilePath("/music-videos/radiohead/come_as_you_are.mp4");
+        MusicVideo mv2 = new MusicVideo("Creep", radiohead, "Pablo Honey", 1993, null);
+        mv2.setVideoFilePath("/music-videos/radiohead/creep.mp4");
         mv2.setTags(List.of("grunge"));
 
         musicVideoRepository.saveAll(List.of(mv1, mv2));

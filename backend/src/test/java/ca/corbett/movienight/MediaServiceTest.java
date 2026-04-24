@@ -7,6 +7,7 @@ import ca.corbett.movienight.model.Series;
 import ca.corbett.movienight.service.EpisodeService;
 import ca.corbett.movienight.service.MediaService;
 import ca.corbett.movienight.service.MovieService;
+import ca.corbett.movienight.service.MusicVideoService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.http.HttpStatus;
@@ -21,13 +22,15 @@ class MediaServiceTest {
 
     private MovieService movieService;
     private EpisodeService episodeService;
+    private MusicVideoService musicVideoService;
     private MediaService mediaService;
 
     @BeforeEach
     void setUp() {
         movieService = mock(MovieService.class);
         episodeService = mock(EpisodeService.class);
-        mediaService = new MediaService(movieService, episodeService);
+        musicVideoService = mock(MusicVideoService.class);
+        mediaService = new MediaService(movieService, episodeService, musicVideoService);
     }
 
     @Test

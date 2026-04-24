@@ -30,8 +30,7 @@ public class SecurityIntegrationWithoutLocalhostOnlyTest {
     private MockMvc mockMvc;
 
     @Test
-    void writeEndpoints_requireAuthButAllowAnyRemoteAddress() throws Exception {
-        // This test assumes that movienight.admin.localhost-only is set to false in the test properties.
+    void writeEndpointsAllowAnyRemoteAddress() throws Exception {
         String movieJson = """
                 {
                   "title": "Secured Movie",
@@ -44,12 +43,37 @@ public class SecurityIntegrationWithoutLocalhostOnlyTest {
                 }
                 """;
 
+        // Remote address but with the right credentials should work,
+        // because our localhost-only check is disabled:
         mockMvc.perform(post("/api/movies")
                                 .with(remoteAddr("192.168.1.50"))
                                 .with(httpBasic("admin", "secret"))
                                 .contentType(MediaType.APPLICATION_JSON)
                                 .content(movieJson))
                .andExpect(status().isCreated());
+    }
+
+    @Test
+    void writeEndpointsStillFailWithoutAuth() throws Exception {
+        String movieJson = """
+                {
+                  "title": "Secured Movie",
+                  "year": 2024,
+                  "genre": { "id": 1 },
+                  "description": "Created through the secured admin API.",
+                  "watched": false,
+                  "tags": ["security"],
+                  "videoFilePath": "/movies/secured_movie.mkv"
+                }
+                """;
+
+        // Localhost access but no credentials should fail,
+        // even though our localhost-only check is disabled, because auth is still required:
+        mockMvc.perform(post("/api/movies")
+                                .with(remoteAddr("127.0.0.1"))
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .content(movieJson))
+               .andExpect(status().isUnauthorized());
     }
 
     private static RequestPostProcessor remoteAddr(String remoteAddress) {

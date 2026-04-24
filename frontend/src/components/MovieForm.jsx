@@ -27,7 +27,13 @@ export default function MovieForm({ movie, onSave, onCancel }) {
   const [thumbnailPreview, setThumbnailPreview] = useState(null)
   const [clearThumbnail, setClearThumbnail] = useState(false)
   const [showFileBrowser, setShowFileBrowser] = useState(false)
-  const initialBrowsePath = sessionStorage.getItem(LAST_DIR_KEY) || '/'
+  const [initialBrowsePath] = useState(() => {
+    try {
+      return sessionStorage.getItem(LAST_DIR_KEY) || '/'
+    } catch {
+      return '/'
+    }
+  })
   const fileInputRef = useRef(null)
   const objectUrlRef = useRef(null)
 

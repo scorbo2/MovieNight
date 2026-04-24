@@ -30,7 +30,11 @@ export default function FileBrowserModal({ initialPath, onSelect, onClose }) {
       if (!res.ok) throw new Error(`Failed to list directory (${res.status})`)
       const data = await res.json()
       setCurrentPath(data.path)
-      sessionStorage.setItem(LAST_DIR_KEY, data.path)
+      try {
+        sessionStorage.setItem(LAST_DIR_KEY, data.path)
+      } catch {
+        // Ignore storage persistence failures so browsing still works.
+      }
       setParentPath(data.parent)
       setPathInput(data.path)
       setEntries(data.entries)

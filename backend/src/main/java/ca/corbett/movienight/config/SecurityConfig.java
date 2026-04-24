@@ -107,7 +107,7 @@ public class SecurityConfig {
      */
     private void emitLocalhostWarning() {
         if (!localhostWarningIssued) {
-            logger.warn("WARNING: movienight.admin.localhost-only is disabled." +
+            logger.warn("WARNING: movienight.admin.localhost-only is disabled. " +
                                 "This allows admin access from any IP address, which may be a security risk. ");
             localhostWarningIssued = true;
         }

@@ -1,6 +1,5 @@
 package ca.corbett.movienight.service;
 
-import ca.corbett.movienight.model.Artist;
 import ca.corbett.movienight.model.MusicVideo;
 import ca.corbett.movienight.repository.MusicVideoRepository;
 import jakarta.persistence.criteria.Join;

@@ -71,7 +71,7 @@ public class Artist {
     }
 
     public void setName(String name) {
-        this.name = name;
+        this.name = name == null ? null : name.trim();
     }
 
     public String getDescription() {

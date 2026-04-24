@@ -23,6 +23,7 @@ import org.springframework.security.web.access.intercept.RequestAuthorizationCon
 
 import java.net.InetAddress;
 import java.net.UnknownHostException;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import static org.springframework.security.authorization.AuthorityAuthorizationManager.hasRole;
 
@@ -30,7 +31,7 @@ import static org.springframework.security.authorization.AuthorityAuthorizationM
 public class SecurityConfig {
 
     private static final Logger logger = LoggerFactory.getLogger(SecurityConfig.class);
-    private static boolean localhostWarningIssued = false;
+    private static final AtomicBoolean localhostWarningIssued = new AtomicBoolean(false);
 
     @Bean
     public SecurityFilterChain securityFilterChain(
@@ -106,10 +107,10 @@ public class SecurityConfig {
      * The warning is only emitted once per application run.
      */
     private void emitLocalhostWarning() {
-        if (!localhostWarningIssued) {
+        if (!localhostWarningIssued.get()) {
             logger.warn("WARNING: movienight.admin.localhost-only is disabled. " +
-                                "This allows admin access from any IP address, which may be a security risk. ");
-            localhostWarningIssued = true;
+                                "This allows admin access from any IP address, which may be a security risk.");
+            localhostWarningIssued.set(true);
         }
     }
 }

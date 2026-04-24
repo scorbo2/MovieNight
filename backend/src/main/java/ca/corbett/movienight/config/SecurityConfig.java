@@ -1,5 +1,7 @@
 package ca.corbett.movienight.config;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -10,6 +12,7 @@ import org.springframework.security.authorization.AuthorizationManagers;
 import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
+import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.core.userdetails.User;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
@@ -17,9 +20,6 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.provisioning.InMemoryUserDetailsManager;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.access.intercept.RequestAuthorizationContext;
-import org.springframework.security.config.http.SessionCreationPolicy;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.net.InetAddress;
 import java.net.UnknownHostException;
@@ -30,6 +30,7 @@ import static org.springframework.security.authorization.AuthorityAuthorizationM
 public class SecurityConfig {
 
     private static final Logger logger = LoggerFactory.getLogger(SecurityConfig.class);
+    private static boolean localhostWarningIssued = false;
 
     @Bean
     public SecurityFilterChain securityFilterChain(
@@ -60,9 +61,15 @@ public class SecurityConfig {
     }
 
     @Bean
-    public AuthorizationManager<RequestAuthorizationContext> localhostOnlyAccess() {
-        return (authentication, context) ->
-                new AuthorizationDecision(isLoopbackAddress(context.getRequest().getRemoteAddr()));
+    public AuthorizationManager<RequestAuthorizationContext> localhostOnlyAccess(
+            @Value("${movienight.admin.localhost-only:true}") boolean localhostOnly) {
+        return (authentication, context) -> {
+            if (!localhostOnly) {
+                emitLocalhostWarning();
+                return new AuthorizationDecision(true);
+            }
+            return new AuthorizationDecision(isLoopbackAddress(context.getRequest().getRemoteAddr()));
+        };
     }
 
     @Bean
@@ -90,6 +97,19 @@ public class SecurityConfig {
         } catch (UnknownHostException e) {
             logger.warn("Could not resolve remote address {}", remoteAddress, e);
             return false;
+        }
+    }
+
+    /**
+     * The first time this is invoked, it will emit a short warning to the log
+     * about localhost-only access being disabled on the Admin API.
+     * The warning is only emitted once per application run.
+     */
+    private void emitLocalhostWarning() {
+        if (!localhostWarningIssued) {
+            logger.warn("WARNING: movienight.admin.localhost-only is disabled." +
+                                "This allows admin access from any IP address, which may be a security risk. ");
+            localhostWarningIssued = true;
         }
     }
 }

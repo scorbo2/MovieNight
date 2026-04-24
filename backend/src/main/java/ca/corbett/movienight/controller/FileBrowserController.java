@@ -1,7 +1,11 @@
 package ca.corbett.movienight.controller;
 
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.CrossOrigin;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
 
 import java.io.File;
 import java.io.IOException;
@@ -27,6 +31,11 @@ public class FileBrowserController {
             dir = new File(path).getCanonicalFile();
         } catch (IOException e) {
             dir = new File(File.separator);
+        }
+
+        // The UI might give us a file. Not a problem: just use its parent directory.
+        if (dir.isFile()) {
+            dir = dir.getParentFile() == null ? new File(File.separator) : dir.getParentFile();
         }
 
         if (!dir.exists() || !dir.isDirectory()) {

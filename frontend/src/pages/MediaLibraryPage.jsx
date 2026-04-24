@@ -493,7 +493,7 @@ export default function MediaLibraryPage({ mode }) {
       }
       setShowMusicVideoForm(false)
       setEditingMusicVideo(null)
-      const isArtistGridView = !selectedArtist && !title && !tag
+      const isArtistGridView = !selectedArtist && !musicVideoTitleQuery && !musicVideoTagQuery
       if (isArtistGridView) {
         fetchArtists()
       } else {

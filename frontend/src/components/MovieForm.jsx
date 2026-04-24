@@ -3,6 +3,7 @@ import FileBrowserModal from './FileBrowserModal'
 
 const MOVIES_API = '/api/movies'
 const GENRES_API = '/api/genres'
+const LAST_DIR_KEY = 'movienight:lastBrowseDir'
 
 const EMPTY_FORM = {
   id: null,
@@ -26,6 +27,13 @@ export default function MovieForm({ movie, onSave, onCancel }) {
   const [thumbnailPreview, setThumbnailPreview] = useState(null)
   const [clearThumbnail, setClearThumbnail] = useState(false)
   const [showFileBrowser, setShowFileBrowser] = useState(false)
+  const [initialBrowsePath] = useState(() => {
+    try {
+      return sessionStorage.getItem(LAST_DIR_KEY) || '/'
+    } catch {
+      return '/'
+    }
+  })
   const fileInputRef = useRef(null)
   const objectUrlRef = useRef(null)
 
@@ -376,7 +384,7 @@ export default function MovieForm({ movie, onSave, onCancel }) {
 
     {showFileBrowser && (
       <FileBrowserModal
-        initialPath={form.videoFilePath || '/'}
+        initialPath={form.videoFilePath || initialBrowsePath}
         onSelect={(path) => {
           const normalizedPath = path.trim()
           setForm((prev) => ({ ...prev, videoFilePath: normalizedPath }))

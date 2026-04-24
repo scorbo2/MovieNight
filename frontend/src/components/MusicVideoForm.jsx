@@ -3,6 +3,7 @@ import FileBrowserModal from './FileBrowserModal'
 
 const MUSIC_VIDEOS_API = '/api/music-videos'
 const ARTISTS_API = '/api/artists'
+const LAST_DIR_KEY = 'movienight:lastBrowseDir'
 
 const EMPTY_FORM = {
   id: null,
@@ -26,6 +27,13 @@ export default function MusicVideoForm({ musicVideo, onSave, onCancel }) {
   const [thumbnailPreview, setThumbnailPreview] = useState(null)
   const [clearThumbnail, setClearThumbnail] = useState(false)
   const [showFileBrowser, setShowFileBrowser] = useState(false)
+  const [initialBrowsePath] = useState(() => {
+    try {
+      return sessionStorage.getItem(LAST_DIR_KEY) || '/'
+    } catch {
+      return '/'
+    }
+  })
   const fileInputRef = useRef(null)
   const objectUrlRef = useRef(null)
 
@@ -374,7 +382,7 @@ export default function MusicVideoForm({ musicVideo, onSave, onCancel }) {
 
     {showFileBrowser && (
       <FileBrowserModal
-        initialPath={form.videoFilePath || '/'}
+        initialPath={form.videoFilePath || initialBrowsePath}
         onSelect={(path) => {
           const normalizedPath = typeof path === 'string' ? path.trim() : ''
           setForm((prev) => ({ ...prev, videoFilePath: normalizedPath }))

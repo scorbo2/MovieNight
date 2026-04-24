@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from 'react'
 
 const FILES_API = '/api/files'
+const LAST_DIR_KEY = 'movienight:lastBrowseDir'
 
 const VIDEO_EXTENSIONS = new Set([
   'mp4', 'mkv', 'avi', 'mov', 'wmv', 'flv', 'webm', 'm4v', 'mpg', 'mpeg', 'ts', 'm2ts',
@@ -29,6 +30,11 @@ export default function FileBrowserModal({ initialPath, onSelect, onClose }) {
       if (!res.ok) throw new Error(`Failed to list directory (${res.status})`)
       const data = await res.json()
       setCurrentPath(data.path)
+      try {
+        sessionStorage.setItem(LAST_DIR_KEY, data.path)
+      } catch {
+        // Ignore storage persistence failures so browsing still works.
+      }
       setParentPath(data.parent)
       setPathInput(data.path)
       setEntries(data.entries)

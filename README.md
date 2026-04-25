@@ -19,15 +19,15 @@ To get started, clone the repository and build with Maven (Java 17+ required):
 
 ```bash
 git clone https://github.com/scorbo2/MovieNight.git
-cd MovieNight
+cd MovieNight/backend
 mvn clean package
 ```
 
-This generates a standalone executable Jar file in the `target` directory.
+This generates a standalone executable Jar file in the `backend/target` directory.
 You can run it with default settings using:
 
 ```bash
-java -jar target/MovieNight.jar
+java -jar backend/target/MovieNight.jar
 ```
 
 By default, this will listen on port 8080 and will use `/var/lib/movienight` for storing media metadata.
@@ -42,8 +42,8 @@ you can customize the settings:
 ```properties
 server.port=8080
 logging.file.name=/path/to/movienight.log
-# Set this to false to allow admin access from anywhere:
-movienight.admin.localhost-only=true
+# If false, Admin access is allowed from anywhere:
+movienight.admin.localhost-only=false
 # Number of days to consider a media item as "recently watched"
 # (set this to 0 to disable the "recently watched" feature)
 movienight.recently-watched-days=3
@@ -104,9 +104,8 @@ entered manually, or via the file browser. Remember that the file browser is sho
 not the filesystem on whatever system you are accessing the Admin interface from!
 
 Note that as soon as you hit the save button, you will be prompted by your browser for the Admin API credentials.
-The Admin API defaults to using basic authentication (username/password). You can disable this in properties,
-if you are running on a trusted local network behind a good firewall. Refer to the "Running with custom settings"
-section above for details on how to disable authentication.
+The Admin API defaults to using basic authentication (username/password). You can change the username and password
+in the settings, as described in the "Running with custom settings" section above.
 
 ## Browsing and searching
 

@@ -520,22 +520,20 @@ export default function MediaLibraryPage({ mode }) {
 
   return (
     <>
+      {isAdmin && (
       <section className="mb-6 rounded-xl border border-gray-800 bg-gray-900 px-5 py-4">
         <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-          <div>
-            <p className="text-xs font-semibold uppercase tracking-[0.2em] text-indigo-300">
-              {isAdmin ? 'Admin interface' : 'Read-only interface'}
-            </p>
-            <h2 className="mt-1 text-xl font-semibold text-white">
-              {isAdmin ? 'Manage your media library' : 'Browse your media library'}
-            </h2>
-            <p className="mt-1 text-sm text-gray-400">
-              {isAdmin
-                ? 'Create, edit, and delete entries from this machine only. Basic auth is required for admin access.'
-                : 'Browse movies, episodes, and genres without any write controls.'}
-            </p>
-          </div>
-          {isAdmin && (
+              <div>
+                <p className="text-xs font-semibold uppercase tracking-[0.2em] text-indigo-300">
+                  Admin interface
+                </p>
+                <h2 className="mt-1 text-xl font-semibold text-white">
+                  Manage your media library
+                </h2>
+                <p className="mt-1 text-sm text-gray-400">
+                    Create, edit, and delete entries from this machine only. Basic auth is required for admin access.
+                </p>
+              </div>
             <button
               onClick={() => {
                 if (activeTab === 'movies') {
@@ -562,9 +560,9 @@ export default function MediaLibraryPage({ mode }) {
             >
               {adminActionLabel}
             </button>
-          )}
         </div>
       </section>
+      )}
 
       <div className="flex gap-1 mb-6 bg-gray-900 border border-gray-800 rounded-lg p-1 overflow-x-auto">
         <button
@@ -677,7 +675,7 @@ export default function MediaLibraryPage({ mode }) {
                   : 'text-gray-400 hover:text-gray-200'
               }`}
             >
-              Series
+              💿 Series
             </button>
             <button
               onClick={() => {

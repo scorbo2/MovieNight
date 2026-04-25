@@ -26,7 +26,6 @@ export default function App() {
               <span className="text-3xl" aria-hidden="true">🎬</span>
               <div>
                 <h1 className="text-2xl font-bold text-white tracking-tight">MovieNight</h1>
-                <p className="text-sm text-gray-400">Public browse UI with a localhost-only admin route.</p>
               </div>
             </div>
             <nav className="flex items-center gap-2">

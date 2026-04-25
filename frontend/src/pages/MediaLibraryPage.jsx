@@ -521,8 +521,11 @@ export default function MediaLibraryPage({ mode }) {
   })
 
   const switchTab = (tab) => {
-    if (tab === activeTab) return
     if (transitionTimer.current) clearTimeout(transitionTimer.current)
+    if (tab === activeTab) {
+      setIsTransitioning(false)
+      return
+    }
     setIsTransitioning(true)
     transitionTimer.current = setTimeout(() => {
       setActiveTab(tab)

@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import MovieList from '../components/MovieList'
 import MovieForm from '../components/MovieForm'
 import EpisodeList from '../components/EpisodeList'
@@ -22,6 +22,8 @@ const MUSIC_VIDEOS_API = '/api/music-videos'
 export default function MediaLibraryPage({ mode }) {
   const isAdmin = mode === 'admin'
   const [activeTab, setActiveTab] = useState('movies')
+  const [isTransitioning, setIsTransitioning] = useState(false)
+  const transitionTimer = useRef(null)
 
   const [movies, setMovies] = useState([])
   const [moviesLoading, setMoviesLoading] = useState(true)
@@ -518,6 +520,34 @@ export default function MediaLibraryPage({ mode }) {
       || (artist.description || '').toLowerCase().includes(q)
   })
 
+  const switchTab = (tab) => {
+    if (tab === activeTab) return
+    if (transitionTimer.current) clearTimeout(transitionTimer.current)
+    setIsTransitioning(true)
+    transitionTimer.current = setTimeout(() => {
+      setActiveTab(tab)
+      setShowMovieForm(false)
+      setEditingMovie(null)
+      setShowEpisodeForm(false)
+      setEditingEpisode(null)
+      setShowGenreForm(false)
+      setEditingGenre(null)
+      setShowSeriesForm(false)
+      setEditingSeries(null)
+      setShowArtistForm(false)
+      setEditingArtist(null)
+      setShowMusicVideoForm(false)
+      setEditingMusicVideo(null)
+      setIsTransitioning(false)
+    }, 150)
+  }
+
+  useEffect(() => {
+    return () => {
+      if (transitionTimer.current) clearTimeout(transitionTimer.current)
+    }
+  }, [])
+
   return (
     <>
       {isAdmin && (
@@ -566,19 +596,7 @@ export default function MediaLibraryPage({ mode }) {
 
       <div className="flex gap-1 mb-6 bg-gray-900 border border-gray-800 rounded-lg p-1 overflow-x-auto">
         <button
-          onClick={() => {
-            setActiveTab('movies')
-            setShowEpisodeForm(false)
-            setEditingEpisode(null)
-            setShowGenreForm(false)
-            setEditingGenre(null)
-            setShowSeriesForm(false)
-            setEditingSeries(null)
-            setShowArtistForm(false)
-            setEditingArtist(null)
-            setShowMusicVideoForm(false)
-            setEditingMusicVideo(null)
-          }}
+          onClick={() => switchTab('movies')}
           className={`px-5 py-2 rounded-md text-sm font-medium transition-colors ${
             activeTab === 'movies'
               ? 'bg-indigo-600 text-white'
@@ -588,19 +606,7 @@ export default function MediaLibraryPage({ mode }) {
           🎬 Movies
         </button>
         <button
-          onClick={() => {
-            setActiveTab('episodes')
-            setShowMovieForm(false)
-            setEditingMovie(null)
-            setShowGenreForm(false)
-            setEditingGenre(null)
-            setShowSeriesForm(false)
-            setEditingSeries(null)
-            setShowArtistForm(false)
-            setEditingArtist(null)
-            setShowMusicVideoForm(false)
-            setEditingMusicVideo(null)
-          }}
+          onClick={() => switchTab('episodes')}
           className={`px-5 py-2 rounded-md text-sm font-medium transition-colors ${
             activeTab === 'episodes'
               ? 'bg-indigo-600 text-white'
@@ -610,19 +616,7 @@ export default function MediaLibraryPage({ mode }) {
           📺 Episodes
         </button>
         <button
-          onClick={() => {
-            setActiveTab('musicvideos')
-            setShowMovieForm(false)
-            setEditingMovie(null)
-            setShowEpisodeForm(false)
-            setEditingEpisode(null)
-            setShowGenreForm(false)
-            setEditingGenre(null)
-            setShowSeriesForm(false)
-            setEditingSeries(null)
-            setShowArtistForm(false)
-            setEditingArtist(null)
-          }}
+          onClick={() => switchTab('musicvideos')}
           className={`px-5 py-2 rounded-md text-sm font-medium transition-colors ${
             activeTab === 'musicvideos'
               ? 'bg-indigo-600 text-white'
@@ -634,19 +628,7 @@ export default function MediaLibraryPage({ mode }) {
         {isAdmin && (
           <>
             <button
-              onClick={() => {
-                setActiveTab('genres')
-                setShowMovieForm(false)
-                setEditingMovie(null)
-                setShowEpisodeForm(false)
-                setEditingEpisode(null)
-                setShowSeriesForm(false)
-                setEditingSeries(null)
-                setShowArtistForm(false)
-                setEditingArtist(null)
-                setShowMusicVideoForm(false)
-                setEditingMusicVideo(null)
-              }}
+              onClick={() => switchTab('genres')}
               className={`px-5 py-2 rounded-md text-sm font-medium transition-colors ${
                 activeTab === 'genres'
                   ? 'bg-indigo-600 text-white'
@@ -656,19 +638,7 @@ export default function MediaLibraryPage({ mode }) {
               🏷️ Genres
             </button>
             <button
-              onClick={() => {
-                setActiveTab('series')
-                setShowMovieForm(false)
-                setEditingMovie(null)
-                setShowEpisodeForm(false)
-                setEditingEpisode(null)
-                setShowGenreForm(false)
-                setEditingGenre(null)
-                setShowArtistForm(false)
-                setEditingArtist(null)
-                setShowMusicVideoForm(false)
-                setEditingMusicVideo(null)
-              }}
+              onClick={() => switchTab('series')}
               className={`px-5 py-2 rounded-md text-sm font-medium transition-colors ${
                 activeTab === 'series'
                   ? 'bg-indigo-600 text-white'
@@ -678,19 +648,7 @@ export default function MediaLibraryPage({ mode }) {
               💿 Series
             </button>
             <button
-              onClick={() => {
-                setActiveTab('artists')
-                setShowMovieForm(false)
-                setEditingMovie(null)
-                setShowEpisodeForm(false)
-                setEditingEpisode(null)
-                setShowGenreForm(false)
-                setEditingGenre(null)
-                setShowSeriesForm(false)
-                setEditingSeries(null)
-                setShowMusicVideoForm(false)
-                setEditingMusicVideo(null)
-              }}
+              onClick={() => switchTab('artists')}
               className={`px-5 py-2 rounded-md text-sm font-medium transition-colors ${
                 activeTab === 'artists'
                   ? 'bg-indigo-600 text-white'
@@ -703,6 +661,11 @@ export default function MediaLibraryPage({ mode }) {
         )}
       </div>
 
+      <div
+        className={`transition-all duration-150 ease-in-out ${
+          isTransitioning ? 'opacity-0 translate-y-1' : 'opacity-100 translate-y-0'
+        }`}
+      >
       {activeTab === 'movies' && (
         <>
           <div className="flex flex-col sm:flex-row gap-3 mb-6">
@@ -1227,6 +1190,7 @@ export default function MediaLibraryPage({ mode }) {
           )}
         </>
       )}
+      </div>
     </>
   )
 }

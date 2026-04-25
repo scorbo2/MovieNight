@@ -48,10 +48,10 @@ function MovieCard({ movie, onEdit, onDelete, onTagClick, readOnly }) {
       <div className="p-5 flex flex-col gap-3 flex-1">
       <div className="flex items-start justify-between gap-2">
         <h2 className="text-lg font-semibold text-white leading-tight">{movie.title}</h2>
-        {movie.watched ? (
-          <span className="shrink-0 text-xs bg-green-800/60 text-green-300 px-2 py-0.5 rounded-full">Watched</span>
-        ) : (
-          <span className="shrink-0 text-xs bg-gray-700 text-gray-400 px-2 py-0.5 rounded-full">Unwatched</span>
+        {movie.watchedRecently && (
+          <span className="shrink-0 text-xs bg-green-800/60 text-green-300 px-2 py-0.5 rounded-full">
+            Watched recently
+          </span>
         )}
       </div>
 

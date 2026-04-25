@@ -11,7 +11,6 @@ const EMPTY_FORM = {
   year: '',
   genreId: '',
   description: '',
-  watched: false,
   tags: [],
   videoFilePath: '',
 }
@@ -89,7 +88,6 @@ export default function MovieForm({ movie, onSave, onCancel }) {
         year: movie.year ?? '',
         genreId: movie.genre?.id != null ? String(movie.genre.id) : '',
         description: movie.description ?? '',
-        watched: Boolean(movie.watched),
         tags: movie.tags ?? [],
         videoFilePath: movie.videoFilePath ?? '',
       })
@@ -143,7 +141,6 @@ export default function MovieForm({ movie, onSave, onCancel }) {
       year: form.year !== '' ? Number(form.year) : null,
       genre: { id: Number(form.genreId) },
       description: form.description,
-      watched: form.watched,
       tags: pendingTags,
       videoFilePath: form.videoFilePath,
       _thumbnail: thumbnailFile,
@@ -350,18 +347,6 @@ export default function MovieForm({ movie, onSave, onCancel }) {
         </div>
         {errors.videoFilePath && <p className="text-red-400 text-xs mt-1">{errors.videoFilePath}</p>}
       </div>
-
-      {/* Watched */}
-      <label className="flex items-center gap-2 text-sm text-gray-300 cursor-pointer">
-        <input
-          name="watched"
-          type="checkbox"
-          checked={form.watched}
-          onChange={handleChange}
-          className="w-4 h-4 accent-indigo-500"
-        />
-        Marked as watched
-      </label>
 
       {/* Buttons */}
       <div className="flex gap-3 pt-2">

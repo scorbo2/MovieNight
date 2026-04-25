@@ -65,10 +65,10 @@ function EpisodeCard({ episode, onEdit, onDelete, onTagClick, readOnly }) {
             <p className="text-sm text-gray-300 leading-tight">{episode.episodeTitle}</p>
           )}
         </div>
-        {episode.watched ? (
-          <span className="shrink-0 text-xs bg-green-800/60 text-green-300 px-2 py-0.5 rounded-full">Watched</span>
-        ) : (
-          <span className="shrink-0 text-xs bg-gray-700 text-gray-400 px-2 py-0.5 rounded-full">Unwatched</span>
+        {episode.watchedRecently && (
+          <span className="shrink-0 text-xs bg-green-800/60 text-green-300 px-2 py-0.5 rounded-full">
+            Watched recently
+          </span>
         )}
       </div>
 

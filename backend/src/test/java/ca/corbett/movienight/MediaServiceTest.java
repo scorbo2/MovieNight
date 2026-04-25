@@ -4,13 +4,22 @@ import ca.corbett.movienight.model.Episode;
 import ca.corbett.movienight.model.Genre;
 import ca.corbett.movienight.model.Movie;
 import ca.corbett.movienight.model.Series;
+import ca.corbett.movienight.repository.EpisodeRepository;
+import ca.corbett.movienight.repository.GenreRepository;
+import ca.corbett.movienight.repository.MovieRepository;
+import ca.corbett.movienight.repository.MusicVideoRepository;
+import ca.corbett.movienight.repository.SeriesRepository;
 import ca.corbett.movienight.service.EpisodeService;
 import ca.corbett.movienight.service.MediaService;
 import ca.corbett.movienight.service.MovieService;
 import ca.corbett.movienight.service.MusicVideoService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.autoconfigure.jdbc.AutoConfigureTestDatabase;
+import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
 import org.springframework.http.HttpStatus;
+import org.springframework.test.context.TestPropertySource;
 import org.springframework.web.server.ResponseStatusException;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -18,6 +27,14 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
+@DataJpaTest
+@AutoConfigureTestDatabase(replace = AutoConfigureTestDatabase.Replace.NONE)
+@TestPropertySource(properties = {
+        "spring.datasource.url=jdbc:sqlite::memory:",
+        "spring.datasource.driver-class-name=org.sqlite.JDBC",
+        "spring.jpa.database-platform=org.hibernate.community.dialect.SQLiteDialect",
+        "spring.jpa.hibernate.ddl-auto=create-drop"
+})
 class MediaServiceTest {
 
     private MovieService movieService;
@@ -25,35 +42,62 @@ class MediaServiceTest {
     private MusicVideoService musicVideoService;
     private MediaService mediaService;
 
+    @Autowired
+    private SeriesRepository seriesRepository;
+
+    @Autowired
+    private GenreRepository genreRepository;
+
+    @Autowired
+    private MovieRepository movieRepository;
+
+    @Autowired
+    private EpisodeRepository episodeRepository;
+
+    @Autowired
+    private MusicVideoRepository musicVideoRepository;
+
     @BeforeEach
     void setUp() {
         movieService = mock(MovieService.class);
         episodeService = mock(EpisodeService.class);
         musicVideoService = mock(MusicVideoService.class);
-        mediaService = new MediaService(movieService, episodeService, musicVideoService);
+        mediaService = new MediaService(movieService, episodeService, musicVideoService,
+                                        movieRepository, episodeRepository, musicVideoRepository);
     }
 
     @Test
     void resolvesMovieId() {
         Genre drama = new Genre("Drama", "");
-
-        Movie movie = new Movie("Test Movie", 2024, drama, "A test.", false);
+        genreRepository.save(drama);
+        Movie movie = new Movie("Test Movie", 2024, drama, "A test.", null);
         movie.setVideoFilePath("/movies/test_movie.mp4");
-        when(movieService.requireMovie(42L)).thenReturn(movie);
+        movie = movieRepository.save(movie);
+        when(movieService.requireMovie(movie.getId())).thenReturn(movie);
 
-        String path = mediaService.findById("M42");
+        String path = mediaService.findById("M" + movie.getId());
         assertThat(path).isEqualTo("/movies/test_movie.mp4");
+
+        // Also verify that the side effect of the mediaService.findById set a lastWatchedDate and saved it.
+        Movie actual = movieRepository.findById(movie.getId()).orElseThrow();
+        assertThat(actual.getLastWatchedDate()).isNotNull();
     }
 
     @Test
     void resolvesEpisodeId() {
         Series series = new Series("Test Series", "A test series.");
-        Episode episode = new Episode(series, "Pilot", 1, 1, "First episode.", false);
+        seriesRepository.save(series);
+        Episode episode = new Episode(series, "Pilot", 1, 1, "First episode.", null);
         episode.setVideoFilePath("/episodes/s01e01.mp4");
-        when(episodeService.requireEpisode(7L)).thenReturn(episode);
+        episode = episodeRepository.save(episode);
+        when(episodeService.requireEpisode(episode.getId())).thenReturn(episode);
 
-        String path = mediaService.findById("E7");
+        String path = mediaService.findById("E" + episode.getId());
         assertThat(path).isEqualTo("/episodes/s01e01.mp4");
+
+        // Also verify that the side effect of the mediaService.findById set a lastWatchedDate and saved it.
+        Episode actual = episodeRepository.findById(episode.getId()).orElseThrow();
+        assertThat(actual.getLastWatchedDate()).isNotNull();
     }
 
     @Test

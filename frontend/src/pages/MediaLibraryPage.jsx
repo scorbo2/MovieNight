@@ -29,7 +29,6 @@ export default function MediaLibraryPage({ mode }) {
   const [showMovieForm, setShowMovieForm] = useState(false)
   const [editingMovie, setEditingMovie] = useState(null)
   const [movieSearchQuery, setMovieSearchQuery] = useState('')
-  const [filterWatched, setFilterWatched] = useState('')
   const [movieTagQuery, setMovieTagQuery] = useState('')
 
   const [episodes, setEpisodes] = useState([])
@@ -39,7 +38,6 @@ export default function MediaLibraryPage({ mode }) {
   const [editingEpisode, setEditingEpisode] = useState(null)
   const [episodeSeriesQuery, setEpisodeSeriesQuery] = useState('')
   const [episodeSeasonQuery, setEpisodeSeasonQuery] = useState('')
-  const [filterEpisodeWatched, setFilterEpisodeWatched] = useState('')
   const [episodeTagQuery, setEpisodeTagQuery] = useState('')
 
   const [genres, setGenres] = useState([])
@@ -91,7 +89,6 @@ export default function MediaLibraryPage({ mode }) {
       setMoviesLoading(true)
       const params = new URLSearchParams()
       if (movieSearchQuery) params.append('title', movieSearchQuery)
-      if (filterWatched !== '') params.append('watched', filterWatched)
       if (movieTagQuery) params.append('tag', movieTagQuery)
       if (selectedGenre) params.append('genreId', selectedGenre.id)
       const res = await fetch(`${MOVIES_API}?${params}`)
@@ -107,9 +104,9 @@ export default function MediaLibraryPage({ mode }) {
 
   useEffect(() => {
     fetchMovies()
-  }, [movieSearchQuery, filterWatched, movieTagQuery, selectedGenre])
+  }, [movieSearchQuery, movieTagQuery, selectedGenre])
 
-  const isEpisodeSearchActive = !!(episodeSeriesQuery || episodeSeasonQuery || filterEpisodeWatched || episodeTagQuery)
+  const isEpisodeSearchActive = !!(episodeSeriesQuery || episodeSeasonQuery || episodeTagQuery)
 
   const fetchEpisodes = async () => {
     try {
@@ -121,7 +118,6 @@ export default function MediaLibraryPage({ mode }) {
         params.append('seriesName', episodeSeriesQuery)
       }
       if (episodeSeasonQuery !== '') params.append('season', episodeSeasonQuery)
-      if (filterEpisodeWatched !== '') params.append('watched', filterEpisodeWatched)
       if (episodeTagQuery) params.append('tag', episodeTagQuery)
       const res = await fetch(`${EPISODES_API}?${params}`)
       if (!res.ok) throw new Error('Failed to fetch episodes')
@@ -138,7 +134,7 @@ export default function MediaLibraryPage({ mode }) {
     if (activeTab !== 'episodes') return
     if (!selectedSeries && !isEpisodeSearchActive) return
     fetchEpisodes()
-  }, [activeTab, selectedSeries, episodeSeriesQuery, episodeSeasonQuery, filterEpisodeWatched, episodeTagQuery])
+  }, [activeTab, selectedSeries, episodeSeriesQuery, episodeSeasonQuery, episodeTagQuery])
 
   const fetchSeries = async () => {
     try {
@@ -722,17 +718,6 @@ export default function MediaLibraryPage({ mode }) {
               }}
               className="flex-1 bg-gray-800 border border-gray-700 rounded-lg px-4 py-2 text-gray-100 placeholder-gray-500 focus:outline-none focus:border-indigo-500"
             />
-            {(selectedGenre || movieSearchQuery || movieTagQuery) && (
-              <select
-                value={filterWatched}
-                onChange={(e) => setFilterWatched(e.target.value)}
-                className="bg-gray-800 border border-gray-700 rounded-lg px-4 py-2 text-gray-100 focus:outline-none focus:border-indigo-500"
-              >
-                <option value="">All movies</option>
-                <option value="true">Watched</option>
-                <option value="false">Unwatched</option>
-              </select>
-            )}
           </div>
 
           {selectedGenre && !movieSearchQuery && (
@@ -864,15 +849,6 @@ export default function MediaLibraryPage({ mode }) {
               min="1"
               className="w-28 bg-gray-800 border border-gray-700 rounded-lg px-4 py-2 text-gray-100 placeholder-gray-500 focus:outline-none focus:border-indigo-500"
             />
-            <select
-              value={filterEpisodeWatched}
-              onChange={(e) => setFilterEpisodeWatched(e.target.value)}
-              className="bg-gray-800 border border-gray-700 rounded-lg px-4 py-2 text-gray-100 focus:outline-none focus:border-indigo-500"
-            >
-              <option value="">All episodes</option>
-              <option value="true">Watched</option>
-              <option value="false">Unwatched</option>
-            </select>
           </div>
 
           {selectedSeries && !episodeSeriesQuery && (
@@ -960,7 +936,6 @@ export default function MediaLibraryPage({ mode }) {
                     setSelectedSeries(s)
                     setEpisodeSeriesQuery('')
                     setEpisodeSeasonQuery('')
-                    setFilterEpisodeWatched('')
                     setEpisodeTagQuery('')
                   }}
                   readOnly={true}

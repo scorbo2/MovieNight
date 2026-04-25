@@ -11,7 +11,6 @@ const EMPTY_FORM = {
   season: '',
   episode: '',
   description: '',
-  watched: false,
   tags: [],
   videoFilePath: '',
 }
@@ -88,7 +87,6 @@ export default function EpisodeForm({ episode, onSave, onCancel }) {
         episodeTitle: episode.episodeTitle ?? '',
         description: episode.description ?? '',
         videoFilePath: episode.videoFilePath ?? '',
-        watched: episode.watched ?? false,
         seriesId: episode.series?.id != null ? String(episode.series.id) : '',
         season: episode.season ?? '',
         episode: episode.episode ?? '',
@@ -139,7 +137,6 @@ export default function EpisodeForm({ episode, onSave, onCancel }) {
         episodeTitle: form.episodeTitle.trim() || null,
         description: form.description.trim() || null,
         videoFilePath: form.videoFilePath.trim(),
-        watched: form.watched,
       season: form.season !== '' ? Number(form.season) : null,
       episode: form.episode !== '' ? Number(form.episode) : null,
       tags: pendingTags,
@@ -361,18 +358,6 @@ export default function EpisodeForm({ episode, onSave, onCancel }) {
         </div>
         {errors.videoFilePath && <p className="text-red-400 text-xs mt-1">{errors.videoFilePath}</p>}
       </div>
-
-      {/* Watched */}
-      <label className="flex items-center gap-2 text-sm text-gray-300 cursor-pointer">
-        <input
-          name="watched"
-          type="checkbox"
-          checked={form.watched}
-          onChange={handleChange}
-          className="w-4 h-4 accent-indigo-500"
-        />
-        Marked as watched
-      </label>
 
       {/* Buttons */}
       <div className="flex gap-3 pt-2">

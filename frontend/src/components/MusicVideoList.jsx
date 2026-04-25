@@ -60,6 +60,11 @@ function MusicVideoCard({ musicVideo, onEdit, onDelete, onTagClick, readOnly }) 
               <p className="text-sm text-gray-300 leading-tight">🎤 {artistLabel}</p>
             )}
           </div>
+            {musicVideo.watchedRecently && (
+              <span className="shrink-0 text-xs bg-green-800/60 text-green-300 px-2 py-0.5 rounded-full">
+                Watched recently
+              </span>
+            )}
         </div>
 
         <div className="flex flex-wrap gap-x-4 gap-y-1 text-sm text-gray-400">

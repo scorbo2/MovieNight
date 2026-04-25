@@ -74,6 +74,14 @@
     </dependencies>
 
     <build>
+
+        <!-- By default, Maven generates a jar with artifact name and project version.    -->
+        <!-- But that's a little ugly.                                                    -->
+        <!-- In particular, I don't want "backend" in the jar name, because the generated -->
+        <!-- jar is fully self-contained and includes both back and front ends.           -->
+        <!-- So, let's set it to something very simple.                                   -->
+        <finalName>MovieNight</finalName>
+
         <plugins>
             <plugin>
                 <groupId>org.springframework.boot</groupId>

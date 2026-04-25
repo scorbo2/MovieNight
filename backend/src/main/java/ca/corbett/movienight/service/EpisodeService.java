@@ -19,7 +19,7 @@ import java.util.Optional;
 public class EpisodeService {
 
     @Value("${movienight.recently-watched-days:3}")
-    private int RECENTLY_WATCHED_DAYS;
+    private int recentlyWatchedDays;
 
     private final EpisodeRepository episodeRepository;
     private final ThumbnailService thumbnailService;
@@ -88,16 +88,18 @@ public class EpisodeService {
     }
 
     private Episode populateWatchedRecently(Episode episode) {
+        int recentlyWatchedDays = Math.max(this.recentlyWatchedDays, 0);
+        
         // This feature can be explicitly disabled by setting day count to 0.
         // It's also possible this video has never been watched.
-        if (RECENTLY_WATCHED_DAYS == 0 || episode.getLastWatchedDate() == null) {
+        if (recentlyWatchedDays == 0 || episode.getLastWatchedDate() == null) {
             episode.setWatchedRecently(false);
             return episode;
         }
 
         // Otherwise, do the math on the last watch date to determine if it's recent:
         episode.setWatchedRecently(
-                episode.getLastWatchedDate().isAfter(LocalDate.now().minusDays(RECENTLY_WATCHED_DAYS)));
+                episode.getLastWatchedDate().isAfter(LocalDate.now().minusDays(recentlyWatchedDays)));
 
         return episode;
     }
@@ -146,6 +148,6 @@ public class EpisodeService {
      * Visible only for testing, because Spring is dumb.
      */
     public void setRecentlyWatchedDays(int number) {
-        this.RECENTLY_WATCHED_DAYS = Math.max(number, 0);
+        this.recentlyWatchedDays = Math.max(number, 0);
     }
 }

@@ -19,7 +19,7 @@ import java.util.Optional;
 public class MovieService {
 
     @Value("${movienight.recently-watched-days:3}")
-    private int RECENTLY_WATCHED_DAYS;
+    private int recentlyWatchedDays;
 
     private final MovieRepository movieRepository;
     private final ThumbnailService thumbnailService;
@@ -100,15 +100,17 @@ public class MovieService {
     }
 
     private Movie populateWatchedRecently(Movie movie) {
+        int recentlyWatchedDays = Math.max(this.recentlyWatchedDays, 0);
+        
         // This feature can be explicitly disabled by setting day count to 0.
         // It's also possible this video has never been watched.
-        if (RECENTLY_WATCHED_DAYS == 0 || movie.getLastWatchedDate() == null) {
+        if (recentlyWatchedDays == 0 || movie.getLastWatchedDate() == null) {
             movie.setWatchedRecently(false);
             return movie;
         }
 
         // Otherwise, do the math on the last watch date to determine if it's recent:
-        movie.setWatchedRecently(movie.getLastWatchedDate().isAfter(LocalDate.now().minusDays(RECENTLY_WATCHED_DAYS)));
+        movie.setWatchedRecently(movie.getLastWatchedDate().isAfter(LocalDate.now().minusDays(recentlyWatchedDays)));
 
         return movie;
     }
@@ -148,6 +150,6 @@ public class MovieService {
      * Visible only for testing, because Spring is dumb.
      */
     public void setRecentlyWatchedDays(int number) {
-        this.RECENTLY_WATCHED_DAYS = Math.max(number, 0);
+        this.recentlyWatchedDays = Math.max(number, 0);
     }
 }

@@ -37,7 +37,7 @@ class MediaServiceTest {
     void resolvesMovieId() {
         Genre drama = new Genre("Drama", "");
 
-        Movie movie = new Movie("Test Movie", 2024, drama, "A test.", false);
+        Movie movie = new Movie("Test Movie", 2024, drama, "A test.", null);
         movie.setVideoFilePath("/movies/test_movie.mp4");
         when(movieService.requireMovie(42L)).thenReturn(movie);
 
@@ -48,7 +48,7 @@ class MediaServiceTest {
     @Test
     void resolvesEpisodeId() {
         Series series = new Series("Test Series", "A test series.");
-        Episode episode = new Episode(series, "Pilot", 1, 1, "First episode.", false);
+        Episode episode = new Episode(series, "Pilot", 1, 1, "First episode.", null);
         episode.setVideoFilePath("/episodes/s01e01.mp4");
         when(episodeService.requireEpisode(7L)).thenReturn(episode);
 

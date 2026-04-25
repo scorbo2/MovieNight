@@ -16,6 +16,7 @@ import jakarta.persistence.Transient;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
 
+import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -57,7 +58,11 @@ public class Episode {
     private String description;
 
     @Column
-    private Boolean watched = false;
+    private LocalDate lastWatchedDate;
+
+    @Transient
+    @JsonProperty(value = "watchedRecently", access = JsonProperty.Access.READ_ONLY)
+    private boolean watchedRecently;
 
     @ElementCollection(fetch = FetchType.EAGER)
     @CollectionTable(name = "episode_tags", joinColumns = @JoinColumn(name = "episode_id"))
@@ -76,13 +81,13 @@ public class Episode {
     }
 
     public Episode(Series series, String episodeTitle, Integer season, Integer episode,
-                   String description, Boolean watched) {
+                   String description, LocalDate lastWatchedDate) {
         this.series = series;
         this.episodeTitle = episodeTitle;
         this.season = season;
         this.episode = episode;
         this.description = description;
-        this.watched = watched;
+        this.lastWatchedDate = lastWatchedDate;
     }
 
     // Getters and setters
@@ -135,12 +140,12 @@ public class Episode {
         this.description = description;
     }
 
-    public Boolean getWatched() {
-        return watched;
+    public LocalDate getLastWatchedDate() {
+        return lastWatchedDate;
     }
 
-    public void setWatched(Boolean watched) {
-        this.watched = watched;
+    public void setLastWatchedDate(LocalDate lastWatchedDate) {
+        this.lastWatchedDate = lastWatchedDate;
     }
 
     public List<String> getTags() {
@@ -166,6 +171,14 @@ public class Episode {
 
     public void setHasThumbnail(boolean hasThumbnail) {
         this.hasThumbnail = hasThumbnail;
+    }
+
+    public boolean isWatchedRecently() {
+        return watchedRecently;
+    }
+
+    public void setWatchedRecently(boolean watchedRecently) {
+        this.watchedRecently = watchedRecently;
     }
 
     public String getVideoFilePath() {

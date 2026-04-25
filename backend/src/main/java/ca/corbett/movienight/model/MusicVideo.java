@@ -17,6 +17,7 @@ import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 
+import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -60,6 +61,13 @@ public class MusicVideo {
     @Column(length = 2000)
     private String description;
 
+    @Column
+    private LocalDate lastWatchedDate;
+
+    @Transient
+    @JsonProperty(value = "watchedRecently", access = JsonProperty.Access.READ_ONLY)
+    private boolean watchedRecently;
+
     @ElementCollection(fetch = FetchType.EAGER)
     @CollectionTable(name = "music_video_tags", joinColumns = @JoinColumn(name = "music_video_id"))
     @Column(name = "tag")
@@ -76,12 +84,14 @@ public class MusicVideo {
     public MusicVideo() {
     }
 
-    public MusicVideo(String title, Artist artist, String album, Integer year, String description) {
+    public MusicVideo(String title, Artist artist, String album,
+                      Integer year, String description, LocalDate lastWatchedDate) {
         this.title = title;
         this.artist = artist;
         this.album = album;
         this.year = year;
         this.description = description;
+        this.lastWatchedDate = lastWatchedDate;
     }
 
     // Getters and setters
@@ -134,6 +144,14 @@ public class MusicVideo {
         this.description = description;
     }
 
+    public LocalDate getLastWatchedDate() {
+        return lastWatchedDate;
+    }
+
+    public void setLastWatchedDate(LocalDate lastWatchedDate) {
+        this.lastWatchedDate = lastWatchedDate;
+    }
+
     public List<String> getTags() {
         return tags;
     }
@@ -165,5 +183,13 @@ public class MusicVideo {
 
     public void setHasThumbnail(boolean hasThumbnail) {
         this.hasThumbnail = hasThumbnail;
+    }
+
+    public boolean isWatchedRecently() {
+        return watchedRecently;
+    }
+
+    public void setWatchedRecently(boolean watchedRecently) {
+        this.watchedRecently = watchedRecently;
     }
 }

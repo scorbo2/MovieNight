@@ -5,16 +5,21 @@ import ca.corbett.movienight.model.Movie;
 import ca.corbett.movienight.repository.MovieRepository;
 import jakarta.persistence.criteria.Join;
 import jakarta.persistence.criteria.JoinType;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
 
+import java.time.LocalDate;
 import java.util.List;
 import java.util.Optional;
 
 @Service
 public class MovieService {
+
+    @Value("${movienight.recently-watched-days:3}")
+    private int RECENTLY_WATCHED_DAYS;
 
     private final MovieRepository movieRepository;
     private final ThumbnailService thumbnailService;
@@ -25,11 +30,11 @@ public class MovieService {
     }
 
     public List<Movie> getAllMovies() {
-        return populateHasThumbnail(movieRepository.findAll());
+        return populateTransientFields(movieRepository.findAll());
     }
 
     public Optional<Movie> getMovieById(Long id) {
-        return movieRepository.findById(id).map(this::populateHasThumbnail);
+        return movieRepository.findById(id).map(this::populateTransientFields);
     }
 
     public Movie saveMovie(Movie movie) {
@@ -38,7 +43,7 @@ public class MovieService {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Movie genre is required.");
         }
 
-        return populateHasThumbnail(movieRepository.save(movie));
+        return populateTransientFields(movieRepository.save(movie));
     }
 
     public Movie updateMovie(Long id, Movie updatedMovie) {
@@ -52,10 +57,9 @@ public class MovieService {
             movie.setYear(updatedMovie.getYear());
             movie.setGenre(updatedMovie.getGenre());
             movie.setDescription(updatedMovie.getDescription());
-            movie.setWatched(updatedMovie.getWatched());
             movie.setTags(updatedMovie.getTags());
             movie.setVideoFilePath(updatedMovie.getVideoFilePath());
-            return populateHasThumbnail(movieRepository.save(movie));
+            return populateTransientFields(movieRepository.save(movie));
         }).orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Movie not found with id: " + id));
     }
 
@@ -72,27 +76,22 @@ public class MovieService {
     }
 
     public List<Movie> searchByTitle(String title) {
-        return populateHasThumbnail(movieRepository.findByTitleContainingIgnoreCase(title));
-    }
-
-    public List<Movie> getByWatched(Boolean watched) {
-        return populateHasThumbnail(movieRepository.findByWatched(watched));
+        return populateTransientFields(movieRepository.findByTitleContainingIgnoreCase(title));
     }
 
     public List<Movie> searchByTag(String tag) {
-        return populateHasThumbnail(movieRepository.findByTagsContainingIgnoreCase(tag));
+        return populateTransientFields(movieRepository.findByTagsContainingIgnoreCase(tag));
     }
 
     public List<Movie> searchMovies(Genre genre) {
-        return populateHasThumbnail(movieRepository.findByGenre(genre));
+        return populateTransientFields(movieRepository.findByGenre(genre));
     }
 
-    public List<Movie> searchMovies(String title, Boolean watched, String tag, Long genreId) {
+    public List<Movie> searchMovies(String title, String tag, Long genreId) {
         Specification<Movie> spec = Specification.where(titleContains(title))
-                .and(watchedEquals(watched))
                 .and(tagContains(tag))
                 .and(genreEquals(genreId));
-        return populateHasThumbnail(movieRepository.findAll(spec));
+        return populateTransientFields(movieRepository.findAll(spec));
     }
 
     private Movie populateHasThumbnail(Movie movie) {
@@ -100,9 +99,18 @@ public class MovieService {
         return movie;
     }
 
-    private List<Movie> populateHasThumbnail(List<Movie> movies) {
-        movies.forEach(this::populateHasThumbnail);
-        return movies;
+    private Movie populateWatchedRecently(Movie movie) {
+        // This feature can be explicitly disabled by setting day count to 0.
+        // It's also possible this video has never been watched.
+        if (RECENTLY_WATCHED_DAYS == 0 || movie.getLastWatchedDate() == null) {
+            movie.setWatchedRecently(false);
+            return movie;
+        }
+
+        // Otherwise, do the math on the last watch date to determine if it's recent:
+        movie.setWatchedRecently(movie.getLastWatchedDate().isAfter(LocalDate.now().minusDays(RECENTLY_WATCHED_DAYS)));
+
+        return movie;
     }
 
     private static Specification<Movie> titleContains(String title) {
@@ -110,10 +118,6 @@ public class MovieService {
             if (title == null || title.isBlank()) return null;
             return cb.like(cb.lower(root.get("title")), "%" + title.trim().toLowerCase() + "%");
         };
-    }
-
-    private static Specification<Movie> watchedEquals(Boolean watched) {
-        return (root, query, cb) -> watched == null ? null : cb.equal(root.get("watched"), watched);
     }
 
     private static Specification<Movie> tagContains(String tag) {
@@ -127,5 +131,23 @@ public class MovieService {
 
     private static Specification<Movie> genreEquals(Long genreId) {
         return (root, query, cb) -> genreId == null ? null : cb.equal(root.get("genre").get("id"), genreId);
+    }
+
+    private Movie populateTransientFields(Movie movie) {
+        populateHasThumbnail(movie);
+        populateWatchedRecently(movie);
+        return movie;
+    }
+
+    private List<Movie> populateTransientFields(List<Movie> movies) {
+        movies.forEach(this::populateTransientFields);
+        return movies;
+    }
+
+    /**
+     * Visible only for testing, because Spring is dumb.
+     */
+    public void setRecentlyWatchedDays(int number) {
+        this.RECENTLY_WATCHED_DAYS = Math.max(number, 0);
     }
 }

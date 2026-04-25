@@ -16,6 +16,7 @@ import jakarta.persistence.Transient;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
 
+import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -55,7 +56,11 @@ public class Movie {
     private String description;
 
     @Column
-    private Boolean watched = false;
+    private LocalDate lastWatchedDate;
+
+    @Transient
+    @JsonProperty(value = "watchedRecently", access = JsonProperty.Access.READ_ONLY)
+    private boolean watchedRecently;
 
     @ElementCollection(fetch = FetchType.EAGER)
     @CollectionTable(name = "movie_tags", joinColumns = @JoinColumn(name = "movie_id"))
@@ -74,12 +79,12 @@ public class Movie {
     }
 
     public Movie(String title, Integer year, Genre genre,
-                 String description, Boolean watched) {
+                 String description, LocalDate lastWatchedDate) {
         this.title = title;
         this.year = year;
         this.genre = genre;
         this.description = description;
-        this.watched = watched;
+        this.lastWatchedDate = lastWatchedDate;
     }
 
     // Getters and setters
@@ -124,12 +129,12 @@ public class Movie {
         this.description = description;
     }
 
-    public Boolean getWatched() {
-        return watched;
+    public LocalDate getLastWatchedDate() {
+        return lastWatchedDate;
     }
 
-    public void setWatched(Boolean watched) {
-        this.watched = watched;
+    public void setLastWatchedDate(LocalDate lastWatchedDate) {
+        this.lastWatchedDate = lastWatchedDate;
     }
 
     public List<String> getTags() {
@@ -155,6 +160,14 @@ public class Movie {
 
     public void setHasThumbnail(boolean hasThumbnail) {
         this.hasThumbnail = hasThumbnail;
+    }
+
+    public boolean isWatchedRecently() {
+        return watchedRecently;
+    }
+
+    public void setWatchedRecently(boolean watchedRecently) {
+        this.watchedRecently = watchedRecently;
     }
 
     public String getVideoFilePath() {

@@ -13,8 +13,6 @@ public interface MovieRepository extends JpaRepository<Movie, Long>, JpaSpecific
 
     List<Movie> findByTitleContainingIgnoreCase(String title);
 
-    List<Movie> findByWatched(Boolean watched);
-
     List<Movie> findByGenre(Genre genre);
 
     long countByGenre(Genre genre);

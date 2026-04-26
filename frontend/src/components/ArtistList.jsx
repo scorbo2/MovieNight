@@ -14,7 +14,7 @@ export default function ArtistList({ artists, onEdit, onDelete, onArtistClick, r
   }
 
   return (
-    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
+    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5">
       {artists.map((artist) => (
         <ArtistCard
           key={artist.id}

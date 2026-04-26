@@ -35,7 +35,7 @@ export default function App() {
           </div>
         </header>
 
-        <main className="max-w-6xl mx-auto px-4 py-8">
+        <main className="max-w-screen-2xl mx-auto px-4 py-8">
           <Routes>
             <Route path="/" element={<MediaLibraryPage mode="user" />} />
             <Route path="/admin" element={<MediaLibraryPage mode="admin" />} />

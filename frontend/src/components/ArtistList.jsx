@@ -43,7 +43,7 @@ function ArtistCard({ artist, onEdit, onDelete, onArtistClick, readOnly }) {
         <img
           src={`${ARTISTS_API}/${artist.id}/thumbnail`}
           alt={`${artist.name} thumbnail`}
-          className="w-full h-48 object-cover"
+          className="w-full h-48 object-cover object-top"
         />
       )}
 

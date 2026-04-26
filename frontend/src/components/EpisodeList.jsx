@@ -47,7 +47,7 @@ function EpisodeCard({ episode, onEdit, onDelete, onTagClick, readOnly }) {
         <img
           src={`${EPISODES_API}/${episode.id}/thumbnail`}
           alt={`${seriesLabel} thumbnail`}
-          className="w-full h-48 object-cover"
+          className="w-full h-48 object-cover object-top"
         />
       )}
       {showPlayer && (

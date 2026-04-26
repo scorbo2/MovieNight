@@ -42,7 +42,7 @@ function MusicVideoCard({ musicVideo, onEdit, onDelete, onTagClick, readOnly }) 
         <img
           src={`${MUSIC_VIDEOS_API}/${musicVideo.id}/thumbnail`}
           alt={`${musicVideo.title} thumbnail`}
-          className="w-full h-48 object-cover"
+          className="w-full h-48 object-cover object-top"
         />
       )}
       {showPlayer && (

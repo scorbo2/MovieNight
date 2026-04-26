@@ -43,7 +43,7 @@ function GenreCard({ genre, onEdit, onDelete, onGenreClick, readOnly }) {
         <img
           src={`${GENRES_API}/${genre.id}/thumbnail`}
           alt={`${genre.name} thumbnail`}
-          className="w-full h-48 object-cover"
+          className="w-full h-48 object-cover object-top"
         />
       )}
 

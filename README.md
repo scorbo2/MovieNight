@@ -19,20 +19,23 @@ To get started, clone the repository and build with Maven (Java 17+ required):
 
 ```bash
 git clone https://github.com/scorbo2/MovieNight.git
+
+# We build from the "backend" directory, but this builds the whole thing:
 cd MovieNight/backend
 mvn clean package
 ```
 
-This generates a standalone executable Jar file in the `backend/target` directory.
+This generates a standalone executable Jar file in the `target` directory.
 You can run it with default settings using:
 
 ```bash
-java -jar backend/target/MovieNight.jar
+# Note: version number may vary from this example:
+java -jar target/MovieNight-1.0.jar
 ```
 
 By default, this will listen on port 8080 and will use `/var/lib/movienight` for storing media metadata.
 (Make sure that directory exists and is writable by the application before running).
-The access credentials for the Admin API will be `admin`/`change-me`.
+The access credentials for the Admin API will be `admin`/`change-me` - but these are not great defaults!
 
 ### Running with custom settings
 
@@ -41,14 +44,22 @@ you can customize the settings:
 
 ```properties
 server.port=8080
+#
 logging.file.name=/path/to/movienight.log
+#
 # If false, Admin access is allowed from anywhere:
 movienight.admin.localhost-only=false
+#
 # Number of days to consider a media item as "recently watched"
 # (set this to 0 to disable the "recently watched" feature)
 movienight.recently-watched-days=3
+#
 spring.datasource.url=jdbc:sqlite:/path/to/movienight.db
+#
+# All uploaded thumbnails will go to this data dir:
 movienight.data-dir=/path/to/movienight-data-dir
+#
+# Don't leave this as admin/change-me!
 movienight.admin.username=admin
 movienight.admin.password=change-me
 ```

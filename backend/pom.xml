@@ -14,7 +14,7 @@
 
     <groupId>com.movienight</groupId>
     <artifactId>movienight-backend</artifactId>
-    <version>0.0.1-SNAPSHOT</version>
+    <version>1.0-SNAPSHOT</version>
     <name>MovieNight Backend</name>
     <description>Spring Boot backend for MovieNight</description>
 
@@ -80,7 +80,7 @@
         <!-- In particular, I don't want "backend" in the jar name, because the generated -->
         <!-- jar is fully self-contained and includes both back and front ends.           -->
         <!-- So, let's set it to something very simple.                                   -->
-        <finalName>MovieNight</finalName>
+        <finalName>MovieNight-${project.version}</finalName>
 
         <plugins>
             <plugin>

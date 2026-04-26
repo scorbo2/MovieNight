@@ -15,8 +15,6 @@ import java.nio.file.Path;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static org.springframework.http.HttpStatus.BAD_REQUEST;
-import static org.springframework.http.HttpStatus.SERVICE_UNAVAILABLE;
 
 class ThumbnailServiceTest {
 
@@ -119,7 +117,7 @@ class ThumbnailServiceTest {
         MockMultipartFile garbage = new MockMultipartFile("file", "bad.jpg", "image/jpeg",
                 "this is not an image".getBytes());
         assertThatThrownBy(() -> thumbnailService.saveThumbnail(garbage, "movies", 4L))
-                .hasMessageContaining("Invalid image");
+                .hasMessageContaining("Unable to read image");
     }
 
     @Test

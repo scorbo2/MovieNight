@@ -21,7 +21,7 @@ export default function App() {
     <BrowserRouter>
       <div className="min-h-screen bg-gray-950 text-gray-100">
         <header className="bg-gray-900 border-b border-gray-800 shadow-lg">
-          <div className="max-w-6xl mx-auto px-4 py-4 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+          <div className="max-w-screen-2xl mx-auto px-4 py-4 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
             <div className="flex items-center gap-3">
               <span className="text-3xl" aria-hidden="true">🎬</span>
               <div>
@@ -35,7 +35,7 @@ export default function App() {
           </div>
         </header>
 
-        <main className="max-w-6xl mx-auto px-4 py-8">
+        <main className="max-w-screen-2xl mx-auto px-4 py-8">
           <Routes>
             <Route path="/" element={<MediaLibraryPage mode="user" />} />
             <Route path="/admin" element={<MediaLibraryPage mode="admin" />} />

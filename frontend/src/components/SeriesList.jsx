@@ -43,7 +43,7 @@ function SeriesCard({ series, onEdit, onDelete, onSeriesClick, readOnly }) {
         <img
           src={`${SERIES_API}/${series.id}/thumbnail`}
           alt={`${series.name} thumbnail`}
-          className="w-full h-48 object-cover"
+          className="w-full h-48 object-cover object-top"
         />
       )}
 

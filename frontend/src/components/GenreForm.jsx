@@ -117,7 +117,7 @@ export default function GenreForm({ genre, onSave, onCancel }) {
             <img
               src={thumbnailPreview}
               alt="Genre thumbnail preview"
-              className="rounded-lg max-h-40 object-cover border border-gray-700"
+              className="rounded-lg max-h-40 object-cover object-top border border-gray-700"
             />
             <button
               type="button"
@@ -158,7 +158,7 @@ export default function GenreForm({ genre, onSave, onCancel }) {
           }}
           className="block w-full text-sm text-gray-400 file:mr-3 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-sm file:bg-gray-700 file:text-gray-200 hover:file:bg-gray-600 cursor-pointer"
         />
-        <p className="text-xs text-gray-500 mt-1">JPEG or PNG, 26×26 to 2000×2000</p>
+        <p className="text-xs text-gray-500 mt-1">JPEG or PNG, Recommend 2:1 aspect ratio</p>
       </div>
 
       <div className="flex gap-3 pt-2">

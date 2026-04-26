@@ -35,7 +35,7 @@ function MovieCard({ movie, onEdit, onDelete, onTagClick, readOnly }) {
         <img
           src={`${MOVIES_API}/${movie.id}/thumbnail`}
           alt={`${movie.title} thumbnail`}
-          className="w-full h-48 object-cover"
+          className="w-full h-48 object-cover object-top"
         />
       )}
       {showPlayer && (

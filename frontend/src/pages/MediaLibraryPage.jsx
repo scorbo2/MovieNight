@@ -255,8 +255,11 @@ export default function MediaLibraryPage({ mode }) {
         const formData = new FormData()
         formData.append('file', _thumbnail)
         const thumbnailRes = await fetch(`${MOVIES_API}/${saved.id}/thumbnail`, { method: 'POST', body: formData })
-        if (!thumbnailRes.ok) throw new Error('Failed to upload movie thumbnail')
+        if (!thumbnailRes.ok) {
+            throw new Error(await getErrorMessage(thumbnailRes, 'Failed to upload movie thumbnail'))
+        }
       }
+
       setShowMovieForm(false)
       setEditingMovie(null)
       fetchMovies()
@@ -295,8 +298,11 @@ export default function MediaLibraryPage({ mode }) {
         const formData = new FormData()
         formData.append('file', _thumbnail)
         const thumbnailRes = await fetch(`${EPISODES_API}/${saved.id}/thumbnail`, { method: 'POST', body: formData })
-        if (!thumbnailRes.ok) throw new Error('Failed to upload episode thumbnail')
+        if (!thumbnailRes.ok) {
+            throw new Error(await getErrorMessage(thumbnailRes, 'Failed to upload episode thumbnail'))
+        }
       }
+
       setShowEpisodeForm(false)
       setEditingEpisode(null)
       fetchEpisodes()
@@ -336,7 +342,9 @@ export default function MediaLibraryPage({ mode }) {
         const formData = new FormData()
         formData.append('file', _thumbnail)
         const thumbnailRes = await fetch(`${GENRES_API}/${saved.id}/thumbnail`, { method: 'POST', body: formData })
-        if (!thumbnailRes.ok) throw new Error('Failed to upload genre thumbnail')
+        if (!thumbnailRes.ok) {
+            throw new Error(await getErrorMessage(thumbnailRes, 'Failed to upload genre thumbnail'))
+        }
       }
 
       setShowGenreForm(false)
@@ -397,7 +405,9 @@ export default function MediaLibraryPage({ mode }) {
         const formData = new FormData()
         formData.append('file', _thumbnail)
         const thumbnailRes = await fetch(`${SERIES_API}/${saved.id}/thumbnail`, { method: 'POST', body: formData })
-        if (!thumbnailRes.ok) throw new Error('Failed to upload series thumbnail')
+        if (!thumbnailRes.ok) {
+            throw new Error(await getErrorMessage(thumbnailRes, 'Failed to upload series thumbnail'))
+        }
       }
 
       setShowSeriesForm(false)
@@ -446,7 +456,9 @@ export default function MediaLibraryPage({ mode }) {
         const formData = new FormData()
         formData.append('file', _thumbnail)
         const thumbnailRes = await fetch(`${ARTISTS_API}/${saved.id}/thumbnail`, { method: 'POST', body: formData })
-        if (!thumbnailRes.ok) throw new Error('Failed to upload artist thumbnail')
+        if (!thumbnailRes.ok) {
+            throw new Error(await getErrorMessage(thumbnailRes, 'Failed to upload artist thumbnail'))
+        }
       }
 
       setShowArtistForm(false)
@@ -487,8 +499,11 @@ export default function MediaLibraryPage({ mode }) {
         const formData = new FormData()
         formData.append('file', _thumbnail)
         const thumbnailRes = await fetch(`${MUSIC_VIDEOS_API}/${saved.id}/thumbnail`, { method: 'POST', body: formData })
-        if (!thumbnailRes.ok) throw new Error('Failed to upload music video thumbnail')
+        if (!thumbnailRes.ok) {
+            throw new Error(await getErrorMessage(thumbnailRes, 'Failed to upload music video thumbnail'))
+        }
       }
+
       setShowMusicVideoForm(false)
       setEditingMusicVideo(null)
       const isArtistGridView = !selectedArtist && !musicVideoTitleQuery && !musicVideoTagQuery

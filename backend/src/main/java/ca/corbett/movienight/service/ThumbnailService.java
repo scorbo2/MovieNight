@@ -72,7 +72,7 @@ public class ThumbnailService {
     public void saveThumbnail(MultipartFile file, String subDir, Long id) {
         if (!enabled) {
             throw new ResponseStatusException(HttpStatus.SERVICE_UNAVAILABLE,
-                    "Thumbnail support is not available");
+                                              "Thumbnail support is not available - set data directory in properties to enable");
         }
 
         byte[] bytes;
@@ -80,7 +80,7 @@ public class ThumbnailService {
             bytes = file.getBytes();
         } catch (IOException e) {
             throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR,
-                    "Unable to read uploaded image", e);
+                                              "Unable to read uploaded image!", e);
         }
 
         // Use ImageReader to read dimensions from metadata first (avoids full decode)
@@ -89,15 +89,18 @@ public class ThumbnailService {
         try {
             iis = ImageIO.createImageInputStream(new ByteArrayInputStream(bytes));
         } catch (Exception e) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Invalid image file");
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Invalid image file!", e);
         }
         if (iis == null) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Invalid image file");
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Invalid image file!");
         }
         Iterator<ImageReader> readers = ImageIO.getImageReaders(iis);
         if (!readers.hasNext()) {
             try { iis.close(); } catch (IOException ignored) {}
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Invalid image file");
+            // This is extremely unlikely, but it could happen.
+            // It's hard to return a meaningful error here, but let's return something
+            // other than "Invalid image file!" since that might get confused with the above exceptions.
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Unable to read images of this type!");
         }
         ImageReader reader = readers.next();
         try {
@@ -114,7 +117,7 @@ public class ThumbnailService {
                             "Image too small (min " + MIN_DIMENSION + "x" + MIN_DIMENSION + ")");
                 }
             } catch (IOException e) {
-                throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Invalid image file", e);
+                throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Image file appears corrupt!", e);
             }
         } finally {
             reader.dispose();
@@ -126,10 +129,10 @@ public class ThumbnailService {
         try {
             image = ImageIO.read(new ByteArrayInputStream(bytes));
         } catch (Exception e) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Invalid image file");
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Invalid image file!", e);
         }
         if (image == null) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Invalid image file");
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Invalid image file!");
         }
 
         // Delete any existing thumbnail before saving the new one
@@ -140,8 +143,13 @@ public class ThumbnailService {
         try {
             Files.write(dest, bytes);
         } catch (IOException e) {
+            // This can happen if we were configured with a data directory that
+            // we don't have write access to, or if the disk gets full, or if our
+            // data dir has been deleted or moved since we started up.
+            // No need to return a super specific error message here.
+            // Users can check the log for full details.
             throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR,
-                    "Unable to save thumbnail", e);
+                                              "Unable to save thumbnail!", e);
         }
     }
 

@@ -158,7 +158,7 @@ export default function ArtistForm({ artist, onSave, onCancel }) {
           }}
           className="block w-full text-sm text-gray-400 file:mr-3 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-sm file:bg-gray-700 file:text-gray-200 hover:file:bg-gray-600 cursor-pointer"
         />
-        <p className="text-xs text-gray-500 mt-1">JPEG or PNG, Recommend 2:1 aspect ratio</p>
+        <p className="text-xs text-gray-500 mt-1">JPEG or PNG, max size 2000x2000, recommend a 2:1 aspect ratio</p>
       </div>
 
       <div className="flex gap-3 pt-2">

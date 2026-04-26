@@ -256,18 +256,10 @@ export default function MediaLibraryPage({ mode }) {
         formData.append('file', _thumbnail)
         const thumbnailRes = await fetch(`${MOVIES_API}/${saved.id}/thumbnail`, { method: 'POST', body: formData })
         if (!thumbnailRes.ok) {
-          const errorText = await thumbnailRes.text()
-          let message = 'Failed to upload movie thumbnail'
-          try {
-            const errorData = JSON.parse(errorText)
-            message = errorData.message || message
-          } catch {
-            // Body wasn't JSON — use the raw text if it's non-empty, otherwise keep the fallback
-            if (errorText.trim()) message = errorText
-          }
-          throw new Error(message)
+            throw new Error(await getErrorMessage(thumbnailRes, 'Failed to upload movie thumbnail'))
         }
       }
+
       setShowMovieForm(false)
       setEditingMovie(null)
       fetchMovies()
@@ -307,18 +299,10 @@ export default function MediaLibraryPage({ mode }) {
         formData.append('file', _thumbnail)
         const thumbnailRes = await fetch(`${EPISODES_API}/${saved.id}/thumbnail`, { method: 'POST', body: formData })
         if (!thumbnailRes.ok) {
-          const errorText = await thumbnailRes.text()
-          let message = 'Failed to upload episode thumbnail'
-          try {
-            const errorData = JSON.parse(errorText)
-            message = errorData.message || message
-          } catch {
-            // Body wasn't JSON — use the raw text if it's non-empty, otherwise keep the fallback
-            if (errorText.trim()) message = errorText
-          }
-          throw new Error(message)
+            throw new Error(await getErrorMessage(thumbnailRes, 'Failed to upload episode thumbnail'))
         }
       }
+
       setShowEpisodeForm(false)
       setEditingEpisode(null)
       fetchEpisodes()
@@ -359,18 +343,8 @@ export default function MediaLibraryPage({ mode }) {
         formData.append('file', _thumbnail)
         const thumbnailRes = await fetch(`${GENRES_API}/${saved.id}/thumbnail`, { method: 'POST', body: formData })
         if (!thumbnailRes.ok) {
-          const errorText = await thumbnailRes.text()
-          let message = 'Failed to upload genre thumbnail'
-          try {
-            const errorData = JSON.parse(errorText)
-            message = errorData.message || message
-          } catch {
-            // Body wasn't JSON — use the raw text if it's non-empty, otherwise keep the fallback
-            if (errorText.trim()) message = errorText
-          }
-          throw new Error(message)
+            throw new Error(await getErrorMessage(thumbnailRes, 'Failed to upload genre thumbnail'))
         }
-
       }
 
       setShowGenreForm(false)
@@ -432,18 +406,8 @@ export default function MediaLibraryPage({ mode }) {
         formData.append('file', _thumbnail)
         const thumbnailRes = await fetch(`${SERIES_API}/${saved.id}/thumbnail`, { method: 'POST', body: formData })
         if (!thumbnailRes.ok) {
-          const errorText = await thumbnailRes.text()
-          let message = 'Failed to upload series thumbnail'
-          try {
-            const errorData = JSON.parse(errorText)
-            message = errorData.message || message
-          } catch {
-            // Body wasn't JSON — use the raw text if it's non-empty, otherwise keep the fallback
-            if (errorText.trim()) message = errorText
-          }
-          throw new Error(message)
+            throw new Error(await getErrorMessage(thumbnailRes, 'Failed to upload series thumbnail'))
         }
-
       }
 
       setShowSeriesForm(false)
@@ -493,18 +457,8 @@ export default function MediaLibraryPage({ mode }) {
         formData.append('file', _thumbnail)
         const thumbnailRes = await fetch(`${ARTISTS_API}/${saved.id}/thumbnail`, { method: 'POST', body: formData })
         if (!thumbnailRes.ok) {
-          const errorText = await thumbnailRes.text()
-          let message = 'Failed to upload artist thumbnail'
-          try {
-            const errorData = JSON.parse(errorText)
-            message = errorData.message || message
-          } catch {
-            // Body wasn't JSON — use the raw text if it's non-empty, otherwise keep the fallback
-            if (errorText.trim()) message = errorText
-          }
-          throw new Error(message)
+            throw new Error(await getErrorMessage(thumbnailRes, 'Failed to upload artist thumbnail'))
         }
-
       }
 
       setShowArtistForm(false)
@@ -546,19 +500,10 @@ export default function MediaLibraryPage({ mode }) {
         formData.append('file', _thumbnail)
         const thumbnailRes = await fetch(`${MUSIC_VIDEOS_API}/${saved.id}/thumbnail`, { method: 'POST', body: formData })
         if (!thumbnailRes.ok) {
-          const errorText = await thumbnailRes.text()
-          let message = 'Failed to upload music video thumbnail'
-          try {
-            const errorData = JSON.parse(errorText)
-            message = errorData.message || message
-          } catch {
-            // Body wasn't JSON — use the raw text if it's non-empty, otherwise keep the fallback
-            if (errorText.trim()) message = errorText
-          }
-          throw new Error(message)
+            throw new Error(await getErrorMessage(thumbnailRes, 'Failed to upload music video thumbnail'))
         }
-
       }
+
       setShowMusicVideoForm(false)
       setEditingMusicVideo(null)
       const isArtistGridView = !selectedArtist && !musicVideoTitleQuery && !musicVideoTagQuery

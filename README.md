@@ -45,6 +45,7 @@ you can customize the settings:
 ```properties
 server.port=8080
 #
+# This defaults to the system temp dir if unspecified:
 logging.file.name=/path/to/movienight.log
 #
 # If false, Admin access is allowed from anywhere:
@@ -54,6 +55,8 @@ movienight.admin.localhost-only=false
 # (set this to 0 to disable the "recently watched" feature)
 movienight.recently-watched-days=3
 #
+# This db file will be created and managed automatically.
+# But the directory where it lives has to be writable by us.
 spring.datasource.url=jdbc:sqlite:/path/to/movienight.db
 #
 # All uploaded thumbnails will go to this data dir:

@@ -6,6 +6,7 @@ import ca.corbett.movienight.repository.MovieRepository;
 import jakarta.persistence.criteria.Join;
 import jakarta.persistence.criteria.JoinType;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.data.domain.Sort;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
@@ -91,7 +92,11 @@ public class MovieService {
         Specification<Movie> spec = Specification.where(titleContains(title))
                 .and(tagContains(tag))
                 .and(genreEquals(genreId));
-        return populateTransientFields(movieRepository.findAll(spec));
+        Sort sort = Sort.by(
+                Sort.Order.asc("title").nullsLast(),
+                Sort.Order.asc("year").nullsLast() // Example: "Ghostbusters" (1984) and "Ghostbusters" (2016)
+        );
+        return populateTransientFields(movieRepository.findAll(spec, sort));
     }
 
     private Movie populateHasThumbnail(Movie movie) {

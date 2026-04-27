@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { useAppConfig } from '../context/AppConfigContext'
 
 const EPISODES_API = '/api/episodes'
 const STREAM_API = '/api/stream'
@@ -34,6 +35,7 @@ export default function EpisodeList({ episodes, onEdit, onDelete, onTagClick, re
 
 function EpisodeCard({ episode, onEdit, onDelete, onTagClick, readOnly }) {
   const [showPlayer, setShowPlayer] = useState(false)
+  const { vlcEnabled } = useAppConfig()
   const seriesLabel = typeof episode.series === 'string' ? episode.series : episode.series?.name
 
   const seasonEpisodeLabel = [
@@ -108,6 +110,18 @@ function EpisodeCard({ episode, onEdit, onDelete, onTagClick, readOnly }) {
         >
           {showPlayer ? 'Hide' : '▶ Watch'}
         </button>
+        {vlcEnabled && (
+          <button
+            type="button"
+            aria-label="Watch in VLC"
+            onClick={() => {
+              window.location.href = `${STREAM_API}/E${episode.id}/playlist`
+            }}
+            className="flex-1 bg-indigo-700 hover:bg-indigo-600 text-white text-sm px-3 py-1.5 rounded-lg transition-colors"
+          >
+            ▶ Watch in VLC
+          </button>
+        )}
         {!readOnly && (
           <>
             <button

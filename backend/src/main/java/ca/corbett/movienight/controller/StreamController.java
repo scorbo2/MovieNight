@@ -2,6 +2,7 @@ package ca.corbett.movienight.controller;
 
 import ca.corbett.movienight.service.MediaService;
 import jakarta.annotation.PostConstruct;
+import jakarta.servlet.http.HttpServletRequest;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
@@ -39,6 +40,9 @@ public class StreamController {
 
     @Value("${movienight.max-range-request-size-mb:32}")
     private int rangeRequestMaxChunkMB;
+
+    @Value("${movienight.enable-vlc-integration:false}")
+    private boolean enableVlcIntegration;
 
     public StreamController(MediaService mediaService) {
         this.mediaService = mediaService;
@@ -147,6 +151,55 @@ public class StreamController {
                 .header(HttpHeaders.CONTENT_RANGE, "bytes " + start + "-" + end + "/" + contentLength)
                 .contentLength(rangeLength)
                 .body(data);
+    }
+
+    /**
+     * This simple endpoint returns "true" or "false" depending on whether VLC integration is enabled in the properties.
+     * This value can't change at runtime, so the UI should only hit it once on startup.
+     * We can use this to show or hide the "Watch in VLC" button on each media card.
+     */
+    @GetMapping("/vlc-enabled")
+    public ResponseEntity<String> isVlcIntegrationEnabled() {
+        return ResponseEntity.ok(enableVlcIntegration ? "true" : "false");
+    }
+
+    /**
+     * Returns a VLC style M3U playlist file that points to the streaming endpoint for the given media ID.
+     * If the client has VLC installed and associated with M3U files, and has a browser like Firefox that
+     * allows automatic launching of an associated application, this can be a good alternative to using
+     * the built-in video player. In particular, this is a great option for watching video that has multiple
+     * audio tracks, since the built-in video player doesn't support that.
+     * <p>
+     * Note that this endpoint will work even if the VLC integration is disabled!
+     * It's up to the UI to show or hide the VLC option as needed... the API doesn't care.
+     * </p>
+     */
+    @GetMapping("/{id}/playlist")
+    public ResponseEntity<String> getPlaylist(@PathVariable String id, HttpServletRequest request) {
+        String filePath = mediaService.findById(id);
+        Path videoPath = Paths.get(filePath);
+        String fileName = videoPath.getFileName().toString();
+
+        if (!Files.exists(videoPath)) {
+            logger.warn("Video file not found for media id {} (path: {})", id, filePath);
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND,
+                                              "Video file not found for media id: " + id);
+        }
+
+        // Build the stream URL pointing back to our existing streaming endpoint:
+        String streamUrl = request.getScheme() + "://" +
+                request.getServerName() + ":" +
+                request.getServerPort() +
+                "/api/stream/" + id;
+
+        // The M3U format is very straightforward:
+        String m3u = "#EXTM3U\n#EXTINF:-1," + fileName + "\n" + streamUrl + "\n";
+
+        // VLC will be able to stream directly from our existing streaming endpoint:
+        return ResponseEntity.ok()
+                             .header(HttpHeaders.CONTENT_TYPE, "audio/x-mpegurl")
+                             .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"stream.m3u\"")
+                             .body(m3u);
     }
 
     /**

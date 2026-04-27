@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { useAppConfig } from '../context/AppConfigContext'
 
 const MUSIC_VIDEOS_API = '/api/music-videos'
 const STREAM_API = '/api/stream'
@@ -34,6 +35,7 @@ export default function MusicVideoList({ musicVideos, onEdit, onDelete, onTagCli
 
 function MusicVideoCard({ musicVideo, onEdit, onDelete, onTagClick, readOnly }) {
   const [showPlayer, setShowPlayer] = useState(false)
+  const { vlcEnabled } = useAppConfig()
   const artistLabel = typeof musicVideo.artist === 'string' ? musicVideo.artist : musicVideo.artist?.name
 
   return (
@@ -102,6 +104,18 @@ function MusicVideoCard({ musicVideo, onEdit, onDelete, onTagClick, readOnly }) 
           >
             {showPlayer ? 'Hide' : '▶ Watch'}
           </button>
+          {vlcEnabled && (
+            <button
+              type="button"
+              aria-label="Watch in VLC"
+              onClick={() => {
+                window.location.href = `${STREAM_API}/V${musicVideo.id}/playlist`
+              }}
+              className="flex-1 bg-indigo-700 hover:bg-indigo-600 text-white text-sm px-3 py-1.5 rounded-lg transition-colors"
+            >
+              ▶ Watch in VLC
+            </button>
+          )}
           {!readOnly && (
             <>
               <button

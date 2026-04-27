@@ -168,6 +168,34 @@ The default value of 32 is a good starting point, but you can increase it if you
 are taking too long to start streaming. If your server has a lot of memory, and your local network has
 decent bandwidth, you can set this to 0 to allow range requests of any size.
 
+### "Wait, why can't I change audio tracks or subtitles?"
+
+Welcome to the wonderful world of the HTML 5 `video` tag! This tag was intended for simple video streaming,
+and doesn't easily expose options for multiple audio tracks/languages. Fortunately, MovieNight has an answer for this!
+If you have VLC installed on your client device, you can enable VLC integration in the settings:
+
+```properties
+# Enable this to present a "Watch in VLC" button in each media card:
+movienight.enable-vlc-integration=false
+```
+
+This is disabled by default, as it requires a bit of setup on the client side. If you enable this property,
+the UI will show a "Watch in VLC" button on each media card (for Movies, TV shows, and Music videos).
+Clicking this will cause your browser to download a very small `.m3u` file. This is a VLC-compatible playlist
+file, which contains the URL to the media stream. The first time you click this button, your browser will likely
+just download the file, which is not very helpful. In Firefox, you can right-click the downloaded file in
+your downloads list, and select "Always Open Similar Files", like this:
+
+![Firefox VLC Integration Screenshot](screenshots/vlc_firefox_setup.png)
+
+Now, the next time you click the "Watch in VLC" button, VLC will be launched automatically, and streaming will
+start immediately! This allows you to take full advantage of VLC's powerful playback features, including
+multiple audio track selection, subtitle selection, and more.
+
+The inline video player is still available, even if VLC integration is enabled. This gives you the best of
+both worlds - you can use the inline player for quick and easy streaming, or switch to VLC when you need
+more advanced playback features.
+
 ## More information
 
 Project page: https://github.com/scorbo2/MovieNight

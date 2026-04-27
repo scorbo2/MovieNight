@@ -113,6 +113,7 @@ function EpisodeCard({ episode, onEdit, onDelete, onTagClick, readOnly }) {
         {vlcEnabled && (
           <button
             type="button"
+            aria-label="Watch in VLC"
             onClick={() => {
               window.location.href = `${STREAM_API}/E${episode.id}/playlist`
             }}

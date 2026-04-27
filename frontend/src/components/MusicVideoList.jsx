@@ -107,6 +107,7 @@ function MusicVideoCard({ musicVideo, onEdit, onDelete, onTagClick, readOnly }) 
           {vlcEnabled && (
             <button
               type="button"
+              aria-label="Watch in VLC"
               onClick={() => {
                 window.location.href = `${STREAM_API}/V${musicVideo.id}/playlist`
               }}

@@ -1,3 +1,4 @@
+import { useState } from 'react'
 const SERIES_API = '/api/series'
 
 export default function SeriesList({ series, onEdit, onDelete, onSeriesClick, readOnly = false }) {
@@ -30,6 +31,7 @@ export default function SeriesList({ series, onEdit, onDelete, onSeriesClick, re
 }
 
 function SeriesCard({ series, onEdit, onDelete, onSeriesClick, readOnly }) {
+  const [isLandscapeThumb, setIsLandscapeThumb] = useState(null) // null = not loaded yet
   const isClickable = typeof onSeriesClick === 'function'
 
   return (
@@ -43,7 +45,17 @@ function SeriesCard({ series, onEdit, onDelete, onSeriesClick, readOnly }) {
         <img
           src={`${SERIES_API}/${series.id}/thumbnail`}
           alt={`${series.name} thumbnail`}
-          className="w-full h-48 object-cover object-top"
+          onLoad={(e) => {
+            const { naturalWidth, naturalHeight } = e.currentTarget
+            setIsLandscapeThumb(naturalWidth > naturalHeight)
+          }}
+          className={`w-full h-48 ${
+            isLandscapeThumb === null
+              ? 'object-contain invisible' // safe default before load
+              : isLandscapeThumb
+                ? 'object-fill'
+                : 'object-contain'
+          }`}
         />
       )}
 

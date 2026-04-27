@@ -296,7 +296,7 @@ export default function MusicVideoForm({ musicVideo, onSave, onCancel }) {
             <img
               src={thumbnailPreview}
               alt="Thumbnail preview"
-              className="rounded-lg max-h-40 object-cover object-top border border-gray-700"
+              className="rounded-lg max-h-40 object-contain border border-gray-700"
             />
             <button
               type="button"

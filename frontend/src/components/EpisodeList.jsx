@@ -35,6 +35,7 @@ export default function EpisodeList({ episodes, onEdit, onDelete, onTagClick, re
 
 function EpisodeCard({ episode, onEdit, onDelete, onTagClick, readOnly }) {
   const [showPlayer, setShowPlayer] = useState(false)
+  const [isLandscapeThumb, setIsLandscapeThumb] = useState(null) // null = not loaded yet
   const { vlcEnabled } = useAppConfig()
   const seriesLabel = typeof episode.series === 'string' ? episode.series : episode.series?.name
 
@@ -49,7 +50,17 @@ function EpisodeCard({ episode, onEdit, onDelete, onTagClick, readOnly }) {
         <img
           src={`${EPISODES_API}/${episode.id}/thumbnail`}
           alt={`${seriesLabel} thumbnail`}
-          className="w-full h-48 object-cover object-top"
+          onLoad={(e) => {
+            const { naturalWidth, naturalHeight } = e.currentTarget
+            setIsLandscapeThumb(naturalWidth > naturalHeight)
+          }}
+          className={`w-full h-48 ${
+            isLandscapeThumb === null
+              ? 'object-contain invisible' // safe default before load
+              : isLandscapeThumb
+                ? 'object-fill'
+                : 'object-contain'
+          }`}
         />
       )}
       {showPlayer && (

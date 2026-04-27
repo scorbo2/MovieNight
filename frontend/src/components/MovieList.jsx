@@ -28,6 +28,7 @@ export default function MovieList({ movies, onEdit, onDelete, onTagClick, readOn
 
 function MovieCard({ movie, onEdit, onDelete, onTagClick, readOnly }) {
   const [showPlayer, setShowPlayer] = useState(false)
+  const [isLandscapeThumb, setIsLandscapeThumb] = useState(null) // null = not loaded yet
   const { vlcEnabled } = useAppConfig()
   const genreLabel = typeof movie.genre === 'string' ? movie.genre : movie.genre?.name
 
@@ -37,7 +38,17 @@ function MovieCard({ movie, onEdit, onDelete, onTagClick, readOnly }) {
         <img
           src={`${MOVIES_API}/${movie.id}/thumbnail`}
           alt={`${movie.title} thumbnail`}
-          className="w-full h-48 object-cover object-top"
+          onLoad={(e) => {
+            const { naturalWidth, naturalHeight } = e.currentTarget
+            setIsLandscapeThumb(naturalWidth > naturalHeight)
+          }}
+          className={`w-full h-48 ${
+            isLandscapeThumb === null
+              ? 'object-contain invisible' // safe default before load
+              : isLandscapeThumb
+                ? 'object-fill'
+                : 'object-contain'
+          }`}
         />
       )}
       {showPlayer && (

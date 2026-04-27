@@ -1,3 +1,4 @@
+import { useState } from 'react'
 const GENRES_API = '/api/genres'
 
 export default function GenreList({ genres, onEdit, onDelete, onGenreClick, readOnly = false }) {
@@ -30,6 +31,7 @@ export default function GenreList({ genres, onEdit, onDelete, onGenreClick, read
 }
 
 function GenreCard({ genre, onEdit, onDelete, onGenreClick, readOnly }) {
+  const [isLandscapeThumb, setIsLandscapeThumb] = useState(null) // null = not loaded yet
   const isClickable = typeof onGenreClick === 'function'
 
   return (
@@ -43,7 +45,17 @@ function GenreCard({ genre, onEdit, onDelete, onGenreClick, readOnly }) {
         <img
           src={`${GENRES_API}/${genre.id}/thumbnail`}
           alt={`${genre.name} thumbnail`}
-          className="w-full h-48 object-cover object-top"
+          onLoad={(e) => {
+            const { naturalWidth, naturalHeight } = e.currentTarget
+            setIsLandscapeThumb(naturalWidth > naturalHeight)
+          }}
+          className={`w-full h-48 ${
+            isLandscapeThumb === null
+              ? 'object-contain invisible' // safe default before load
+              : isLandscapeThumb
+                ? 'object-fill'
+                : 'object-contain'
+          }`}
         />
       )}
 

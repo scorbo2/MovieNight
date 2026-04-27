@@ -3,6 +3,7 @@ package ca.corbett.movienight.controller;
 import ca.corbett.movienight.service.MediaService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.io.FileSystemResource;
 import org.springframework.core.io.Resource;
 import org.springframework.http.HttpHeaders;
@@ -35,6 +36,11 @@ public class StreamController {
 
     private final MediaService mediaService;
 
+    @Value("${movienight.max-range-request-size-mb:32}")
+    private int rangeRequestMaxChunkMB;
+
+    private boolean rangeLimitWarningIssued = false;
+
     public StreamController(MediaService mediaService) {
         this.mediaService = mediaService;
     }
@@ -46,6 +52,18 @@ public class StreamController {
     @GetMapping("/{id}")
     public ResponseEntity<?> streamVideo(@PathVariable String id,
                                          @RequestHeader HttpHeaders headers) {
+        // We'll log ONE notice about the configured range request limit:
+        if (!rangeLimitWarningIssued) {
+            if (rangeRequestMaxChunkMB <= 0) {
+                logger.warn("StreamController range request chunk size is unlimited - this may cause memory issues. "
+                                    + "You can control this with the movienight.max-range-request-size-mb property.");
+            }
+            else {
+                logger.info("StreamController range request chunk size set to {} MB", rangeRequestMaxChunkMB);
+            }
+            rangeLimitWarningIssued = true;
+        }
+
         String filePath = mediaService.findById(id);
         Path videoPath = Paths.get(filePath);
 
@@ -95,8 +113,16 @@ public class StreamController {
         }
 
         // Optional safety cap to avoid huge in-memory chunks from abusive ranges.
-        int maxChunkSize = 1024 * 1024; // 1 MiB
+        // By default, we'll limit range requests to 32MB, which is good for streaming,
+        // but the user can configure this in our properties. (zero means no limit)
+        int rangeLimitMB = Math.max(0, rangeRequestMaxChunkMB); // reject negative config values
+        int maxChunkSize = rangeLimitMB == 0 ? Integer.MAX_VALUE : 1024 * 1024 * rangeLimitMB;
         int bytesToRead = (int) Math.min(rangeLength, maxChunkSize);
+        if (bytesToRead < rangeLength) {
+            logger.info("Client requested {} bytes with offset {} for media id {}. " +
+                                "Supplying configured max range of {} MB instead.",
+                        rangeLength, start, id, rangeLimitMB);
+        }
         end = start + bytesToRead - 1;
         rangeLength = bytesToRead;
 

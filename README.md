@@ -151,6 +151,23 @@ Each media item card has a "Watch" button which will bring up an inline media pl
 Use the media player controls to play, pause, or seek through the media. You can go full screen for
 a better viewing experience! Click the "Hide" button while streaming to hide the media player and stop the stream.
 
+### Note about very large media files
+
+If you have full-length high-resolution movies in your collection, you may encounter a significant delay
+when you begin streaming. You can mitigate this by configuring the max size of range requests in the properties file:
+
+```properties
+# You can optionally restrict range requests to a certain size, in MB.
+# Set this to 0 to allow range requests of any size.
+# Caution: setting this too low may cause LONG delays streaming large videos.
+# The default value is 32MB.
+movienight.max-range-request-size-mb=32
+```
+
+The default value of 32 is a good starting point, but you can increase it if you find that your media files
+are taking too long to start streaming. If your server has a lot of memory, and your local network has
+decent bandwidth, you can set this to 0 to allow range requests of any size.
+
 ## More information
 
 Project page: https://github.com/scorbo2/MovieNight

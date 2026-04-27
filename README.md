@@ -158,7 +158,7 @@ when you begin streaming. You can mitigate this by configuring the max size of r
 
 ```properties
 # You can optionally restrict range requests to a certain size, in MB.
-# Set this to 0 to allow range requests of any size.
+# Set this to 0 to allow range requests of any size (up to 2GB for Integer.MAX_VALUE).
 # Caution: setting this too low may cause LONG delays streaming large videos.
 # The default value is 32MB.
 movienight.max-range-request-size-mb=32

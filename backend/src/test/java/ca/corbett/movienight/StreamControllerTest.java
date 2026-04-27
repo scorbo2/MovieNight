@@ -1,5 +1,6 @@
 package ca.corbett.movienight;
 
+import ca.corbett.movienight.controller.StreamController;
 import ca.corbett.movienight.service.MediaService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -17,6 +18,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 
 import static org.hamcrest.Matchers.containsString;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
@@ -186,5 +188,20 @@ class StreamControllerTest {
                         .header("Range", "bytes=10-14"))
                 .andExpect(status().isPartialContent())
                 .andExpect(header().string("Content-Length", "5"));
+    }
+
+    @Test
+    void getPrintableSize_returnsFormattedSizeStrings() {
+        // GIVEN various byte values
+        // WHEN we call getPrintableSize on the StreamController
+        // THEN we should get a pretty formatted value:
+        assertEquals("0 B", StreamController.getPrintableSize(0));
+        assertEquals("500 B", StreamController.getPrintableSize(500));
+        assertEquals("1.0 KB", StreamController.getPrintableSize(1024));
+        assertEquals("1.5 KB", StreamController.getPrintableSize(1536));
+        assertEquals("1.0 MB", StreamController.getPrintableSize(1024 * 1024));
+        assertEquals("1.5 MB", StreamController.getPrintableSize(1024 * 1024 + 512 * 1024));
+        assertEquals("1.0 GB", StreamController.getPrintableSize(1024L * 1024 * 1024));
+        assertEquals("2.5 GB", StreamController.getPrintableSize(2L * 1024 * 1024 * 1024 + 512L * 1024 * 1024));
     }
 }

@@ -1,8 +1,10 @@
 package ca.corbett.movienight.controller;
 
 import ca.corbett.movienight.service.MediaService;
+import jakarta.annotation.PostConstruct;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.io.FileSystemResource;
 import org.springframework.core.io.Resource;
 import org.springframework.http.HttpHeaders;
@@ -35,8 +37,22 @@ public class StreamController {
 
     private final MediaService mediaService;
 
+    @Value("${movienight.max-range-request-size-mb:32}")
+    private int rangeRequestMaxChunkMB;
+
     public StreamController(MediaService mediaService) {
         this.mediaService = mediaService;
+    }
+
+    @PostConstruct
+    public void logRangeLimit() {
+        if (rangeRequestMaxChunkMB <= 0) {
+            logger.warn("StreamController range request chunk size is unlimited - this may cause memory issues. "
+                                + "You can control this with the movienight.max-range-request-size-mb property.");
+        }
+        else {
+            logger.info("StreamController range request chunk size set to {} MB", rangeRequestMaxChunkMB);
+        }
     }
 
     /**
@@ -95,11 +111,21 @@ public class StreamController {
         }
 
         // Optional safety cap to avoid huge in-memory chunks from abusive ranges.
-        int maxChunkSize = 1024 * 1024; // 1 MiB
+        // By default, we'll limit range requests to 32MB, which is good for streaming,
+        // but the user can configure this in our properties. (zero means no limit)
+        int rangeLimitMB = Math.max(0, rangeRequestMaxChunkMB); // reject negative config values
+        long maxChunkSize = rangeLimitMB == 0 ? Integer.MAX_VALUE : 1024 * 1024 * (long)rangeLimitMB;
+        maxChunkSize = Math.min(maxChunkSize, Integer.MAX_VALUE); // cap to max int for array allocation
         int bytesToRead = (int) Math.min(rangeLength, maxChunkSize);
+        if (bytesToRead < rangeLength) {
+            logger.info("Client requested {} with offset {} for media id {}. " +
+                                "Supplying configured max range of {} MB instead.",
+                        getPrintableSize(rangeLength), getPrintableSize(start), id, rangeLimitMB);
+        }
         end = start + bytesToRead - 1;
         rangeLength = bytesToRead;
 
+        // TODO: A streaming response body might be a better approach than in-memory buffering...
         byte[] data = new byte[bytesToRead];
         try (var input = Files.newInputStream(videoPath)) {
             input.skipNBytes(start);
@@ -121,5 +147,23 @@ public class StreamController {
                 .header(HttpHeaders.CONTENT_RANGE, "bytes " + start + "-" + end + "/" + contentLength)
                 .contentLength(rangeLength)
                 .body(data);
+    }
+
+    /**
+     * Given a count in bytes, returns a formatted String like "75 MB" or "1.2 GB"
+     * for easier readability in logs and error messages.
+     *
+     * @param bytes a byte count to format
+     * @return a human-readable string representing the size in appropriate units (B, KB, MB, GB, etc.)
+     */
+    public static String getPrintableSize(long bytes) {
+        if (bytes < 1024) {
+            return bytes + " B";
+        }
+        int exp = (int)(Math.log(bytes) / Math.log(1024));
+        String unit = "KMGTPE".charAt(exp - 1) + "B";
+        double size = bytes / Math.pow(1024, exp);
+        return String.format("%.1f %s", size, unit);
+
     }
 }

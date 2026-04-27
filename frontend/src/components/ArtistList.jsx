@@ -1,3 +1,4 @@
+import { useState } from 'react'
 const ARTISTS_API = '/api/artists'
 
 export default function ArtistList({ artists, onEdit, onDelete, onArtistClick, readOnly = false }) {
@@ -30,6 +31,7 @@ export default function ArtistList({ artists, onEdit, onDelete, onArtistClick, r
 }
 
 function ArtistCard({ artist, onEdit, onDelete, onArtistClick, readOnly }) {
+  const [isLandscapeThumb, setIsLandscapeThumb] = useState(null) // null = not loaded yet
   const isClickable = typeof onArtistClick === 'function'
 
   return (
@@ -43,7 +45,17 @@ function ArtistCard({ artist, onEdit, onDelete, onArtistClick, readOnly }) {
         <img
           src={`${ARTISTS_API}/${artist.id}/thumbnail`}
           alt={`${artist.name} thumbnail`}
-          className="w-full h-48 object-cover object-top"
+          onLoad={(e) => {
+            const { naturalWidth, naturalHeight } = e.currentTarget
+            setIsLandscapeThumb(naturalWidth > naturalHeight)
+          }}
+          className={`w-full h-48 ${
+            isLandscapeThumb === null
+              ? 'object-contain invisible' // safe default before load
+              : isLandscapeThumb
+                ? 'object-fill'
+                : 'object-contain'
+          }`}
         />
       )}
 

@@ -117,7 +117,7 @@ export default function ArtistForm({ artist, onSave, onCancel }) {
             <img
               src={thumbnailPreview}
               alt="Artist thumbnail preview"
-              className="rounded-lg max-h-40 object-cover object-top border border-gray-700"
+              className="rounded-lg max-h-40 object-contain border border-gray-700"
             />
             <button
               type="button"

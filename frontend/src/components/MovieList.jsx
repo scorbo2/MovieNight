@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { useAppConfig } from '../context/AppConfigContext'
 
 const MOVIES_API = '/api/movies'
 const STREAM_API = '/api/stream'
@@ -27,6 +28,7 @@ export default function MovieList({ movies, onEdit, onDelete, onTagClick, readOn
 
 function MovieCard({ movie, onEdit, onDelete, onTagClick, readOnly }) {
   const [showPlayer, setShowPlayer] = useState(false)
+  const { vlcEnabled } = useAppConfig()
   const genreLabel = typeof movie.genre === 'string' ? movie.genre : movie.genre?.name
 
   return (
@@ -88,6 +90,18 @@ function MovieCard({ movie, onEdit, onDelete, onTagClick, readOnly }) {
         >
           {showPlayer ? 'Hide' : '▶ Watch'}
         </button>
+
+        {vlcEnabled && (
+          <button
+            onClick={() => {
+              window.location.href = `${STREAM_API}/M${movie.id}/playlist`
+            }}
+            className="flex-1 bg-indigo-700 hover:bg-indigo-600 text-white text-sm px-3 py-1.5 rounded-lg transition-colors"
+          >
+            ▶ Watch in VLC
+          </button>
+        )}
+
         {!readOnly && (
           <>
             <button

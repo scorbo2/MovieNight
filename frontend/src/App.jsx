@@ -1,5 +1,6 @@
 import { BrowserRouter, NavLink, Navigate, Route, Routes } from 'react-router-dom'
 import MediaLibraryPage from './pages/MediaLibraryPage'
+import { AppConfigProvider } from './context/AppConfigContext'
 
 function NavItem({ to, children }) {
   return (
@@ -18,31 +19,33 @@ function NavItem({ to, children }) {
 
 export default function App() {
   return (
-    <BrowserRouter>
-      <div className="min-h-screen bg-gray-950 text-gray-100">
-        <header className="bg-gray-900 border-b border-gray-800 shadow-lg">
-          <div className="max-w-screen-2xl mx-auto px-4 py-4 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-            <div className="flex items-center gap-3">
-              <span className="text-3xl" aria-hidden="true">🎬</span>
-              <div>
-                <h1 className="text-2xl font-bold text-white tracking-tight">MovieNight</h1>
+    <AppConfigProvider>
+      <BrowserRouter>
+        <div className="min-h-screen bg-gray-950 text-gray-100">
+          <header className="bg-gray-900 border-b border-gray-800 shadow-lg">
+            <div className="max-w-screen-2xl mx-auto px-4 py-4 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+              <div className="flex items-center gap-3">
+                <span className="text-3xl" aria-hidden="true">🎬</span>
+                <div>
+                  <h1 className="text-2xl font-bold text-white tracking-tight">MovieNight</h1>
+                </div>
               </div>
+              <nav className="flex items-center gap-2">
+                <NavItem to="/">Browse</NavItem>
+                <NavItem to="/admin">Admin</NavItem>
+              </nav>
             </div>
-            <nav className="flex items-center gap-2">
-              <NavItem to="/">Browse</NavItem>
-              <NavItem to="/admin">Admin</NavItem>
-            </nav>
-          </div>
-        </header>
+          </header>
 
-        <main className="max-w-screen-2xl mx-auto px-4 py-8">
-          <Routes>
-            <Route path="/" element={<MediaLibraryPage mode="user" />} />
-            <Route path="/admin" element={<MediaLibraryPage mode="admin" />} />
-            <Route path="*" element={<Navigate to="/" replace />} />
-          </Routes>
-        </main>
-      </div>
-    </BrowserRouter>
+          <main className="max-w-screen-2xl mx-auto px-4 py-8">
+            <Routes>
+              <Route path="/" element={<MediaLibraryPage mode="user" />} />
+              <Route path="/admin" element={<MediaLibraryPage mode="admin" />} />
+              <Route path="*" element={<Navigate to="/" replace />} />
+            </Routes>
+          </main>
+        </div>
+      </BrowserRouter>
+    </AppConfigProvider>
   )
 }

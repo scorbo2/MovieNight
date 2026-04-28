@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react'
 
-const FILES_API = '/api/files'
+const FILES_API = '/api/files/'
 const LAST_DIR_KEY = 'movienight:lastBrowseDir'
 
 const VIDEO_EXTENSIONS = new Set([
@@ -14,7 +14,7 @@ function isVideoFile(name) {
   return VIDEO_EXTENSIONS.has(ext)
 }
 
-export default function FileBrowserModal({ initialPath, onSelect, onClose }) {
+export default function FileBrowserModal({ mediaType, initialPath, onSelect, onClose }) {
   const [currentPath, setCurrentPath] = useState(initialPath || '/')
   const [parentPath, setParentPath] = useState('/')
   const [entries, setEntries] = useState([])
@@ -26,7 +26,7 @@ export default function FileBrowserModal({ initialPath, onSelect, onClose }) {
     setLoading(true)
     setError(null)
     try {
-      const res = await fetch(`${FILES_API}?path=${encodeURIComponent(path)}`)
+      const res = await fetch(`${FILES_API}${mediaType}?path=${encodeURIComponent(path)}`)
       if (!res.ok) throw new Error(`Failed to list directory (${res.status})`)
       const data = await res.json()
       setCurrentPath(data.path)
@@ -98,15 +98,17 @@ export default function FileBrowserModal({ initialPath, onSelect, onClose }) {
         </form>
 
         {/* Navigation */}
-        <div className="px-5 py-2 border-b border-gray-700">
-          <button
-            onClick={() => loadDirectory(parentPath)}
-            disabled={currentPath === parentPath}
-            className="text-indigo-400 hover:text-indigo-300 text-sm disabled:opacity-40 disabled:cursor-not-allowed"
-          >
-            ↑ Parent directory
-          </button>
-        </div>
+        {parentPath && (
+            <div className="px-5 py-2 border-b border-gray-700">
+              <button
+                onClick={() => loadDirectory(parentPath)}
+                disabled={currentPath === parentPath}
+                className="text-indigo-400 hover:text-indigo-300 text-sm disabled:opacity-40 disabled:cursor-not-allowed"
+              >
+                ↑ Parent directory
+              </button>
+            </div>
+        )}
 
         {/* File listing */}
         <div className="flex-1 overflow-y-auto px-5 py-2">

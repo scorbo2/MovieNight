@@ -382,6 +382,7 @@ export default function MusicVideoForm({ musicVideo, onSave, onCancel }) {
 
     {showFileBrowser && (
       <FileBrowserModal
+        mediaType="music"
         initialPath={form.videoFilePath || initialBrowsePath}
         onSelect={(path) => {
           const normalizedPath = typeof path === 'string' ? path.trim() : ''

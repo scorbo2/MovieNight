@@ -1,5 +1,10 @@
 package ca.corbett.movienight.controller;
 
+import ca.corbett.movienight.service.MediaService;
+import jakarta.annotation.PostConstruct;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -8,7 +13,6 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.io.File;
-import java.io.IOException;
 import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -22,33 +26,63 @@ import java.util.Map;
 @CrossOrigin(origins = "http://localhost:5173")
 public class FileBrowserController {
 
-    @GetMapping
-    public ResponseEntity<Map<String, Object>> listFiles(
-            @RequestParam(defaultValue = "/") String path) {
+    private static final Logger log = LoggerFactory.getLogger(FileBrowserController.class);
 
-        File dir;
-        try {
-            dir = new File(path).getCanonicalFile();
-        } catch (IOException e) {
-            dir = new File(File.separator);
+    @Value("${movienight.prefix.movies:/}")
+    private String movieDirectory;
+    private File resolvedMovieDirectory;
+
+    @Value("${movienight.prefix.episodes:/}")
+    private String episodeDirectory;
+    private File resolvedEpisodeDirectory;
+
+    @Value("${movienight.prefix.music:/}")
+    private String musicVideoDirectory;
+    private File resolvedMusicVideoDirectory;
+
+    /**
+     * We'll check to ensure we got valid values for our media directories,
+     * and resolve them to actual filesystem paths for use later.
+     * This allows us to fail fast if our configuration is invalid,
+     * and also allows us to avoid having to do this on every findById request.
+     */
+    @PostConstruct
+    public void resolveMediaDirectories() {
+        resolvedMovieDirectory = MediaService.resolveMediaDirectory(movieDirectory, "movienight.prefix.movies");
+        resolvedEpisodeDirectory = MediaService.resolveMediaDirectory(episodeDirectory, "movienight.prefix.episodes");
+        resolvedMusicVideoDirectory = MediaService.resolveMediaDirectory(musicVideoDirectory,
+                                                                         "movienight.prefix.music");
+    }
+
+    /**
+     * Provides a chrooted view of the given mediaDir, starting at the given optional path.
+     * The path is relative to the given mediaDir. We will not provide options for navigating
+     * outside of mediaDir.
+     */
+    private ResponseEntity<Map<String, Object>> listFilesInternal(File mediaDir, String path) {
+        if (path.startsWith(mediaDir.getAbsolutePath())) {
+            path = path.substring(mediaDir.getAbsolutePath().length());
         }
+        log.info("Listing files in media directory: {}, path: {}", mediaDir.getAbsolutePath(), path);
+        File currentDir = new File(mediaDir, path);
 
         // The UI might give us a file. Not a problem: just use its parent directory.
-        if (dir.isFile()) {
-            dir = dir.getParentFile() == null ? new File(File.separator) : dir.getParentFile();
+        if (currentDir.isFile()) {
+            currentDir = mediaDir.getParentFile() == null ? mediaDir : currentDir.getParentFile();
         }
 
-        if (!dir.exists() || !dir.isDirectory()) {
-            // Fall back to filesystem root
-            dir = new File(File.separator);
+        if (!currentDir.exists() || !currentDir.isDirectory()) {
+            // Fall back to our chroot
+            currentDir = mediaDir;
         }
 
-        String canonicalPath = dir.getAbsolutePath();
-        File parentDir = dir.getParentFile();
-        String parentPath = (parentDir != null) ? parentDir.getAbsolutePath() : canonicalPath;
+        boolean isRoot = currentDir.getAbsolutePath().equals(mediaDir.getAbsolutePath());
+        String canonicalPath = currentDir.getAbsolutePath();
+        File parentDir = isRoot ? null : currentDir.getParentFile();
+        String parentPath = (parentDir != null) ? parentDir.getAbsolutePath() : null;
 
         List<Map<String, String>> entries = new ArrayList<>();
-        File[] children = dir.listFiles();
+        File[] children = currentDir.listFiles();
         if (children != null) {
             Arrays.sort(children, Comparator
                     .comparing((File f) -> !f.isDirectory())
@@ -71,8 +105,28 @@ public class FileBrowserController {
 
         Map<String, Object> result = new HashMap<>();
         result.put("path", canonicalPath);
-        result.put("parent", parentPath);
+        if (!isRoot) {
+            result.put("parent", parentPath);
+        }
         result.put("entries", entries);
         return ResponseEntity.ok(result);
+    }
+
+    @GetMapping("/movies")
+    public ResponseEntity<Map<String, Object>> listMovieFiles(
+            @RequestParam(defaultValue = "/") String path) {
+        return listFilesInternal(resolvedMovieDirectory, path);
+    }
+
+    @GetMapping("/episodes")
+    public ResponseEntity<Map<String, Object>> listEpisodeFiles(
+            @RequestParam(defaultValue = "/") String path) {
+        return listFilesInternal(resolvedEpisodeDirectory, path);
+    }
+
+    @GetMapping("/music")
+    public ResponseEntity<Map<String, Object>> listMusicVideoFiles(
+            @RequestParam(defaultValue = "/") String path) {
+        return listFilesInternal(resolvedMusicVideoDirectory, path);
     }
 }

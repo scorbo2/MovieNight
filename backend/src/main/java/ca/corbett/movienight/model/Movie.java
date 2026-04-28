@@ -67,6 +67,10 @@ public class Movie {
     @Column(name = "tag")
     private List<String> tags = new ArrayList<>();
 
+    /**
+     * This path is relative to the configured media directory for this media type!
+     * See application.properties for the "movienight.prefix.*" properties.
+     */
     @NotBlank
     @Column(nullable = false)
     private String videoFilePath;

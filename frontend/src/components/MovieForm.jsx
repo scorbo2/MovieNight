@@ -369,6 +369,7 @@ export default function MovieForm({ movie, onSave, onCancel }) {
 
     {showFileBrowser && (
       <FileBrowserModal
+        mediaType="movies"
         initialPath={form.videoFilePath || initialBrowsePath}
         onSelect={(path) => {
           const normalizedPath = path.trim()

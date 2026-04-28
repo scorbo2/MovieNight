@@ -24,6 +24,9 @@ public class MusicVideoService {
     private final MusicVideoRepository musicVideoRepository;
     private final ThumbnailService thumbnailService;
 
+    @Value("${movienight.prefix.music:/}")
+    private String musicVideoDirectory;
+
     public MusicVideoService(MusicVideoRepository musicVideoRepository, ThumbnailService thumbnailService) {
         this.musicVideoRepository = musicVideoRepository;
         this.thumbnailService = thumbnailService;
@@ -41,6 +44,7 @@ public class MusicVideoService {
         if (musicVideo.getArtist() == null) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Music video artist is required.");
         }
+        musicVideo.setVideoFilePath(MediaService.resolveFilePath(musicVideoDirectory, musicVideo.getVideoFilePath()));
         return populateTransientFields(musicVideoRepository.save(musicVideo));
     }
 
@@ -56,7 +60,8 @@ public class MusicVideoService {
             mv.setYear(updatedMusicVideo.getYear());
             mv.setDescription(updatedMusicVideo.getDescription());
             mv.setTags(updatedMusicVideo.getTags());
-            mv.setVideoFilePath(updatedMusicVideo.getVideoFilePath());
+            mv.setVideoFilePath(
+                    MediaService.resolveFilePath(musicVideoDirectory, updatedMusicVideo.getVideoFilePath()));
             return populateTransientFields(musicVideoRepository.save(mv));
         }).orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND,
                                                          "Music video not found with id: " + id));

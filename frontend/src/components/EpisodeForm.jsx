@@ -380,6 +380,7 @@ export default function EpisodeForm({ episode, onSave, onCancel }) {
 
     {showFileBrowser && (
       <FileBrowserModal
+        mediaType="episodes"
         initialPath={form.videoFilePath || initialBrowsePath}
         onSelect={(path) => {
           const normalizedPath = typeof path === 'string' ? path.trim() : ''

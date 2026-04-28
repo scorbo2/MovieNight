@@ -24,6 +24,9 @@ public class EpisodeService {
     private final EpisodeRepository episodeRepository;
     private final ThumbnailService thumbnailService;
 
+    @Value("${movienight.prefix.episodes:/}")
+    private String episodeDirectory;
+
     public EpisodeService(EpisodeRepository episodeRepository, ThumbnailService thumbnailService) {
         this.episodeRepository = episodeRepository;
         this.thumbnailService = thumbnailService;
@@ -34,6 +37,8 @@ public class EpisodeService {
     }
 
     public Episode saveEpisode(Episode episode) {
+        episode.setVideoFilePath(episode.getVideoFilePath()); // goofy, but forces validation and path resolution
+        episode.setVideoFilePath(MediaService.resolveFilePath(episodeDirectory, episode.getVideoFilePath()));
         return populateTransientFields(episodeRepository.save(episode));
     }
 
@@ -50,7 +55,7 @@ public class EpisodeService {
             ep.setEpisode(updatedEpisode.getEpisode());
             ep.setDescription(updatedEpisode.getDescription());
             ep.setTags(updatedEpisode.getTags());
-            ep.setVideoFilePath(updatedEpisode.getVideoFilePath());
+            ep.setVideoFilePath(MediaService.resolveFilePath(episodeDirectory, updatedEpisode.getVideoFilePath()));
             return populateTransientFields(episodeRepository.save(ep));
         }).orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Episode not found with id: " + id));
     }

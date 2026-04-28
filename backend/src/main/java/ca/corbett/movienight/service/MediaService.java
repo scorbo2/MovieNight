@@ -171,7 +171,7 @@ public class MediaService {
      */
     public static File resolveMediaDirectory(String directory, String propName) {
         if (directory == null || directory.isBlank()) {
-            logger.warn("movienight.prefix.movies is not set or is blank. Defaulting to root directory.");
+            logger.warn("{} is not set or is blank (value: {}). Defaulting to root directory.", propName, directory);
             directory = "/";
         }
         File resolvedDirectory = new File(directory).getAbsoluteFile();

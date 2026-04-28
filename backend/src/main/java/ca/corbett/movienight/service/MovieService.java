@@ -63,7 +63,7 @@ public class MovieService {
             movie.setGenre(updatedMovie.getGenre());
             movie.setDescription(updatedMovie.getDescription());
             movie.setTags(updatedMovie.getTags());
-            movie.setVideoFilePath(MediaService.resolveFilePath(movieDirectory, movie.getVideoFilePath()));
+            movie.setVideoFilePath(MediaService.resolveFilePath(movieDirectory, updatedMovie.getVideoFilePath()));
             return populateTransientFields(movieRepository.save(movie));
         }).orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Movie not found with id: " + id));
     }

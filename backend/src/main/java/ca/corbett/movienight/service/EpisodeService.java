@@ -37,7 +37,6 @@ public class EpisodeService {
     }
 
     public Episode saveEpisode(Episode episode) {
-        episode.setVideoFilePath(episode.getVideoFilePath()); // goofy, but forces validation and path resolution
         episode.setVideoFilePath(MediaService.resolveFilePath(episodeDirectory, episode.getVideoFilePath()));
         return populateTransientFields(episodeRepository.save(episode));
     }

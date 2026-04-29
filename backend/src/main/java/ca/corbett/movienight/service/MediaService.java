@@ -79,6 +79,10 @@ public class MediaService {
             if (mediaDirectory == null || mediaDirectory.isBlank()) {
                 mediaDirectory = "/";
             }
+            if (!mediaDirectory.endsWith(File.separator)) {
+                mediaDirectory += File.separator;
+            }
+            // TODO: should probably normalize to guard against malicious input like "../../../etc/passwd"...
             if (videoFilePath.startsWith(mediaDirectory)) {
                 videoFilePath = videoFilePath.substring(mediaDirectory.length());
             }

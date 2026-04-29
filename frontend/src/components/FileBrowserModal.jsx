@@ -1,7 +1,11 @@
 import { useState, useEffect, useCallback } from 'react'
 
 const FILES_API = '/api/files/'
-const LAST_DIR_KEY = 'movienight:lastBrowseDir'
+const LAST_DIR_KEY = new Map([
+    ['movies', 'movienight:lastMoviesBrowseDir'],
+    ['episodes', 'movienight:lastEpisodesBrowseDir'],
+    ['music', 'movienight:lastMusicBrowseDir']
+])
 
 const VIDEO_EXTENSIONS = new Set([
   'mp4', 'mkv', 'avi', 'mov', 'wmv', 'flv', 'webm', 'm4v', 'mpg', 'mpeg', 'ts', 'm2ts',
@@ -21,6 +25,7 @@ export default function FileBrowserModal({ mediaType, initialPath, onSelect, onC
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState(null)
   const [pathInput, setPathInput] = useState(initialPath || '/')
+  const lastDirKey = LAST_DIR_KEY.get(mediaType)
 
   const loadDirectory = useCallback(async (path) => {
     setLoading(true)
@@ -31,7 +36,9 @@ export default function FileBrowserModal({ mediaType, initialPath, onSelect, onC
       const data = await res.json()
       setCurrentPath(data.path)
       try {
-        sessionStorage.setItem(LAST_DIR_KEY, data.path)
+          if (lastDirKey) {
+              sessionStorage.setItem(lastDirKey, data.path)
+          }
       } catch {
         // Ignore storage persistence failures so browsing still works.
       }

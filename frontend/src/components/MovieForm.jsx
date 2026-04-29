@@ -3,7 +3,7 @@ import FileBrowserModal from './FileBrowserModal'
 
 const MOVIES_API = '/api/movies'
 const GENRES_API = '/api/genres'
-const LAST_DIR_KEY = 'movienight:lastBrowseDir'
+const LAST_DIR_KEY = 'movienight:lastMoviesBrowseDir'
 
 const EMPTY_FORM = {
   id: null,

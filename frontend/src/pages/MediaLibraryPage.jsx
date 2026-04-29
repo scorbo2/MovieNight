@@ -753,21 +753,6 @@ export default function MediaLibraryPage({ mode }) {
             </div>
           )}
 
-          {isAdmin && showMovieForm && (
-            <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4">
-              <div className="bg-gray-900 border border-gray-700 rounded-xl shadow-2xl w-full max-w-lg">
-                <MovieForm
-                  movie={editingMovie}
-                  onSave={handleSaveMovie}
-                  onCancel={() => {
-                    setShowMovieForm(false)
-                    setEditingMovie(null)
-                  }}
-                />
-              </div>
-            </div>
-          )}
-
           {!selectedGenre && !movieSearchQuery && !movieTagQuery ? (
             genresLoading ? (
               <div className="text-center text-gray-400 py-16">Loading…</div>
@@ -881,21 +866,6 @@ export default function MediaLibraryPage({ mode }) {
           {episodesError && (
             <div className="bg-red-900/50 border border-red-700 text-red-300 px-4 py-3 rounded-lg mb-6">
               {episodesError}
-            </div>
-          )}
-
-          {isAdmin && showEpisodeForm && (
-            <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4">
-              <div className="bg-gray-900 border border-gray-700 rounded-xl shadow-2xl w-full max-w-lg overflow-y-auto max-h-[90vh]">
-                <EpisodeForm
-                  episode={editingEpisode}
-                  onSave={handleSaveEpisode}
-                  onCancel={() => {
-                    setShowEpisodeForm(false)
-                    setEditingEpisode(null)
-                  }}
-                />
-              </div>
             </div>
           )}
 
@@ -1106,21 +1076,6 @@ export default function MediaLibraryPage({ mode }) {
             </div>
           )}
 
-          {isAdmin && showMusicVideoForm && (
-            <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4">
-              <div className="bg-gray-900 border border-gray-700 rounded-xl shadow-2xl w-full max-w-lg overflow-y-auto max-h-[90vh]">
-                <MusicVideoForm
-                  musicVideo={editingMusicVideo}
-                  onSave={handleSaveMusicVideo}
-                  onCancel={() => {
-                    setShowMusicVideoForm(false)
-                    setEditingMusicVideo(null)
-                  }}
-                />
-              </div>
-            </div>
-          )}
-
           {!selectedArtist && !musicVideoTitleQuery && !musicVideoTagQuery ? (
             artistsLoading ? (
               <div className="text-center text-gray-400 py-16">Loading…</div>
@@ -1209,6 +1164,51 @@ export default function MediaLibraryPage({ mode }) {
         </>
       )}
       </div>
+
+      {isAdmin && showMovieForm && (
+        <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4">
+          <div className="bg-gray-900 border border-gray-700 rounded-xl shadow-2xl w-full max-w-lg overflow-y-auto max-h-[90vh]">
+            <MovieForm
+              movie={editingMovie}
+              onSave={handleSaveMovie}
+              onCancel={() => {
+                setShowMovieForm(false)
+                setEditingMovie(null)
+              }}
+            />
+          </div>
+        </div>
+      )}
+
+      {isAdmin && showEpisodeForm && (
+        <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4">
+          <div className="bg-gray-900 border border-gray-700 rounded-xl shadow-2xl w-full max-w-lg overflow-y-auto max-h-[90vh]">
+            <EpisodeForm
+              episode={editingEpisode}
+              onSave={handleSaveEpisode}
+              onCancel={() => {
+                setShowEpisodeForm(false)
+                setEditingEpisode(null)
+              }}
+            />
+          </div>
+        </div>
+      )}
+
+      {isAdmin && showMusicVideoForm && (
+        <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4">
+          <div className="bg-gray-900 border border-gray-700 rounded-xl shadow-2xl w-full max-w-lg overflow-y-auto max-h-[90vh]">
+            <MusicVideoForm
+              musicVideo={editingMusicVideo}
+              onSave={handleSaveMusicVideo}
+              onCancel={() => {
+                setShowMusicVideoForm(false)
+                setEditingMusicVideo(null)
+              }}
+            />
+          </div>
+        </div>
+      )}
     </>
   )
 }

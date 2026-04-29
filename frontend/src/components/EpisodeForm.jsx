@@ -3,7 +3,7 @@ import FileBrowserModal from './FileBrowserModal'
 
 const EPISODES_API = '/api/episodes'
 const SERIES_API = '/api/series'
-const LAST_DIR_KEY = 'movienight:lastBrowseDir'
+const LAST_DIR_KEY = 'movienight:lastEpisodesBrowseDir'
 
 const EMPTY_FORM = {
   seriesId: '',
@@ -380,6 +380,7 @@ export default function EpisodeForm({ episode, onSave, onCancel }) {
 
     {showFileBrowser && (
       <FileBrowserModal
+        mediaType="episodes"
         initialPath={form.videoFilePath || initialBrowsePath}
         onSelect={(path) => {
           const normalizedPath = typeof path === 'string' ? path.trim() : ''

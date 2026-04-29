@@ -25,6 +25,9 @@ public class MovieService {
     private final MovieRepository movieRepository;
     private final ThumbnailService thumbnailService;
 
+    @Value("${movienight.prefix.movies:/}")
+    private String movieDirectory;
+
     public MovieService(MovieRepository movieRepository, ThumbnailService thumbnailService) {
         this.movieRepository = movieRepository;
         this.thumbnailService = thumbnailService;
@@ -44,6 +47,7 @@ public class MovieService {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Movie genre is required.");
         }
 
+        movie.setVideoFilePath(MediaService.resolveFilePath(movieDirectory, movie.getVideoFilePath()));
         return populateTransientFields(movieRepository.save(movie));
     }
 
@@ -59,7 +63,7 @@ public class MovieService {
             movie.setGenre(updatedMovie.getGenre());
             movie.setDescription(updatedMovie.getDescription());
             movie.setTags(updatedMovie.getTags());
-            movie.setVideoFilePath(updatedMovie.getVideoFilePath());
+            movie.setVideoFilePath(MediaService.resolveFilePath(movieDirectory, updatedMovie.getVideoFilePath()));
             return populateTransientFields(movieRepository.save(movie));
         }).orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Movie not found with id: " + id));
     }

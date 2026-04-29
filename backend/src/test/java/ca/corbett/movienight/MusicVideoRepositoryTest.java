@@ -31,7 +31,8 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
         "spring.datasource.driver-class-name=org.sqlite.JDBC",
         "spring.jpa.database-platform=org.hibernate.community.dialect.SQLiteDialect",
         "spring.jpa.hibernate.ddl-auto=create-drop",
-        "movienight.recently-watched-days=5" // This is ignored because we create the service ourselves here
+        "movienight.recently-watched-days=5", // This is ignored because we create the service ourselves here
+        "movienight.prefix.music=/music"
 })
 class MusicVideoRepositoryTest {
 

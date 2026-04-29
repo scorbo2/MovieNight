@@ -43,7 +43,7 @@ export default function FileBrowserModal({ mediaType, initialPath, onSelect, onC
     } finally {
       setLoading(false)
     }
-  }, [])
+  }, [mediaType])
 
   useEffect(() => {
     loadDirectory(initialPath || '/')

@@ -928,21 +928,6 @@ export default function MediaLibraryPage({ mode }) {
             </div>
           )}
 
-          {isAdmin && showGenreForm && (
-            <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4">
-              <div className="bg-gray-900 border border-gray-700 rounded-xl shadow-2xl w-full max-w-lg overflow-y-auto max-h-[90vh]">
-                <GenreForm
-                  genre={editingGenre}
-                  onSave={handleSaveGenre}
-                  onCancel={() => {
-                    setShowGenreForm(false)
-                    setEditingGenre(null)
-                  }}
-                />
-              </div>
-            </div>
-          )}
-
           {genresLoading ? (
             <div className="text-center text-gray-400 py-16">Loading…</div>
           ) : (
@@ -973,21 +958,6 @@ export default function MediaLibraryPage({ mode }) {
           {seriesError && (
             <div className="bg-red-900/50 border border-red-700 text-red-300 px-4 py-3 rounded-lg mb-6">
               {seriesError}
-            </div>
-          )}
-
-          {isAdmin && showSeriesForm && (
-            <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4">
-              <div className="bg-gray-900 border border-gray-700 rounded-xl shadow-2xl w-full max-w-lg overflow-y-auto max-h-[90vh]">
-                <SeriesForm
-                  series={editingSeries}
-                  onSave={handleSaveSeries}
-                  onCancel={() => {
-                    setShowSeriesForm(false)
-                    setEditingSeries(null)
-                  }}
-                />
-              </div>
             </div>
           )}
 
@@ -1133,21 +1103,6 @@ export default function MediaLibraryPage({ mode }) {
             </div>
           )}
 
-          {isAdmin && showArtistForm && (
-            <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4">
-              <div className="bg-gray-900 border border-gray-700 rounded-xl shadow-2xl w-full max-w-lg overflow-y-auto max-h-[90vh]">
-                <ArtistForm
-                  artist={editingArtist}
-                  onSave={handleSaveArtist}
-                  onCancel={() => {
-                    setShowArtistForm(false)
-                    setEditingArtist(null)
-                  }}
-                />
-              </div>
-            </div>
-          )}
-
           {artistsLoading ? (
             <div className="text-center text-gray-400 py-16">Loading…</div>
           ) : (
@@ -1204,6 +1159,51 @@ export default function MediaLibraryPage({ mode }) {
               onCancel={() => {
                 setShowMusicVideoForm(false)
                 setEditingMusicVideo(null)
+              }}
+            />
+          </div>
+        </div>
+      )}
+
+      {isAdmin && showGenreForm && (
+        <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4">
+          <div className="bg-gray-900 border border-gray-700 rounded-xl shadow-2xl w-full max-w-lg overflow-y-auto max-h-[90vh]">
+            <GenreForm
+              genre={editingGenre}
+              onSave={handleSaveGenre}
+              onCancel={() => {
+                setShowGenreForm(false)
+                setEditingGenre(null)
+              }}
+            />
+          </div>
+        </div>
+      )}
+
+      {isAdmin && showSeriesForm && (
+        <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4">
+          <div className="bg-gray-900 border border-gray-700 rounded-xl shadow-2xl w-full max-w-lg overflow-y-auto max-h-[90vh]">
+            <SeriesForm
+              series={editingSeries}
+              onSave={handleSaveSeries}
+              onCancel={() => {
+                setShowSeriesForm(false)
+                setEditingSeries(null)
+              }}
+            />
+          </div>
+        </div>
+      )}
+
+      {isAdmin && showArtistForm && (
+        <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4">
+          <div className="bg-gray-900 border border-gray-700 rounded-xl shadow-2xl w-full max-w-lg overflow-y-auto max-h-[90vh]">
+            <ArtistForm
+              artist={editingArtist}
+              onSave={handleSaveArtist}
+              onCancel={() => {
+                setShowArtistForm(false)
+                setEditingArtist(null)
               }}
             />
           </div>

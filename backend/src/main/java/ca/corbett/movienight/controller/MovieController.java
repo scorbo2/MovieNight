@@ -1,11 +1,14 @@
 package ca.corbett.movienight.controller;
 
 import ca.corbett.movienight.model.Movie;
+import ca.corbett.movienight.service.MediaService;
 import ca.corbett.movienight.service.MovieService;
 import ca.corbett.movienight.service.ThumbnailService;
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import org.springframework.core.io.PathResource;
 import org.springframework.core.io.Resource;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -23,6 +26,7 @@ import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.server.ResponseStatusException;
 
 import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.List;
 
 @RestController
@@ -30,19 +34,61 @@ import java.util.List;
 @CrossOrigin(origins = "http://localhost:5173")
 public class MovieController {
 
+    private final MediaService mediaService;
     private final MovieService movieService;
     private final ThumbnailService thumbnailService;
 
-    public MovieController(MovieService movieService, ThumbnailService thumbnailService) {
+    public MovieController(MediaService mediaService, MovieService movieService, ThumbnailService thumbnailService) {
+        this.mediaService = mediaService;
         this.movieService = movieService;
         this.thumbnailService = thumbnailService;
     }
 
+    /**
+     * Returns a list of all movies that match the provided (optional) search criteria.
+     */
     @GetMapping
     public List<Movie> getAllMovies(@RequestParam(required = false) String title,
                                    @RequestParam(required = false) String tag,
                                    @RequestParam(required = false) Long genreId) {
         return movieService.searchMovies(title, tag, genreId);
+    }
+
+    /**
+     * Returns an m3u playlist containing all movies that match the provided (optional) search criteria.
+     */
+    @GetMapping("/playlist")
+    public ResponseEntity<String> getPlaylist(@RequestParam(required = false) String title,
+                                              @RequestParam(required = false) String tag,
+                                              @RequestParam(required = false) Long genreId,
+                                              HttpServletRequest request) {
+        List<Movie> movies = movieService.searchMovies(title, tag, genreId);
+        StringBuilder m3u = new StringBuilder();
+        m3u.append("#EXTM3U\n");
+        for (Movie movie : movies) {
+            String filePath = mediaService.findById(Long.toString(movie.getId()));
+            Path videoPath = Paths.get(filePath);
+            String fileName = videoPath.getFileName().toString();
+
+            // Build the stream URL pointing back to our existing streaming endpoint:
+            String streamUrl = request.getScheme() + "://" +
+                    request.getServerName() + ":" +
+                    request.getServerPort() +
+                    "/api/stream/" + movie.getId();
+
+            // The M3U format is very straightforward:
+            m3u.append("#EXTINF:-1,");
+            m3u.append(fileName);
+            m3u.append("\n");
+            m3u.append(streamUrl);
+            m3u.append("\n");
+        }
+
+        // VLC will be able to stream directly from our existing streaming endpoint:
+        return ResponseEntity.ok()
+                             .header(HttpHeaders.CONTENT_TYPE, "audio/x-mpegurl")
+                             .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"stream.m3u\"")
+                             .body(m3u.toString());
     }
 
     @GetMapping("/{id}")

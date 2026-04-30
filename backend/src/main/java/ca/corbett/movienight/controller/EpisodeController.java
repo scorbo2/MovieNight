@@ -2,10 +2,13 @@ package ca.corbett.movienight.controller;
 
 import ca.corbett.movienight.model.Episode;
 import ca.corbett.movienight.service.EpisodeService;
+import ca.corbett.movienight.service.MediaService;
 import ca.corbett.movienight.service.ThumbnailService;
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import org.springframework.core.io.PathResource;
 import org.springframework.core.io.Resource;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -23,6 +26,7 @@ import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.server.ResponseStatusException;
 
 import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.List;
 
 @RestController
@@ -30,14 +34,19 @@ import java.util.List;
 @CrossOrigin(origins = "http://localhost:5173")
 public class EpisodeController {
 
+    private final MediaService mediaService;
     private final EpisodeService episodeService;
     private final ThumbnailService thumbnailService;
 
-    public EpisodeController(EpisodeService episodeService, ThumbnailService thumbnailService) {
+    public EpisodeController(MediaService mediaService, EpisodeService episodeService, ThumbnailService thumbnailService) {
+        this.mediaService = mediaService;
         this.episodeService = episodeService;
         this.thumbnailService = thumbnailService;
     }
 
+    /**
+     * Returns a list of all episodes that match the provided (optional) search criteria.
+     */
     @GetMapping
     public List<Episode> getAllEpisodes(@RequestParam(required = false) Long seriesId,
                                         @RequestParam(required = false) String seriesName,
@@ -45,6 +54,45 @@ public class EpisodeController {
                                         @RequestParam(required = false) Integer episode,
                                         @RequestParam(required = false) String tag) {
         return episodeService.searchEpisodes(seriesId, seriesName, season, episode, tag);
+    }
+
+    /**
+     * Returns an m3u playlist containing all episodes that match the provided (optional) search criteria.
+     */
+    @GetMapping("/playlist")
+    public ResponseEntity<String> getPlaylist(@RequestParam(required = false) Long seriesId,
+                                              @RequestParam(required = false) String seriesName,
+                                              @RequestParam(required = false) Integer season,
+                                              @RequestParam(required = false) Integer episodeId,
+                                              @RequestParam(required = false) String tag,
+                                              HttpServletRequest request) {
+        List<Episode> episodes = episodeService.searchEpisodes(seriesId, seriesName, season, episodeId, tag);
+        StringBuilder m3u = new StringBuilder();
+        m3u.append("#EXTM3U\n");
+        for (Episode episode : episodes) {
+            String filePath = mediaService.findById(Long.toString(episode.getId()));
+            Path videoPath = Paths.get(filePath);
+            String fileName = videoPath.getFileName().toString();
+
+            // Build the stream URL pointing back to our existing streaming endpoint:
+            String streamUrl = request.getScheme() + "://" +
+                    request.getServerName() + ":" +
+                    request.getServerPort() +
+                    "/api/stream/" + episode.getId();
+
+            // The M3U format is very straightforward:
+            m3u.append("#EXTINF:-1,");
+            m3u.append(fileName);
+            m3u.append("\n");
+            m3u.append(streamUrl);
+            m3u.append("\n");
+        }
+
+        // VLC will be able to stream directly from our existing streaming endpoint:
+        return ResponseEntity.ok()
+                             .header(HttpHeaders.CONTENT_TYPE, "audio/x-mpegurl")
+                             .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"stream.m3u\"")
+                             .body(m3u.toString());
     }
 
     @GetMapping("/{id}")

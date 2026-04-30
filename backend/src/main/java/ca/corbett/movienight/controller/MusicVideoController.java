@@ -3,9 +3,11 @@ package ca.corbett.movienight.controller;
 import ca.corbett.movienight.model.MusicVideo;
 import ca.corbett.movienight.service.MusicVideoService;
 import ca.corbett.movienight.service.ThumbnailService;
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import org.springframework.core.io.PathResource;
 import org.springframework.core.io.Resource;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -22,6 +24,7 @@ import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.server.ResponseStatusException;
 
+import java.io.File;
 import java.nio.file.Path;
 import java.util.List;
 
@@ -38,11 +41,49 @@ public class MusicVideoController {
         this.thumbnailService = thumbnailService;
     }
 
+    /**
+     * Returns a list of all music videos that match the provided (optional) search criteria.
+     */
     @GetMapping
     public List<MusicVideo> getAllMusicVideos(@RequestParam(required = false) String title,
                                               @RequestParam(required = false) String tag,
                                               @RequestParam(required = false) Long artistId) {
         return musicVideoService.searchMusicVideos(title, tag, artistId);
+    }
+
+    /**
+     * Returns an m3u playlist containing all musicVideos that match the provided (optional) search criteria.
+     */
+    @GetMapping("/playlist")
+    public ResponseEntity<String> getPlaylist(@RequestParam(required = false) String title,
+                                              @RequestParam(required = false) String tag,
+                                              @RequestParam(required = false) Long artistId,
+                                              HttpServletRequest request) {
+        List<MusicVideo> musicVideos = musicVideoService.searchMusicVideos(title, tag, artistId);
+        StringBuilder m3u = new StringBuilder();
+        m3u.append("#EXTM3U\n");
+        for (MusicVideo musicVideo : musicVideos) {
+            String fileName = new File(musicVideo.getVideoFilePath()).getName();
+
+            // Build the stream URL pointing back to our existing streaming endpoint:
+            String streamUrl = request.getScheme() + "://" +
+                    request.getServerName() + ":" +
+                    request.getServerPort() +
+                    "/api/stream/V" + musicVideo.getId();
+
+            // The M3U format is very straightforward:
+            m3u.append("#EXTINF:-1,");
+            m3u.append(fileName);
+            m3u.append("\n");
+            m3u.append(streamUrl);
+            m3u.append("\n");
+        }
+
+        // VLC will be able to stream directly from our existing streaming endpoint:
+        return ResponseEntity.ok()
+                             .header(HttpHeaders.CONTENT_TYPE, "audio/x-mpegurl")
+                             .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"stream.m3u\"")
+                             .body(m3u.toString());
     }
 
     @GetMapping("/{id}")

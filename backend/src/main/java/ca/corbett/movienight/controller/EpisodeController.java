@@ -2,7 +2,6 @@ package ca.corbett.movienight.controller;
 
 import ca.corbett.movienight.model.Episode;
 import ca.corbett.movienight.service.EpisodeService;
-import ca.corbett.movienight.service.MediaService;
 import ca.corbett.movienight.service.ThumbnailService;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
@@ -25,8 +24,8 @@ import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.server.ResponseStatusException;
 
+import java.io.File;
 import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.List;
 
 @RestController
@@ -34,12 +33,10 @@ import java.util.List;
 @CrossOrigin(origins = "http://localhost:5173")
 public class EpisodeController {
 
-    private final MediaService mediaService;
     private final EpisodeService episodeService;
     private final ThumbnailService thumbnailService;
 
-    public EpisodeController(MediaService mediaService, EpisodeService episodeService, ThumbnailService thumbnailService) {
-        this.mediaService = mediaService;
+    public EpisodeController(EpisodeService episodeService, ThumbnailService thumbnailService) {
         this.episodeService = episodeService;
         this.thumbnailService = thumbnailService;
     }
@@ -63,22 +60,20 @@ public class EpisodeController {
     public ResponseEntity<String> getPlaylist(@RequestParam(required = false) Long seriesId,
                                               @RequestParam(required = false) String seriesName,
                                               @RequestParam(required = false) Integer season,
-                                              @RequestParam(required = false) Integer episodeId,
+                                              @RequestParam(required = false) Integer episode,
                                               @RequestParam(required = false) String tag,
                                               HttpServletRequest request) {
-        List<Episode> episodes = episodeService.searchEpisodes(seriesId, seriesName, season, episodeId, tag);
+        List<Episode> episodes = episodeService.searchEpisodes(seriesId, seriesName, season, episode, tag);
         StringBuilder m3u = new StringBuilder();
         m3u.append("#EXTM3U\n");
-        for (Episode episode : episodes) {
-            String filePath = mediaService.findById(Long.toString(episode.getId()));
-            Path videoPath = Paths.get(filePath);
-            String fileName = videoPath.getFileName().toString();
+        for (Episode theEpisode : episodes) {
+            String fileName = new File(theEpisode.getVideoFilePath()).getName();
 
             // Build the stream URL pointing back to our existing streaming endpoint:
             String streamUrl = request.getScheme() + "://" +
                     request.getServerName() + ":" +
                     request.getServerPort() +
-                    "/api/stream/" + episode.getId();
+                    "/api/stream/E" + theEpisode.getId();
 
             // The M3U format is very straightforward:
             m3u.append("#EXTINF:-1,");

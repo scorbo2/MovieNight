@@ -1,7 +1,6 @@
 package ca.corbett.movienight.controller;
 
 import ca.corbett.movienight.model.Movie;
-import ca.corbett.movienight.service.MediaService;
 import ca.corbett.movienight.service.MovieService;
 import ca.corbett.movienight.service.ThumbnailService;
 import jakarta.servlet.http.HttpServletRequest;
@@ -25,8 +24,8 @@ import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.server.ResponseStatusException;
 
+import java.io.File;
 import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.List;
 
 @RestController
@@ -34,12 +33,10 @@ import java.util.List;
 @CrossOrigin(origins = "http://localhost:5173")
 public class MovieController {
 
-    private final MediaService mediaService;
     private final MovieService movieService;
     private final ThumbnailService thumbnailService;
 
-    public MovieController(MediaService mediaService, MovieService movieService, ThumbnailService thumbnailService) {
-        this.mediaService = mediaService;
+    public MovieController(MovieService movieService, ThumbnailService thumbnailService) {
         this.movieService = movieService;
         this.thumbnailService = thumbnailService;
     }
@@ -66,15 +63,13 @@ public class MovieController {
         StringBuilder m3u = new StringBuilder();
         m3u.append("#EXTM3U\n");
         for (Movie movie : movies) {
-            String filePath = mediaService.findById(Long.toString(movie.getId()));
-            Path videoPath = Paths.get(filePath);
-            String fileName = videoPath.getFileName().toString();
+            String fileName = new File(movie.getVideoFilePath()).getName();
 
             // Build the stream URL pointing back to our existing streaming endpoint:
             String streamUrl = request.getScheme() + "://" +
                     request.getServerName() + ":" +
                     request.getServerPort() +
-                    "/api/stream/" + movie.getId();
+                    "/api/stream/M" + movie.getId();
 
             // The M3U format is very straightforward:
             m3u.append("#EXTINF:-1,");

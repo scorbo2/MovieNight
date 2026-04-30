@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
+import { useAppConfig } from '../context/AppConfigContext'
 import MovieList from '../components/MovieList'
 import MovieForm from '../components/MovieForm'
 import EpisodeList from '../components/EpisodeList'
@@ -21,6 +22,7 @@ const MUSIC_VIDEOS_API = '/api/music-videos'
 
 export default function MediaLibraryPage({ mode }) {
   const isAdmin = mode === 'admin'
+  const { vlcEnabled } = useAppConfig()
   const [activeTab, setActiveTab] = useState('movies')
   const [isTransitioning, setIsTransitioning] = useState(false)
   const transitionTimer = useRef(null)
@@ -774,20 +776,39 @@ export default function MediaLibraryPage({ mode }) {
               </>
             )
           ) : (
-            moviesLoading ? (
-              <div className="text-center text-gray-400 py-16">Loading…</div>
-            ) : (
-              <MovieList
-                movies={movies}
-                onEdit={(movie) => {
-                  setEditingMovie(movie)
-                  setShowMovieForm(true)
-                }}
-                onDelete={handleDeleteMovie}
-                onTagClick={(tag) => setMovieTagQuery(tag)}
-                readOnly={!isAdmin}
-              />
-            )
+            <>
+              {vlcEnabled && (
+                <div className="mb-4">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const params = new URLSearchParams()
+                      if (movieSearchQuery) params.append('title', movieSearchQuery)
+                      if (movieTagQuery) params.append('tag', movieTagQuery)
+                      if (selectedGenre) params.append('genreId', selectedGenre.id)
+                      window.location.href = `/api/movies/playlist?${params}`
+                    }}
+                    className="bg-orange-600 hover:bg-orange-500 text-white text-sm font-medium px-4 py-2 rounded-lg transition-colors"
+                  >
+                    ▶ Watch all in VLC
+                  </button>
+                </div>
+              )}
+              {moviesLoading ? (
+                <div className="text-center text-gray-400 py-16">Loading…</div>
+              ) : (
+                <MovieList
+                  movies={movies}
+                  onEdit={(movie) => {
+                    setEditingMovie(movie)
+                    setShowMovieForm(true)
+                  }}
+                  onDelete={handleDeleteMovie}
+                  onTagClick={(tag) => setMovieTagQuery(tag)}
+                  readOnly={!isAdmin}
+                />
+              )}
+            </>
           )}
         </>
       )}
@@ -892,20 +913,43 @@ export default function MediaLibraryPage({ mode }) {
               </>
             )
           ) : (
-            episodesLoading ? (
-              <div className="text-center text-gray-400 py-16">Loading…</div>
-            ) : (
-              <EpisodeList
-                episodes={episodes}
-                onEdit={(episode) => {
-                  setEditingEpisode(episode)
-                  setShowEpisodeForm(true)
-                }}
-                onDelete={handleDeleteEpisode}
-                onTagClick={(tag) => setEpisodeTagQuery(tag)}
-                readOnly={!isAdmin}
-              />
-            )
+            <>
+              {vlcEnabled && (
+                <div className="mb-4">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const params = new URLSearchParams()
+                      if (selectedSeries) {
+                        params.append('seriesId', selectedSeries.id)
+                      } else if (episodeSeriesQuery) {
+                        params.append('seriesName', episodeSeriesQuery)
+                      }
+                      if (episodeSeasonQuery !== '') params.append('season', episodeSeasonQuery)
+                      if (episodeTagQuery) params.append('tag', episodeTagQuery)
+                      window.location.href = `/api/episodes/playlist?${params}`
+                    }}
+                    className="bg-orange-600 hover:bg-orange-500 text-white text-sm font-medium px-4 py-2 rounded-lg transition-colors"
+                  >
+                    ▶ Watch all in VLC
+                  </button>
+                </div>
+              )}
+              {episodesLoading ? (
+                <div className="text-center text-gray-400 py-16">Loading…</div>
+              ) : (
+                <EpisodeList
+                  episodes={episodes}
+                  onEdit={(episode) => {
+                    setEditingEpisode(episode)
+                    setShowEpisodeForm(true)
+                  }}
+                  onDelete={handleDeleteEpisode}
+                  onTagClick={(tag) => setEpisodeTagQuery(tag)}
+                  readOnly={!isAdmin}
+                />
+              )}
+            </>
           )}
         </>
       )}
@@ -1067,20 +1111,39 @@ export default function MediaLibraryPage({ mode }) {
               </>
             )
           ) : (
-            musicVideosLoading ? (
-              <div className="text-center text-gray-400 py-16">Loading…</div>
-            ) : (
-              <MusicVideoList
-                musicVideos={musicVideos}
-                onEdit={(mv) => {
-                  setEditingMusicVideo(mv)
-                  setShowMusicVideoForm(true)
-                }}
-                onDelete={handleDeleteMusicVideo}
-                onTagClick={(tag) => setMusicVideoTagQuery(tag)}
-                readOnly={!isAdmin}
-              />
-            )
+            <>
+              {vlcEnabled && (
+                <div className="mb-4">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const params = new URLSearchParams()
+                      if (musicVideoTitleQuery) params.append('title', musicVideoTitleQuery)
+                      if (musicVideoTagQuery) params.append('tag', musicVideoTagQuery)
+                      if (selectedArtist) params.append('artistId', selectedArtist.id)
+                      window.location.href = `/api/music-videos/playlist?${params}`
+                    }}
+                    className="bg-orange-600 hover:bg-orange-500 text-white text-sm font-medium px-4 py-2 rounded-lg transition-colors"
+                  >
+                    ▶ Watch all in VLC
+                  </button>
+                </div>
+              )}
+              {musicVideosLoading ? (
+                <div className="text-center text-gray-400 py-16">Loading…</div>
+              ) : (
+                <MusicVideoList
+                  musicVideos={musicVideos}
+                  onEdit={(mv) => {
+                    setEditingMusicVideo(mv)
+                    setShowMusicVideoForm(true)
+                  }}
+                  onDelete={handleDeleteMusicVideo}
+                  onTagClick={(tag) => setMusicVideoTagQuery(tag)}
+                  readOnly={!isAdmin}
+                />
+              )}
+            </>
           )}
         </>
       )}

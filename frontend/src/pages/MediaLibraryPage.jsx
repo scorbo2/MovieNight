@@ -20,6 +20,8 @@ const SERIES_API = '/api/series'
 const ARTISTS_API = '/api/artists'
 const MUSIC_VIDEOS_API = '/api/music-videos'
 
+const ADMIN_ONLY_TABS = ['genres', 'series', 'artists']
+
 export default function MediaLibraryPage({ mode }) {
   const isAdmin = mode === 'admin'
   const { vlcEnabled } = useAppConfig()
@@ -567,6 +569,12 @@ export default function MediaLibraryPage({ mode }) {
       if (transitionTimer.current) clearTimeout(transitionTimer.current)
     }
   }, [])
+
+  useEffect(() => {
+    if (!isAdmin && ADMIN_ONLY_TABS.includes(activeTab)) {
+      setActiveTab('movies')
+    }
+  }, [isAdmin, activeTab])
 
   return (
     <>

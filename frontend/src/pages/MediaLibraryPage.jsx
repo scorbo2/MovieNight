@@ -573,6 +573,12 @@ export default function MediaLibraryPage({ mode }) {
   useEffect(() => {
     if (!isAdmin && ADMIN_ONLY_TABS.includes(activeTab)) {
       setActiveTab('movies')
+      setShowGenreForm(false)
+      setEditingGenre(null)
+      setShowSeriesForm(false)
+      setEditingSeries(null)
+      setShowArtistForm(false)
+      setEditingArtist(null)
     }
   }, [isAdmin, activeTab])
 

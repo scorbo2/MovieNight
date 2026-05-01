@@ -788,7 +788,7 @@ export default function MediaLibraryPage({ mode }) {
                       if (selectedGenre) params.append('genreId', selectedGenre.id)
                       window.location.href = `/api/movies/playlist?${params}`
                     }}
-                    className="bg-orange-600 hover:bg-orange-500 text-white text-sm font-medium px-4 py-2 rounded-lg transition-colors"
+                    className="bg-green-600 hover:bg-green-500 text-white text-sm font-medium px-4 py-2 rounded-lg transition-colors"
                   >
                     ▶ Watch all in VLC
                   </button>
@@ -929,7 +929,7 @@ export default function MediaLibraryPage({ mode }) {
                       if (episodeTagQuery) params.append('tag', episodeTagQuery)
                       window.location.href = `/api/episodes/playlist?${params}`
                     }}
-                    className="bg-orange-600 hover:bg-orange-500 text-white text-sm font-medium px-4 py-2 rounded-lg transition-colors"
+                    className="bg-green-600 hover:bg-green-500 text-white text-sm font-medium px-4 py-2 rounded-lg transition-colors"
                   >
                     ▶ Watch all in VLC
                   </button>
@@ -1123,7 +1123,7 @@ export default function MediaLibraryPage({ mode }) {
                       if (selectedArtist) params.append('artistId', selectedArtist.id)
                       window.location.href = `/api/music-videos/playlist?${params}`
                     }}
-                    className="bg-orange-600 hover:bg-orange-500 text-white text-sm font-medium px-4 py-2 rounded-lg transition-colors"
+                    className="bg-green-600 hover:bg-green-500 text-white text-sm font-medium px-4 py-2 rounded-lg transition-colors"
                   >
                     ▶ Watch all in VLC
                   </button>

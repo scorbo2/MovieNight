@@ -2,6 +2,7 @@ package ca.corbett.movienight;
 
 import ca.corbett.movienight.controller.StreamController;
 import ca.corbett.movienight.service.MediaService;
+import ca.corbett.movienight.service.RuntimeConfigService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
@@ -44,6 +45,9 @@ class StreamControllerTest {
     @Autowired
     private MockMvc mockMvc;
 
+    @Autowired
+    private RuntimeConfigService runtimeConfigService;
+
     @MockBean
     private MediaService mediaService;
 
@@ -57,74 +61,75 @@ class StreamControllerTest {
         videoFile = tempDir.resolve("test.mp4");
         Files.write(videoFile, VIDEO_CONTENT);
         when(mediaService.findById("M1")).thenReturn(videoFile.toString());
+        runtimeConfigService.setFullyLocal(false);
     }
 
     @Test
     void fullFileRequest_returns200() throws Exception {
         mockMvc.perform(get("/api/stream/M1"))
-                .andExpect(status().isOk());
+               .andExpect(status().isOk());
     }
 
     @Test
     void fullFileRequest_hasAcceptRangesHeader() throws Exception {
         mockMvc.perform(get("/api/stream/M1"))
-                .andExpect(status().isOk())
-                .andExpect(header().string("Accept-Ranges", "bytes"));
+               .andExpect(status().isOk())
+               .andExpect(header().string("Accept-Ranges", "bytes"));
     }
 
     @Test
     void fullFileRequest_hasVideoMp4ContentType() throws Exception {
         mockMvc.perform(get("/api/stream/M1"))
-                .andExpect(status().isOk())
-                .andExpect(content().contentTypeCompatibleWith("video/mp4"));
+               .andExpect(status().isOk())
+               .andExpect(content().contentTypeCompatibleWith("video/mp4"));
     }
 
     @Test
     void fullFileRequest_returnsEntireFileBody() throws Exception {
         mockMvc.perform(get("/api/stream/M1"))
-                .andExpect(status().isOk())
-                .andExpect(content().bytes(VIDEO_CONTENT));
+               .andExpect(status().isOk())
+               .andExpect(content().bytes(VIDEO_CONTENT));
     }
 
     @Test
     void rangeRequest_returns206() throws Exception {
         mockMvc.perform(get("/api/stream/M1")
-                        .header("Range", "bytes=0-9"))
-                .andExpect(status().isPartialContent());
+                                .header("Range", "bytes=0-9"))
+               .andExpect(status().isPartialContent());
     }
 
     @Test
     void rangeRequest_hasAcceptRangesHeader() throws Exception {
         mockMvc.perform(get("/api/stream/M1")
-                        .header("Range", "bytes=0-9"))
-                .andExpect(status().isPartialContent())
-                .andExpect(header().string("Accept-Ranges", "bytes"));
+                                .header("Range", "bytes=0-9"))
+               .andExpect(status().isPartialContent())
+               .andExpect(header().string("Accept-Ranges", "bytes"));
     }
 
     @Test
     void rangeRequest_hasContentRangeHeader() throws Exception {
         mockMvc.perform(get("/api/stream/M1")
-                        .header("Range", "bytes=0-9"))
-                .andExpect(status().isPartialContent())
-                .andExpect(header().string("Content-Range",
-                        containsString("bytes 0-9/" + VIDEO_CONTENT.length)));
+                                .header("Range", "bytes=0-9"))
+               .andExpect(status().isPartialContent())
+               .andExpect(header().string("Content-Range",
+                                          containsString("bytes 0-9/" + VIDEO_CONTENT.length)));
     }
 
     @Test
     void rangeRequest_returnsCorrectBytes() throws Exception {
         mockMvc.perform(get("/api/stream/M1")
-                        .header("Range", "bytes=0-9"))
-                .andExpect(status().isPartialContent())
-                .andExpect(content().bytes("ABCDEFGHIJ".getBytes()));
+                                .header("Range", "bytes=0-9"))
+               .andExpect(status().isPartialContent())
+               .andExpect(content().bytes("ABCDEFGHIJ".getBytes()));
     }
 
     @Test
     void rangeRequest_midFile_returnsCorrectBytes() throws Exception {
         // bytes=10-14 → "KLMNO"
         mockMvc.perform(get("/api/stream/M1")
-                        .header("Range", "bytes=10-14"))
-                .andExpect(status().isPartialContent())
-                .andExpect(content().bytes("KLMNO".getBytes()));
+                                .header("Range", "bytes=10-14"))
+               .andExpect(status().isPartialContent())
+               .andExpect(content().bytes("KLMNO".getBytes()));
     }
 
     @Test
@@ -133,7 +138,7 @@ class StreamControllerTest {
         when(mediaService.findById("M2")).thenReturn(nonexistent.toString());
 
         mockMvc.perform(get("/api/stream/M2"))
-                .andExpect(status().isNotFound());
+               .andExpect(status().isNotFound());
     }
 
     @Test
@@ -142,7 +147,7 @@ class StreamControllerTest {
                 .thenThrow(new ResponseStatusException(HttpStatus.BAD_REQUEST, "Invalid media id: bad"));
 
         mockMvc.perform(get("/api/stream/bad"))
-                .andExpect(status().isBadRequest());
+               .andExpect(status().isBadRequest());
     }
 
     @Test
@@ -151,43 +156,63 @@ class StreamControllerTest {
                 .thenThrow(new ResponseStatusException(HttpStatus.NOT_FOUND, "Movie not found with id: 999"));
 
         mockMvc.perform(get("/api/stream/M999"))
-                .andExpect(status().isNotFound());
+               .andExpect(status().isNotFound());
     }
 
     @Test
     void rangeRequest_openEnded_returnsBytesToEndOfFile() throws Exception {
         mockMvc.perform(get("/api/stream/M1")
-                        .header("Range", "bytes=10-"))
-                .andExpect(status().isPartialContent())
-                .andExpect(header().string("Content-Range",
-                        containsString("bytes 10-25/" + VIDEO_CONTENT.length)))
-                .andExpect(content().bytes("KLMNOPQRSTUVWXYZ".getBytes()));
+                                .header("Range", "bytes=10-"))
+               .andExpect(status().isPartialContent())
+               .andExpect(header().string("Content-Range",
+                                          containsString("bytes 10-25/" + VIDEO_CONTENT.length)))
+               .andExpect(content().bytes("KLMNOPQRSTUVWXYZ".getBytes()));
     }
 
     @Test
     void rangeRequest_suffix_returnsLastBytes() throws Exception {
         mockMvc.perform(get("/api/stream/M1")
-                        .header("Range", "bytes=-5"))
-                .andExpect(status().isPartialContent())
-                .andExpect(header().string("Content-Range",
-                        containsString("bytes 21-25/" + VIDEO_CONTENT.length)))
-                .andExpect(content().bytes("VWXYZ".getBytes()));
+                                .header("Range", "bytes=-5"))
+               .andExpect(status().isPartialContent())
+               .andExpect(header().string("Content-Range",
+                                          containsString("bytes 21-25/" + VIDEO_CONTENT.length)))
+               .andExpect(content().bytes("VWXYZ".getBytes()));
     }
 
     @Test
     void rangeRequest_outOfBounds_returns416() throws Exception {
         mockMvc.perform(get("/api/stream/M1")
-                        .header("Range", "bytes=999-1000"))
-                .andExpect(status().isRequestedRangeNotSatisfiable())
-                .andExpect(header().string("Content-Range", "bytes */" + VIDEO_CONTENT.length));
+                                .header("Range", "bytes=999-1000"))
+               .andExpect(status().isRequestedRangeNotSatisfiable())
+               .andExpect(header().string("Content-Range", "bytes */" + VIDEO_CONTENT.length));
     }
 
     @Test
     void rangeRequest_hasExpectedContentLength() throws Exception {
         mockMvc.perform(get("/api/stream/M1")
-                        .header("Range", "bytes=10-14"))
-                .andExpect(status().isPartialContent())
-                .andExpect(header().string("Content-Length", "5"));
+                                .header("Range", "bytes=10-14"))
+               .andExpect(status().isPartialContent())
+               .andExpect(header().string("Content-Length", "5"));
+    }
+
+    @Test
+    void playlistRequest_returnsStreamingUrlWhenFullyLocalDisabled() throws Exception {
+        mockMvc.perform(get("/api/stream/M1/playlist")
+                                .with(server("media.local", 9090)))
+               .andExpect(status().isOk())
+               .andExpect(header().string("Content-Type", "audio/x-mpegurl"))
+               .andExpect(content().string("#EXTM3U\n#EXTINF:-1,test.mp4\nhttp://media.local:9090/api/stream/M1\n"));
+    }
+
+    @Test
+    void playlistRequest_returnsAbsolutePathWhenFullyLocalEnabled() throws Exception {
+        runtimeConfigService.setFullyLocal(true);
+
+        mockMvc.perform(get("/api/stream/M1/playlist")
+                                .with(server("media.local", 9090)))
+               .andExpect(status().isOk())
+               .andExpect(header().string("Content-Type", "audio/x-mpegurl"))
+               .andExpect(content().string("#EXTM3U\n#EXTINF:-1,test.mp4\n" + videoFile + "\n"));
     }
 
     @Test
@@ -203,5 +228,14 @@ class StreamControllerTest {
         assertEquals("1.5 MB", StreamController.getPrintableSize(1024 * 1024 + 512 * 1024));
         assertEquals("1.0 GB", StreamController.getPrintableSize(1024L * 1024 * 1024));
         assertEquals("2.5 GB", StreamController.getPrintableSize(2L * 1024 * 1024 * 1024 + 512L * 1024 * 1024));
+    }
+
+    private static org.springframework.test.web.servlet.request.RequestPostProcessor server(String serverName, int serverPort) {
+        return request -> {
+            request.setScheme("http");
+            request.setServerName(serverName);
+            request.setServerPort(serverPort);
+            return request;
+        };
     }
 }

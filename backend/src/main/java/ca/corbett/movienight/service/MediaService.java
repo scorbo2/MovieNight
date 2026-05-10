@@ -142,7 +142,7 @@ public class MediaService {
             movie.setWatchedRecently(true); // Set manually, since we know it's "true" even without date math
             movieRepository.save(movie); // Save via repository to avoid unnecessary filesystem overhead in the service
             logger.debug("Resolved media id {} to movie file path: {}", encodedId, path);
-            return new File(resolvedMovieDirectory, path).getAbsolutePath();
+            return resolveMovieFilePath(path);
         } else if (type == 'E') {
             Episode episode = episodeService.requireEpisode(numericId);
             String path = episode.getVideoFilePath();
@@ -150,7 +150,7 @@ public class MediaService {
             episode.setWatchedRecently(true);
             episodeRepository.save(episode);
             logger.debug("Resolved media id {} to episode file path: {}", encodedId, path);
-            return new File(resolvedEpisodeDirectory, path).getAbsolutePath();
+            return resolveEpisodeFilePath(path);
         } else if (type == 'V') {
             MusicVideo musicVideo = musicVideoService.requireMusicVideo(numericId);
             String path = musicVideo.getVideoFilePath();
@@ -158,11 +158,23 @@ public class MediaService {
             musicVideo.setWatchedRecently(true);
             musicVideoRepository.save(musicVideo);
             logger.debug("Resolved media id {} to music video file path: {}", encodedId, path);
-            return new File(resolvedMusicVideoDirectory, path).getAbsolutePath();
+            return resolveMusicVideoFilePath(path);
         } else {
             logger.warn("Unknown media type prefix '{}' in id: {}", type, encodedId);
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Unknown media type in id: " + encodedId);
         }
+    }
+
+    public String resolveMovieFilePath(String videoFilePath) {
+        return resolveAbsolutePath(resolvedMovieDirectory, videoFilePath);
+    }
+
+    public String resolveEpisodeFilePath(String videoFilePath) {
+        return resolveAbsolutePath(resolvedEpisodeDirectory, videoFilePath);
+    }
+
+    public String resolveMusicVideoFilePath(String videoFilePath) {
+        return resolveAbsolutePath(resolvedMusicVideoDirectory, videoFilePath);
     }
 
     /**
@@ -186,6 +198,10 @@ public class MediaService {
                                               "Can't read " + propName + " directory: " + resolvedDirectory);
         }
         return resolvedDirectory;
+    }
+
+    private String resolveAbsolutePath(File mediaDirectory, String videoFilePath) {
+        return new File(mediaDirectory, videoFilePath).getAbsolutePath();
     }
 
     public void setMovieDirectory(String movieDirectory) {

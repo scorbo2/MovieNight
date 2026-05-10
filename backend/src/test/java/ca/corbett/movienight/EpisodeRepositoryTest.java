@@ -124,7 +124,7 @@ class EpisodeRepositoryTest {
         Specification<Episode> spec = (root, query, cb) ->
                 cb.equal(root.get("series"), dexter);
         Sort sort = Sort.by(Sort.Direction.ASC, "season")
-                .and(Sort.by(Sort.Direction.ASC, "episode"));
+                        .and(Sort.by(Sort.Direction.ASC, "episode"));
 
         List<Episode> results = episodeRepository.findAll(spec, sort);
         assertThat(results).hasSize(4);

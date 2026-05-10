@@ -142,10 +142,31 @@ class MediaServiceTest {
     }
 
     @Test
+    void resolvesMovieFilePathWithoutUpdatingWatchState() {
+        String path = mediaService.resolveMovieFilePath("nested/test_movie.mp4");
+
+        assertThat(path).isEqualTo(new File(tempDir, "movies/nested/test_movie.mp4").getAbsolutePath());
+    }
+
+    @Test
+    void resolvesEpisodeFilePathWithoutUpdatingWatchState() {
+        String path = mediaService.resolveEpisodeFilePath("shows/season1/s01e01.mp4");
+
+        assertThat(path).isEqualTo(new File(tempDir, "episodes/shows/season1/s01e01.mp4").getAbsolutePath());
+    }
+
+    @Test
+    void resolvesMusicVideoFilePathWithoutUpdatingWatchState() {
+        String path = mediaService.resolveMusicVideoFilePath("artists/test_song.mp4");
+
+        assertThat(path).isEqualTo(new File(tempDir, "music/artists/test_song.mp4").getAbsolutePath());
+    }
+
+    @Test
     void throwsBadRequestForNullId() {
         assertThatThrownBy(() -> mediaService.findById(null))
                 .isInstanceOf(ResponseStatusException.class)
-                .satisfies(e -> assertThat(((ResponseStatusException) e).getStatusCode().value())
+                .satisfies(e -> assertThat(((ResponseStatusException)e).getStatusCode().value())
                         .isEqualTo(HttpStatus.BAD_REQUEST.value()));
     }
 
@@ -153,7 +174,7 @@ class MediaServiceTest {
     void throwsBadRequestForTooShortId() {
         assertThatThrownBy(() -> mediaService.findById("M"))
                 .isInstanceOf(ResponseStatusException.class)
-                .satisfies(e -> assertThat(((ResponseStatusException) e).getStatusCode().value())
+                .satisfies(e -> assertThat(((ResponseStatusException)e).getStatusCode().value())
                         .isEqualTo(HttpStatus.BAD_REQUEST.value()));
     }
 
@@ -161,7 +182,7 @@ class MediaServiceTest {
     void throwsBadRequestForNonNumericId() {
         assertThatThrownBy(() -> mediaService.findById("Mabc"))
                 .isInstanceOf(ResponseStatusException.class)
-                .satisfies(e -> assertThat(((ResponseStatusException) e).getStatusCode().value())
+                .satisfies(e -> assertThat(((ResponseStatusException)e).getStatusCode().value())
                         .isEqualTo(HttpStatus.BAD_REQUEST.value()));
     }
 
@@ -169,7 +190,7 @@ class MediaServiceTest {
     void throwsBadRequestForUnknownTypePrefix() {
         assertThatThrownBy(() -> mediaService.findById("X99"))
                 .isInstanceOf(ResponseStatusException.class)
-                .satisfies(e -> assertThat(((ResponseStatusException) e).getStatusCode().value())
+                .satisfies(e -> assertThat(((ResponseStatusException)e).getStatusCode().value())
                         .isEqualTo(HttpStatus.BAD_REQUEST.value()));
     }
 
@@ -180,7 +201,7 @@ class MediaServiceTest {
 
         assertThatThrownBy(() -> mediaService.findById("M999"))
                 .isInstanceOf(ResponseStatusException.class)
-                .satisfies(e -> assertThat(((ResponseStatusException) e).getStatusCode().value())
+                .satisfies(e -> assertThat(((ResponseStatusException)e).getStatusCode().value())
                         .isEqualTo(HttpStatus.NOT_FOUND.value()));
     }
 
@@ -191,7 +212,7 @@ class MediaServiceTest {
 
         assertThatThrownBy(() -> mediaService.findById("E888"))
                 .isInstanceOf(ResponseStatusException.class)
-                .satisfies(e -> assertThat(((ResponseStatusException) e).getStatusCode().value())
+                .satisfies(e -> assertThat(((ResponseStatusException)e).getStatusCode().value())
                         .isEqualTo(HttpStatus.NOT_FOUND.value()));
     }
 }

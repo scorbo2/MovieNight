@@ -14,6 +14,7 @@ import static org.hamcrest.Matchers.not;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.httpBasic;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.header;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -37,19 +38,58 @@ class SecurityIntegrationTest {
     @Test
     void publicReadEndpointsRemainOpen() throws Exception {
         mockMvc.perform(get("/api/movies"))
-                .andExpect(status().isOk())
-                .andExpect(header().string("X-Correlation-Id", not(blankOrNullString())));
+               .andExpect(status().isOk())
+               .andExpect(header().string("X-Correlation-Id", not(blankOrNullString())));
     }
 
     @Test
     void adminRouteRequiresBasicAuthFromLocalhost() throws Exception {
         mockMvc.perform(get("/admin").with(remoteAddr("127.0.0.1")))
-                .andExpect(status().isUnauthorized());
+               .andExpect(status().isUnauthorized());
 
         mockMvc.perform(get("/admin")
-                        .with(remoteAddr("127.0.0.1"))
-                        .with(httpBasic("admin", "secret")))
-                .andExpect(status().isOk());
+                                .with(remoteAddr("127.0.0.1"))
+                                .with(httpBasic("admin", "secret")))
+               .andExpect(status().isOk());
+    }
+
+    @Test
+    void runtimeConfigEndpointsRequireLocalhostAndAuth() throws Exception {
+        mockMvc.perform(get("/api/runtime-config/fully-local")
+                                .with(remoteAddr("127.0.0.1")))
+               .andExpect(status().isUnauthorized());
+
+        mockMvc.perform(get("/api/runtime-config/fully-local")
+                                .with(remoteAddr("192.168.1.50"))
+                                .with(httpBasic("admin", "secret")))
+               .andExpect(status().isForbidden());
+
+        mockMvc.perform(get("/api/runtime-config/fully-local")
+                                .with(remoteAddr("127.0.0.1"))
+                                .with(httpBasic("admin", "secret")))
+               .andExpect(status().isOk())
+               .andExpect(jsonPath("$.fullyLocal").value(false));
+
+        mockMvc.perform(put("/api/runtime-config/fully-local")
+                                .with(remoteAddr("127.0.0.1"))
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .content("{\"fullyLocal\":true}"))
+               .andExpect(status().isUnauthorized());
+
+        mockMvc.perform(put("/api/runtime-config/fully-local")
+                                .with(remoteAddr("192.168.1.50"))
+                                .with(httpBasic("admin", "secret"))
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .content("{\"fullyLocal\":true}"))
+               .andExpect(status().isForbidden());
+
+        mockMvc.perform(put("/api/runtime-config/fully-local")
+                                .with(remoteAddr("127.0.0.1"))
+                                .with(httpBasic("admin", "secret"))
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .content("{\"fullyLocal\":true}"))
+               .andExpect(status().isOk())
+               .andExpect(jsonPath("$.fullyLocal").value(true));
     }
 
     @Test
@@ -67,49 +107,49 @@ class SecurityIntegrationTest {
                 """;
 
         mockMvc.perform(post("/api/movies")
-                        .with(remoteAddr("127.0.0.1"))
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(movieJson))
-                .andExpect(status().isUnauthorized());
+                                .with(remoteAddr("127.0.0.1"))
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .content(movieJson))
+               .andExpect(status().isUnauthorized());
 
         mockMvc.perform(post("/api/movies")
-                        .with(remoteAddr("192.168.1.50"))
-                        .with(httpBasic("admin", "secret"))
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(movieJson))
-                .andExpect(status().isForbidden());
+                                .with(remoteAddr("192.168.1.50"))
+                                .with(httpBasic("admin", "secret"))
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .content(movieJson))
+               .andExpect(status().isForbidden());
 
         mockMvc.perform(post("/api/movies")
-                        .with(remoteAddr("127.0.0.1"))
-                        .with(httpBasic("admin", "secret"))
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(movieJson))
-                .andExpect(status().isCreated());
+                                .with(remoteAddr("127.0.0.1"))
+                                .with(httpBasic("admin", "secret"))
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .content(movieJson))
+               .andExpect(status().isCreated());
     }
 
     @Test
     void echoesIncomingCorrelationId() throws Exception {
         mockMvc.perform(get("/api/movies")
-                        .header("X-Correlation-Id", "test-correlation-id"))
-                .andExpect(status().isOk())
-                .andExpect(header().string("X-Correlation-Id", "test-correlation-id"));
+                                .header("X-Correlation-Id", "test-correlation-id"))
+               .andExpect(status().isOk())
+               .andExpect(header().string("X-Correlation-Id", "test-correlation-id"));
     }
 
     @Test
     void validationErrorsUseStandardErrorResponse() throws Exception {
         mockMvc.perform(post("/api/movies")
-                        .with(remoteAddr("127.0.0.1"))
-                        .with(httpBasic("admin", "secret"))
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content("{}"))
-                .andExpect(status().isBadRequest())
-                .andExpect(header().string("X-Correlation-Id", not(blankOrNullString())))
-                .andExpect(jsonPath("$.status").value(400))
-                .andExpect(jsonPath("$.error").value("Bad Request"))
-                .andExpect(jsonPath("$.message").value("Validation failed"))
-                .andExpect(jsonPath("$.path").value("/api/movies"))
-                .andExpect(jsonPath("$.correlationId").value(not(blankOrNullString())))
-                .andExpect(jsonPath("$.details[0]").exists());
+                                .with(remoteAddr("127.0.0.1"))
+                                .with(httpBasic("admin", "secret"))
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .content("{}"))
+               .andExpect(status().isBadRequest())
+               .andExpect(header().string("X-Correlation-Id", not(blankOrNullString())))
+               .andExpect(jsonPath("$.status").value(400))
+               .andExpect(jsonPath("$.error").value("Bad Request"))
+               .andExpect(jsonPath("$.message").value("Validation failed"))
+               .andExpect(jsonPath("$.path").value("/api/movies"))
+               .andExpect(jsonPath("$.correlationId").value(not(blankOrNullString())))
+               .andExpect(jsonPath("$.details[0]").exists());
     }
 
     private static RequestPostProcessor remoteAddr(String remoteAddress) {

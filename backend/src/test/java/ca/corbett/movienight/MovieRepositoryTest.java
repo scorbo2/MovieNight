@@ -149,7 +149,7 @@ class MovieRepositoryTest {
         // title contains "action", tag contains "blockbuster" → only m1
         Specification<Movie> spec = Specification
                 .<Movie>where((root, query, cb) ->
-                        cb.like(cb.lower(root.get("title")), "%action%"))
+                                      cb.like(cb.lower(root.get("title")), "%action%"))
                 .and((root, query, cb) -> {
                     query.distinct(true);
                     Join<Movie, String> tagsJoin = root.join("tags", JoinType.INNER);

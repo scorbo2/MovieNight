@@ -79,22 +79,18 @@ public class SecurityIntegrationWithoutLocalhostOnlyTest {
                .andExpect(status().isUnauthorized());
     }
 
-                                    @Test
-                                    void runtimeConfigEndpointsAllowAnyRemoteAddressWithAuth() throws Exception {
-                                        mockMvc.perform(get("/api/runtime-config/fully-local")
-                                                        .with(remoteAddr("192.168.1.50"))
-                                                        .with(httpBasic("admin", "secret")))
-                                                .andExpect(status().isOk())
-                                                .andExpect(jsonPath("$.fullyLocal").value(false));
+    @Test
+    void runtimeConfigEndpointsAllowAnyRemoteAddressWithAuth() throws Exception {
+        mockMvc.perform(get("/api/runtime-config/fully-local").with(remoteAddr("192.168.1.50"))
+                                                              .with(httpBasic("admin", "secret")))
+               .andExpect(status().isOk()).andExpect(jsonPath("$.fullyLocal").value(false));
 
-                                        mockMvc.perform(put("/api/runtime-config/fully-local")
-                                                        .with(remoteAddr("192.168.1.50"))
-                                                        .with(httpBasic("admin", "secret"))
-                                                        .contentType(MediaType.APPLICATION_JSON)
-                                                        .content("{\"fullyLocal\":true}"))
-                                                .andExpect(status().isOk())
-                                                .andExpect(jsonPath("$.fullyLocal").value(true));
-                                    }
+        mockMvc.perform(put("/api/runtime-config/fully-local").with(remoteAddr("192.168.1.50"))
+                                                              .with(httpBasic("admin", "secret"))
+                                                              .contentType(MediaType.APPLICATION_JSON)
+                                                              .content("{\"fullyLocal\":true}"))
+               .andExpect(status().isOk()).andExpect(jsonPath("$.fullyLocal").value(true));
+    }
 
     private static RequestPostProcessor remoteAddr(String remoteAddress) {
         return request -> {

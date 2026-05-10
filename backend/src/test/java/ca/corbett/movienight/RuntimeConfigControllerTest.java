@@ -44,42 +44,42 @@ class RuntimeConfigControllerTest {
     @Test
     void getFullyLocal_returnsCurrentState() throws Exception {
         mockMvc.perform(get("/api/runtime-config/fully-local")
-                        .with(remoteAddr("127.0.0.1"))
-                        .with(httpBasic("admin", "secret")))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.fullyLocal").value(false));
+                                .with(remoteAddr("127.0.0.1"))
+                                .with(httpBasic("admin", "secret")))
+               .andExpect(status().isOk())
+               .andExpect(jsonPath("$.fullyLocal").value(false));
     }
 
     @Test
     void putFullyLocal_updatesCurrentState() throws Exception {
         mockMvc.perform(put("/api/runtime-config/fully-local")
-                        .with(remoteAddr("127.0.0.1"))
-                        .with(httpBasic("admin", "secret"))
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content("""
-                                {
-                                  "fullyLocal": true
-                                }
-                                """))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.fullyLocal").value(true));
+                                .with(remoteAddr("127.0.0.1"))
+                                .with(httpBasic("admin", "secret"))
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .content("""
+                                                 {
+                                                   "fullyLocal": true
+                                                 }
+                                                 """))
+               .andExpect(status().isOk())
+               .andExpect(jsonPath("$.fullyLocal").value(true));
 
         mockMvc.perform(get("/api/runtime-config/fully-local")
-                        .with(remoteAddr("127.0.0.1"))
-                        .with(httpBasic("admin", "secret")))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.fullyLocal").value(true));
+                                .with(remoteAddr("127.0.0.1"))
+                                .with(httpBasic("admin", "secret")))
+               .andExpect(status().isOk())
+               .andExpect(jsonPath("$.fullyLocal").value(true));
     }
 
     @Test
     void putFullyLocal_requiresField() throws Exception {
         mockMvc.perform(put("/api/runtime-config/fully-local")
-                        .with(remoteAddr("127.0.0.1"))
-                        .with(httpBasic("admin", "secret"))
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content("{}"))
-                .andExpect(status().isBadRequest())
-                .andExpect(jsonPath("$.message").value("fullyLocal is required"));
+                                .with(remoteAddr("127.0.0.1"))
+                                .with(httpBasic("admin", "secret"))
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .content("{}"))
+               .andExpect(status().isBadRequest())
+               .andExpect(jsonPath("$.message").value("fullyLocal is required"));
     }
 
     private static RequestPostProcessor remoteAddr(String remoteAddress) {

@@ -106,7 +106,7 @@ class ThumbnailServiceTest {
         // Only one thumbnail should exist after replacement
         int count = 0;
         for (String ext : new String[]{"jpg", "jpeg", "png"}) {
-            if (Files.exists(tempDir.resolve("movies").resolve("3." + ext))) count++;
+            if (Files.exists(tempDir.resolve("movies").resolve("3." + ext))) { count++; }
         }
         assertThat(count).isEqualTo(1);
         assertThat(thumbnailService.hasThumbnail("movies", 3L)).isTrue();
@@ -115,7 +115,7 @@ class ThumbnailServiceTest {
     @Test
     void rejectsInvalidImageData() {
         MockMultipartFile garbage = new MockMultipartFile("file", "bad.jpg", "image/jpeg",
-                "this is not an image".getBytes());
+                                                          "this is not an image".getBytes());
         assertThatThrownBy(() -> thumbnailService.saveThumbnail(garbage, "movies", 4L))
                 .hasMessageContaining("Unable to read image");
     }

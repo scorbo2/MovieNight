@@ -160,11 +160,11 @@ class MusicVideoRepositoryTest {
         List<MusicVideo> radioheadVideos = musicVideoRepository.findByArtist(radiohead);
 
         assertThat(beatlesVideos).hasSize(2)
-                .extracting(MusicVideo::getTitle)
-                .containsExactlyInAnyOrder("Come Together", "Hey Jude");
+                                 .extracting(MusicVideo::getTitle)
+                                 .containsExactlyInAnyOrder("Come Together", "Hey Jude");
         assertThat(queenVideos).hasSize(1)
-                .extracting(MusicVideo::getTitle)
-                .containsExactly("Bohemian Rhapsody");
+                               .extracting(MusicVideo::getTitle)
+                               .containsExactly("Bohemian Rhapsody");
         assertThat(radioheadVideos).isEmpty();
     }
 
@@ -183,7 +183,7 @@ class MusicVideoRepositoryTest {
         // title contains "come", tag contains "rock" → only mv1
         Specification<MusicVideo> spec = Specification
                 .<MusicVideo>where((root, query, cb) ->
-                        cb.like(cb.lower(root.get("title")), "%come%"))
+                                           cb.like(cb.lower(root.get("title")), "%come%"))
                 .and((root, query, cb) -> {
                     query.distinct(true);
                     Join<MusicVideo, String> tagsJoin = root.join("tags", JoinType.INNER);

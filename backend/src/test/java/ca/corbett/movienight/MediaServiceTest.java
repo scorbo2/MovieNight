@@ -142,6 +142,27 @@ class MediaServiceTest {
     }
 
     @Test
+    void resolvesMovieFilePathWithoutUpdatingWatchState() {
+        String path = mediaService.resolveMovieFilePath("nested/test_movie.mp4");
+
+        assertThat(path).isEqualTo(new File(tempDir, "movies/nested/test_movie.mp4").getAbsolutePath());
+    }
+
+    @Test
+    void resolvesEpisodeFilePathWithoutUpdatingWatchState() {
+        String path = mediaService.resolveEpisodeFilePath("shows/season1/s01e01.mp4");
+
+        assertThat(path).isEqualTo(new File(tempDir, "episodes/shows/season1/s01e01.mp4").getAbsolutePath());
+    }
+
+    @Test
+    void resolvesMusicVideoFilePathWithoutUpdatingWatchState() {
+        String path = mediaService.resolveMusicVideoFilePath("artists/test_song.mp4");
+
+        assertThat(path).isEqualTo(new File(tempDir, "music/artists/test_song.mp4").getAbsolutePath());
+    }
+
+    @Test
     void throwsBadRequestForNullId() {
         assertThatThrownBy(() -> mediaService.findById(null))
                 .isInstanceOf(ResponseStatusException.class)

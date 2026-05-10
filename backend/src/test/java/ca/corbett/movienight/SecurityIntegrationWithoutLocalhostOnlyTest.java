@@ -10,7 +10,10 @@ import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.request.RequestPostProcessor;
 
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.httpBasic;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 @SpringBootTest
@@ -75,6 +78,23 @@ public class SecurityIntegrationWithoutLocalhostOnlyTest {
                                 .content(movieJson))
                .andExpect(status().isUnauthorized());
     }
+
+                                    @Test
+                                    void runtimeConfigEndpointsAllowAnyRemoteAddressWithAuth() throws Exception {
+                                        mockMvc.perform(get("/api/runtime-config/fully-local")
+                                                        .with(remoteAddr("192.168.1.50"))
+                                                        .with(httpBasic("admin", "secret")))
+                                                .andExpect(status().isOk())
+                                                .andExpect(jsonPath("$.fullyLocal").value(false));
+
+                                        mockMvc.perform(put("/api/runtime-config/fully-local")
+                                                        .with(remoteAddr("192.168.1.50"))
+                                                        .with(httpBasic("admin", "secret"))
+                                                        .contentType(MediaType.APPLICATION_JSON)
+                                                        .content("{\"fullyLocal\":true}"))
+                                                .andExpect(status().isOk())
+                                                .andExpect(jsonPath("$.fullyLocal").value(true));
+                                    }
 
     private static RequestPostProcessor remoteAddr(String remoteAddress) {
         return request -> {

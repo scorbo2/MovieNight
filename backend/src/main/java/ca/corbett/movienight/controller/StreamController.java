@@ -1,6 +1,7 @@
 package ca.corbett.movienight.controller;
 
 import ca.corbett.movienight.service.MediaService;
+import ca.corbett.movienight.service.RuntimeConfigService;
 import jakarta.annotation.PostConstruct;
 import jakarta.servlet.http.HttpServletRequest;
 import org.slf4j.Logger;
@@ -37,6 +38,7 @@ public class StreamController {
     private static final MediaType DEFAULT_VIDEO_MEDIA_TYPE = MediaType.parseMediaType("video/mp4");
 
     private final MediaService mediaService;
+    private final RuntimeConfigService runtimeConfigService;
 
     @Value("${movienight.max-range-request-size-mb:32}")
     private int rangeRequestMaxChunkMB;
@@ -44,8 +46,9 @@ public class StreamController {
     @Value("${movienight.enable-vlc-integration:false}")
     private boolean enableVlcIntegration;
 
-    public StreamController(MediaService mediaService) {
+    public StreamController(MediaService mediaService, RuntimeConfigService runtimeConfigService) {
         this.mediaService = mediaService;
+        this.runtimeConfigService = runtimeConfigService;
     }
 
     @PostConstruct
@@ -186,20 +189,23 @@ public class StreamController {
                                               "Video file not found for media id: " + id);
         }
 
-        // Build the stream URL pointing back to our existing streaming endpoint:
-        String streamUrl = request.getScheme() + "://" +
-                request.getServerName() + ":" +
-                request.getServerPort() +
-                "/api/stream/" + id;
+        String playlistTarget = runtimeConfigService.isFullyLocal() ? filePath : buildStreamUrl(id, request);
 
         // The M3U format is very straightforward:
-        String m3u = "#EXTM3U\n#EXTINF:-1," + fileName + "\n" + streamUrl + "\n";
+        String m3u = "#EXTM3U\n#EXTINF:-1," + fileName + "\n" + playlistTarget + "\n";
 
         // VLC will be able to stream directly from our existing streaming endpoint:
         return ResponseEntity.ok()
                              .header(HttpHeaders.CONTENT_TYPE, "audio/x-mpegurl")
                              .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"stream.m3u\"")
                              .body(m3u);
+    }
+
+    private String buildStreamUrl(String id, HttpServletRequest request) {
+        return request.getScheme() + "://" +
+                request.getServerName() + ":" +
+                request.getServerPort() +
+                "/api/stream/" + id;
     }
 
     /**

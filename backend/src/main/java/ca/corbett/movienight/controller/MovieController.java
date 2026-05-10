@@ -1,7 +1,9 @@
 package ca.corbett.movienight.controller;
 
 import ca.corbett.movienight.model.Movie;
+import ca.corbett.movienight.service.MediaService;
 import ca.corbett.movienight.service.MovieService;
+import ca.corbett.movienight.service.RuntimeConfigService;
 import ca.corbett.movienight.service.ThumbnailService;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
@@ -34,10 +36,17 @@ import java.util.List;
 public class MovieController {
 
     private final MovieService movieService;
+    private final MediaService mediaService;
+    private final RuntimeConfigService runtimeConfigService;
     private final ThumbnailService thumbnailService;
 
-    public MovieController(MovieService movieService, ThumbnailService thumbnailService) {
+    public MovieController(MovieService movieService,
+                           MediaService mediaService,
+                           RuntimeConfigService runtimeConfigService,
+                           ThumbnailService thumbnailService) {
         this.movieService = movieService;
+        this.mediaService = mediaService;
+        this.runtimeConfigService = runtimeConfigService;
         this.thumbnailService = thumbnailService;
     }
 
@@ -64,18 +73,15 @@ public class MovieController {
         m3u.append("#EXTM3U\n");
         for (Movie movie : movies) {
             String fileName = new File(movie.getVideoFilePath()).getName();
-
-            // Build the stream URL pointing back to our existing streaming endpoint:
-            String streamUrl = request.getScheme() + "://" +
-                    request.getServerName() + ":" +
-                    request.getServerPort() +
-                    "/api/stream/M" + movie.getId();
+            String playlistTarget = runtimeConfigService.isFullyLocal()
+                    ? mediaService.resolveMovieFilePath(movie.getVideoFilePath())
+                    : buildStreamUrl(request, "M" + movie.getId());
 
             // The M3U format is very straightforward:
             m3u.append("#EXTINF:-1,");
             m3u.append(fileName);
             m3u.append("\n");
-            m3u.append(streamUrl);
+            m3u.append(playlistTarget);
             m3u.append("\n");
         }
 
@@ -84,6 +90,13 @@ public class MovieController {
                              .header(HttpHeaders.CONTENT_TYPE, "audio/x-mpegurl")
                              .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"stream.m3u\"")
                              .body(m3u.toString());
+    }
+
+    private String buildStreamUrl(HttpServletRequest request, String encodedId) {
+        return request.getScheme() + "://" +
+                request.getServerName() + ":" +
+                request.getServerPort() +
+                "/api/stream/" + encodedId;
     }
 
     @GetMapping("/{id}")

@@ -2,6 +2,7 @@ package ca.corbett.movienight;
 
 import ca.corbett.movienight.controller.StreamController;
 import ca.corbett.movienight.service.MediaService;
+import ca.corbett.movienight.service.RuntimeConfigService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
@@ -44,6 +45,9 @@ class StreamControllerTest {
     @Autowired
     private MockMvc mockMvc;
 
+    @Autowired
+    private RuntimeConfigService runtimeConfigService;
+
     @MockBean
     private MediaService mediaService;
 
@@ -57,6 +61,7 @@ class StreamControllerTest {
         videoFile = tempDir.resolve("test.mp4");
         Files.write(videoFile, VIDEO_CONTENT);
         when(mediaService.findById("M1")).thenReturn(videoFile.toString());
+        runtimeConfigService.setFullyLocal(false);
     }
 
     @Test
@@ -191,6 +196,26 @@ class StreamControllerTest {
     }
 
     @Test
+    void playlistRequest_returnsStreamingUrlWhenFullyLocalDisabled() throws Exception {
+        mockMvc.perform(get("/api/stream/M1/playlist")
+                        .with(server("media.local", 9090)))
+                .andExpect(status().isOk())
+                .andExpect(header().string("Content-Type", "audio/x-mpegurl"))
+                .andExpect(content().string("#EXTM3U\n#EXTINF:-1,test.mp4\nhttp://media.local:9090/api/stream/M1\n"));
+    }
+
+    @Test
+    void playlistRequest_returnsAbsolutePathWhenFullyLocalEnabled() throws Exception {
+        runtimeConfigService.setFullyLocal(true);
+
+        mockMvc.perform(get("/api/stream/M1/playlist")
+                        .with(server("media.local", 9090)))
+                .andExpect(status().isOk())
+                .andExpect(header().string("Content-Type", "audio/x-mpegurl"))
+                .andExpect(content().string("#EXTM3U\n#EXTINF:-1,test.mp4\n" + videoFile + "\n"));
+    }
+
+    @Test
     void getPrintableSize_returnsFormattedSizeStrings() {
         // GIVEN various byte values
         // WHEN we call getPrintableSize on the StreamController
@@ -203,5 +228,14 @@ class StreamControllerTest {
         assertEquals("1.5 MB", StreamController.getPrintableSize(1024 * 1024 + 512 * 1024));
         assertEquals("1.0 GB", StreamController.getPrintableSize(1024L * 1024 * 1024));
         assertEquals("2.5 GB", StreamController.getPrintableSize(2L * 1024 * 1024 * 1024 + 512L * 1024 * 1024));
+    }
+
+    private static org.springframework.test.web.servlet.request.RequestPostProcessor server(String serverName, int serverPort) {
+        return request -> {
+            request.setScheme("http");
+            request.setServerName(serverName);
+            request.setServerPort(serverPort);
+            return request;
+        };
     }
 }

@@ -20,17 +20,20 @@ function NavItem({ to, children }) {
 function FullyLocalCheckbox() {
   const { fullyLocal, setFullyLocal } = useAppConfig()
   return (
-    <label
-      className="flex items-center gap-2 cursor-pointer select-none text-sm font-medium text-gray-300"
-      title="Select this to generate file-based playlists instead of streaming ones"
-    >
+    <label className="flex cursor-pointer select-none items-start gap-2 text-sm font-medium text-gray-300">
       <input
         type="checkbox"
         checked={fullyLocal}
         onChange={e => setFullyLocal(e.target.checked)}
-        className="w-4 h-4 accent-indigo-500 cursor-pointer"
+        aria-describedby="fully-local-description"
+        className="mt-0.5 h-4 w-4 cursor-pointer accent-indigo-500"
       />
-      Fully local
+      <span className="flex flex-col">
+        <span>Fully local</span>
+        <span id="fully-local-description" className="text-xs font-normal text-gray-400">
+          Generate file-based playlists instead of streaming ones
+        </span>
+      </span>
     </label>
   )
 }

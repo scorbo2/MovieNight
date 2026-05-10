@@ -1,6 +1,6 @@
 import { BrowserRouter, NavLink, Navigate, Route, Routes } from 'react-router-dom'
 import MediaLibraryPage from './pages/MediaLibraryPage'
-import { AppConfigProvider } from './context/AppConfigContext'
+import { AppConfigProvider, useAppConfig } from './context/AppConfigContext'
 
 function NavItem({ to, children }) {
   return (
@@ -14,6 +14,27 @@ function NavItem({ to, children }) {
     >
       {children}
     </NavLink>
+  )
+}
+
+function FullyLocalCheckbox() {
+  const { fullyLocal, setFullyLocal } = useAppConfig()
+  return (
+    <label className="flex cursor-pointer select-none items-start gap-2 text-sm font-medium text-gray-300">
+      <input
+        type="checkbox"
+        checked={fullyLocal}
+        onChange={e => setFullyLocal(e.target.checked)}
+        aria-describedby="fully-local-description"
+        className="mt-0.5 h-4 w-4 cursor-pointer accent-indigo-500"
+      />
+      <span className="flex flex-col">
+        <span>Fully local</span>
+        <span id="fully-local-description" className="text-xs font-normal text-gray-400">
+          Generate file-based playlists instead of streaming ones
+        </span>
+      </span>
+    </label>
   )
 }
 
@@ -33,6 +54,7 @@ export default function App() {
               <nav className="flex items-center gap-2">
                 <NavItem to="/">Browse</NavItem>
                 <NavItem to="/admin">Admin</NavItem>
+                <FullyLocalCheckbox />
               </nav>
             </div>
           </header>

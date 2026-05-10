@@ -1,13 +1,17 @@
-import { createContext, useContext, useEffect, useMemo, useRef, useState } from 'react'
+import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react'
 
 const VLC_ENABLED_API = '/api/stream/vlc-enabled'
+const FULLY_LOCAL_API = '/api/runtime-config/fully-local'
 
 const AppConfigContext = createContext({
   vlcEnabled: false,
+  fullyLocal: false,
+  setFullyLocal: () => {},
 })
 
 export function AppConfigProvider({ children }) {
   const [vlcEnabled, setVlcEnabled] = useState(false)
+  const [fullyLocal, setFullyLocalState] = useState(false)
   const hasFetchedConfig = useRef(false)
 
   useEffect(() => {
@@ -26,10 +30,38 @@ export function AppConfigProvider({ children }) {
       }
     }
 
+    const fetchFullyLocal = async () => {
+      try {
+        const response = await fetch(FULLY_LOCAL_API)
+        if (!response.ok) return
+
+        const data = await response.json()
+        setFullyLocalState(!!data.fullyLocal)
+      } catch {
+        setFullyLocalState(false)
+      }
+    }
+
     fetchVlcEnabled()
+    fetchFullyLocal()
   }, [])
 
-  const value = useMemo(() => ({ vlcEnabled }), [vlcEnabled])
+  const setFullyLocal = useCallback(async (value) => {
+    try {
+      const response = await fetch(FULLY_LOCAL_API, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ fullyLocal: value }),
+      })
+      if (!response.ok) return
+      const data = await response.json()
+      setFullyLocalState(!!data.fullyLocal)
+    } catch {
+      // ignore errors; state stays unchanged
+    }
+  }, [])
+
+  const value = useMemo(() => ({ vlcEnabled, fullyLocal, setFullyLocal }), [vlcEnabled, fullyLocal, setFullyLocal])
 
   return <AppConfigContext.Provider value={value}>{children}</AppConfigContext.Provider>
 }

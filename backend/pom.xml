@@ -135,7 +135,6 @@
                 </configuration>
             </plugin>
 
-            <!-- Commented out until new UI is ready
             <plugin>
                 <groupId>com.github.eirslett</groupId>
                 <artifactId>frontend-maven-plugin</artifactId>
@@ -174,7 +173,6 @@
                     </execution>
                 </executions>
             </plugin>
-                -->
 
         </plugins>
     </build>

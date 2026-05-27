@@ -1,7 +1,6 @@
 package ca.corbett.movienight.model;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
-import jakarta.persistence.Transient;
 
 /**
  * MediaGroups are used to group MediaItems together.
@@ -29,15 +28,14 @@ import jakarta.persistence.Transient;
  */
 public class MediaGroup {
 
-    private long id;
-    private Long parentGroupId; // nullable - null means this is a top-level group
-    private String title;
-    private String description;
+    private long id; // not nullable! primary key autoincrement
+    private Long parentGroupId; // null means "top level group" (no parent)
+    private String title; // not nullable! mandatory title
+    private String description; // nullable - optional description
 
     /**
      * Not stored in the database - populated at runtime as a convenience for the UI.
      */
-    @Transient
     @JsonProperty(value = "hasThumbnail", access = JsonProperty.Access.READ_ONLY)
     private boolean hasThumbnail = false;
 
@@ -45,7 +43,7 @@ public class MediaGroup {
         return id;
     }
 
-    public long getParentGroupId() {
+    public Long getParentGroupId() {
         return parentGroupId;
     }
 
@@ -82,6 +80,6 @@ public class MediaGroup {
     }
 
     public boolean isTopLevelGroup() {
-        return parentGroupId == 0; // or we could use null if we change the type to Long
+        return parentGroupId == null;
     }
 }

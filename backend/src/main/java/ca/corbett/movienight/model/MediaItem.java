@@ -1,7 +1,6 @@
 package ca.corbett.movienight.model;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
-import jakarta.persistence.Transient;
 
 import java.time.LocalDate;
 import java.util.ArrayList;
@@ -10,18 +9,26 @@ import java.util.stream.Collectors;
 
 /**
  * Represents a single streamable media item. All MediaItems have a mandatory title, an optional
- * description, an optional last watched date, and an optional list of tags. The media file path
- * stored here is a relative path to the media file, relative to our configured data directory.
- * This allows the data directory to be moved or mounted to a different location without breaking
- * anything in this model. MediaItems can also have a thumbnail image, but these are stored
- * externally to this codebase - if a data directory is configured, thumbnail images can be
- * stored there and will be discovered automatically.
+ * description, an optional last watched date, and an optional list of tags. MediaItems must
+ * belong to a MediaGroup - the mediaGroupId field here is a foreign key reference enforced
+ * by the database.
  * <p>
- *     <b>USING TAGS:</b> tags are any arbitrary String that can serve as metadata for
- *     the media item. This could be the name of an actor, a director, a film genre,
- *     a production year, or literally anything else that might be useful for searching
- *     and filtering media items. Tags are normalized before being stored - they are trimmed, lowercased,
- *     and deduplicated. Tags are completely optional.
+ * <b>The media file path</b> - this is a relative file path! The system will store a configured
+ * "data directory", and all media file paths are relative to that data directory. This allows
+ * the data directory to be moved (or remounted, if it's a file share) without breaking this model.
+ * The media file path is mandatory, but it is not necessary for it to be unique.
+ * </p>
+ * <p>
+ * <b>Thumbnails</b> - MediaItems can have a thumbnail image, but we don't explicitly store the
+ * location of it here. Instead, a "thumbnails" directory will be automatically created inside the
+ * configured data directory, and thumbnail images will be stored using the media item's ID as the filename
+ * (example: "thumbnails/MediaItem_123.jpg" for a media item with ID 123).
+ * <p>
+ * <b>USING TAGS:</b> tags are any arbitrary String that can serve as metadata for
+ * the media item. These are used for searching purposes. This could be the name of an actor, a director, a film genre,
+ * a production year, or literally anything else that might be useful for searching
+ * and filtering media items. Tags are normalized before being stored - they are trimmed, lowercased,
+ * and deduplicated. Tags are completely optional.
  * </p>
  *
  * @author <a href="https://github.com/scorbo2">scorbo2</a>
@@ -29,18 +36,20 @@ import java.util.stream.Collectors;
  */
 public class MediaItem {
 
-    private long id;
+    private long id; // not nullable! primary key autoincrement
     private long mediaGroupId; // foreign key to the MediaGroup this item belongs to
-    private String title;
-    private String description;
-    private LocalDate lastWatchedDate;
-    private String mediaFilePath; // relative to our configured data directory
+    private String title; // not nullable! mandatory title
+    private String description; // nullable - optional description
+    private LocalDate lastWatchedDate; // null means "not yet watched"
+    private String mediaFilePath; // not nullable! relative to our configured data directory
+
+    // When stored to the database, this list is serialized to a single comma-separated string.
+    // It is stored in the database as a simple string (can be empty or null for "no tags")
     private List<String> tags = new ArrayList<>();
 
     /**
      * Not stored in the database - populated at runtime as a convenience for the UI.
      */
-    @Transient
     @JsonProperty(value = "hasThumbnail", access = JsonProperty.Access.READ_ONLY)
     private boolean hasThumbnail = false;
 
@@ -72,6 +81,10 @@ public class MediaItem {
         return new ArrayList<>(tags);
     }
 
+    public String getTagsAsCommaSeparatedString() {
+        return String.join(",", tags);
+    }
+
     public boolean isHasThumbnail() {
         return hasThumbnail;
     }
@@ -98,6 +111,28 @@ public class MediaItem {
 
     public void setMediaFilePath(String mediaFilePath) {
         this.mediaFilePath = mediaFilePath;
+    }
+
+    /**
+     * Normalizes and adds the given tag to the list of tags, if it is not already present.
+     * Normalization means that the tag is trimmed of leading and trailing whitespace, converted to lowercase,
+     * and checked for duplicates. For example:
+     * <pre>
+     *     mediaItem.addTag(" Action ");
+     *     mediaItem.addTag("ACTION");
+     *     mediaItem.addTag("Action    ");
+     *     System.out.println(mediaItem.getTags()); // Output: ["action"]
+     * </pre>
+     *
+     * @param tag Any non-null, non-blank string to be added as a tag. Null or blank tags are ignored.
+     */
+    public void addTag(String tag) {
+        if (tag != null && !tag.isBlank()) {
+            String normalizedTag = tag.trim().toLowerCase();
+            if (!tags.contains(normalizedTag)) {
+                tags.add(normalizedTag);
+            }
+        }
     }
 
     /**

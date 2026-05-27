@@ -2,10 +2,13 @@
 
 Build a modern React-based frontend around the existing REST contract (contained within the Java/Maven project in
 `backend/`), with two clearly separated experiences: a public browse app for discovery and a private-by-convention admin
-app for full CRUD and thumbnail management. The recommended implementation is a small frontend workspace with two
-route-level applications (`browse` and `admin`) sharing a common design system, API client, state/query utilities, and
+app for full CRUD and thumbnail management. The recommended implementation is a one Vite React app with `/browse/*` and
+`/admin/*` route groups sharing a common design system, API client, state/query utilities, and
 theme infrastructure. React + Tailwind is a strong fit here because it supports fast UI iteration, responsive layouts,
 and token-driven theming without forcing hard-coded colors into components.
+
+API examples in this plan list the api base path as `{apiBasePath}`. The default is actually `/api`, but the UI should
+never assume that, and instead expect it to be configurable at runtime.
 
 The backend API already provides the core capabilities this UI needs:
 - group browse/search and item browse/search
@@ -14,7 +17,11 @@ The backend API already provides the core capabilities this UI needs:
 - media streaming and playlist generation for the browse experience
 - thumbnail fetch/create/replace/delete endpoints for both groups and items
 
-That means the UI plan should optimize for clean separation of concerns, rapid iteration, and future extensibility rather than heavy framework complexity.
+That means the UI plan should optimize for clean separation of concerns, rapid iteration, and future extensibility
+rather than heavy framework complexity.
+
+Note that `admin` is not a security boundary. The admin UI is a UX separation only, not access control.
+There is no auth or permissions in this version.
 
 ## Recommended Frontend Structure
 
@@ -24,9 +31,7 @@ Suggested structure:
 
 ```text
 frontend/
-  apps/
-	browse/
-	admin/
+  App.jsx 
   packages/
 	ui/
 	theme/
@@ -41,11 +46,18 @@ frontend/
 3. A central `theme` package makes light/dark and future themes easy to manage consistently.
 4. A shared `api-client` package keeps endpoint contracts aligned with the Java backend and reduces breakage.
 
-If you want an even simpler first iteration, this can also be implemented as a single React app with two route groups:
+This can be implemented as a single React app with two route groups:
 - `/browse/*`
 - `/admin/*`
 
-That said, two app shells in one workspace is the cleaner long-term shape.
+A future release may change this into two app shells in one workspace, but that is deferred for now.
+
+### Deployment
+
+The plan is for the UI to be served by the backend. The backend does not yet support this, but there is
+a `src/main/resources/static/frontend` directory ready to host the built frontend assets.
+The build process should output the production-ready frontend into that directory.
+This plan assumes that the backend will add support for static hosting of this build output.
 
 ## High-Level UX Direction
 
@@ -65,9 +77,12 @@ The browse experience should feel visual, lightweight, and media-oriented:
 - each media item detail page has a "Watch now" action that shows an inline HTML5 video player using the backend's
   streaming endpoint
 - each media item detail page also has a "Watch in VLC" action that invokes the backend's playlist endpoint to download
-  an `m3u` file for that media item
+  an `m3u` file for that media item. (It is assumed the user will have configured their browser to auto-open m3u files).
 - when browsing a media group, the group itself should also have a "Watch all in VLC" action that uses the playlist
   endpoint to download an `m3u` playlist for all media items (direct children only) in that group
+- pagination parameters are `pageNumber` and `pageSize`. Infinite scroll is NOT an option for the browse UI.
+- search filters are `titleContains` and `descriptionContains`. Media items also offer `tagContains`. Ignore
+  `mediaFilePathContains`.
 
 ### Admin UI
 
@@ -84,6 +99,7 @@ The admin experience should feel efficient and operational:
 ## Proposed Component Architecture
 
 Use a layered component architecture so low-level UI remains reusable while app-specific screens stay thin.
+TypeScript is an explicit requirement for all layers to ensure type safety across the stack.
 
 ### 1. App Shell Layer
 
@@ -201,6 +217,7 @@ Recommended choices:
 Create a typed API wrapper around the backend endpoints:
 
 - `listGroups(params)`
+- `listItems(params)`
 - `getGroup(id)`
 - `createGroup(payload)`
 - `updateGroup(id, payload)`
@@ -223,6 +240,7 @@ Create a typed API wrapper around the backend endpoints:
 
 Suggested query keys:
 - `['groups', filters, page]`
+- `['items', filters, page]`
 - `['group', groupId]`
 - `['group-items', groupId, filters, page]`
 - `['item', itemId]`
@@ -242,17 +260,20 @@ This makes invalidation straightforward after create/update/delete/thumbnail ope
    - items within the selected group
    - filters and pagination
 3. Item detail page showing:
-   - title, description, tags, last watched date, media path
-   - thumbnail if present
-   - inline HTML5 video player if "Watch now" is clicked
-   - optional related items from the same group
+    - title, description, tags
+    - (note: last watched date is tracked by the backend but NOT surfaced in the UI for now)
+    - (note also: media file path is never shown to the user in browse mode)
+    - thumbnail if present
+    - inline HTML5 video player if "Watch now" is clicked
+    - "Watch in VLC" action that downloads an `m3u` playlist for that item
 
 ### Browse interaction model
 
-- top-level groups load via `GET /MovieNight/media-groups?topLevelOnly=true`
-- child groups load via `GET /MovieNight/media-groups?parentGroupId={id}`
-- items in a group load via `GET /MovieNight/media-groups/{groupId}/items`
-- item details load via `GET /MovieNight/media-items/{itemId}`
+- top-level groups load via `GET {apiBasePath}/media-groups?topLevelOnly=true`
+- child groups load via `GET {apiBasePath}/media-groups?parentGroupId={id}`
+- items search via `GET {apiBasePath}/media-items`
+- items in a group load via `GET {apiBasePath}/media-groups/{groupId}/items`
+- item details load via `GET {apiBasePath}/media-items/{itemId}`
 - thumbnail images load directly from the thumbnail endpoints when `hasThumbnail` is true
 
 ### Browse UI priorities
@@ -278,29 +299,30 @@ This makes invalidation straightforward after create/update/delete/thumbnail ope
 
 Group management:
 
-- create via `POST /MovieNight/media-groups`
-- edit via `PUT /MovieNight/media-groups/{groupId}`
-- delete via `DELETE /MovieNight/media-groups/{groupId}`
+- create via `POST {apiBasePath}/media-groups`
+- edit via `PUT {apiBasePath}/media-groups/{groupId}`
+- delete via `DELETE {apiBasePath}/media-groups/{groupId}`
 
 Item management:
 
-- create via `POST /MovieNight/media-groups/{groupId}/items`
-- edit via `PUT /MovieNight/media-items/{itemId}`
-- delete via `DELETE /MovieNight/media-items/{itemId}`
+- create via `POST {apiBasePath}/media-groups/{groupId}/items`
+- edit via `PUT {apiBasePath}/media-items/{itemId}`
+- delete via `DELETE {apiBasePath}/media-items/{itemId}`
 
 Thumbnail management:
 
-- preview via `GET /MovieNight/thumbnails/media-groups/{groupId}` or `GET /MovieNight/thumbnails/media-items/{itemId}`
+- preview via `GET {apiBasePath}/thumbnails/media-groups/{groupId}` or
+  `GET {apiBasePath}/thumbnails/media-items/{itemId}`
 - upload new via `POST`
 - replace via `PUT`
 - remove via `DELETE`
 
 Streaming and playlist generation:
 
-- Streaming vie `GET /MovieNight/stream/{itemId}`
-- Playlist generation (single item) `GET /MovieNight/playlist/media-item/{itemId}`
-- Playlist generation (group) `GET /MovieNight/playlist/media-group/{groupId}`
-- Playlist generation (arbitrary list) `POST /MovieNight/playlist/media-item` - JSON body contains an array of
+- Streaming vie `GET {apiBasePath}/stream/{itemId}`
+- Playlist generation (single item) `GET {apiBasePath}/playlist/media-item/{itemId}`
+- Playlist generation (group) `GET {apiBasePath}/playlist/media-group/{groupId}`
+- Playlist generation (arbitrary list) `POST {apiBasePath}/playlist/media-item` - JSON body contains an array of
   mediaItemIds. The arbitrary playlist feature is supported by the backend but will be deferred in the frontend for now.
 
 ### Admin form components
@@ -444,7 +466,6 @@ This gives you:
 
 Deliverables:
 - confirm final route map against the backend endpoints
-- decide single-app-with-route-groups vs two-app workspace
 - scaffold React + Tailwind project structure
 - configure shared API client, router, query provider, and theme provider
 - implement base tokens for light and dark themes
@@ -513,9 +534,10 @@ Outcome:
 
 ## Further Considerations
 
-1. Recommended structure: one repo, two apps (`browse` and `admin`), one shared component/theme package; simpler than fully separate repos while still maintaining clear separation.
+1. Recommended structure: one app, two route groups (`browse` and `admin`), one shared component/theme package; simpler
+   than fully separate repos while still maintaining clear separation.
 2. For thumbnails, prefer multipart upload in the admin UI, with a fallback base64 path only if you later need clipboard/paste workflows.
 3. Because there’s no auth in v1, keep separation purely by app/route; if this later needs access control, the admin app can be gated without redesigning the browse UI.
-4. If implementation speed matters more than architectural purity, start as a single Vite app with `/browse` and `/admin` route groups, then split into two app entry points later.
-5. Keep all component styling mapped to semantic tokens from day one; that decision will pay off immediately when refining dark mode and adding future themes.
+4. Keep all component styling mapped to semantic tokens from day one; that decision will pay off immediately when
+   refining dark mode and adding future themes.
 

@@ -21,6 +21,7 @@ import java.net.HttpURLConnection;
 import java.nio.charset.StandardCharsets;
 import java.util.Base64;
 import java.util.Map;
+import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
 /**
@@ -41,6 +42,8 @@ import java.util.stream.Collectors;
  * @author <a href="https://github.com/scorbo2">scorbo2</a>
  */
 public final class ThumbnailHandler implements HttpHandler {
+
+    private static final Logger log = Logger.getLogger(ThumbnailHandler.class.getName());
 
     private final AppConfig appConfig;
     private final Database database;
@@ -91,6 +94,7 @@ public final class ThumbnailHandler implements HttpHandler {
 
     private void handleGet(HttpExchange exchange, String path) throws Exception {
         String basePath = appConfig.getApiBasePath() + "thumbnails";
+        log.info("Handling GET thumbnail request for path: " + path);
 
         if (path.startsWith(basePath + "/media-items/")) {
             handleGetMediaItemThumbnail(exchange, path);
@@ -139,6 +143,7 @@ public final class ThumbnailHandler implements HttpHandler {
 
     private void handleCreate(HttpExchange exchange, String path) throws Exception {
         String basePath = appConfig.getApiBasePath() + "thumbnails";
+        log.info("Handling POST thumbnail request for path: " + path);
 
         if (path.startsWith(basePath + "/media-items/")) {
             handleCreateMediaItemThumbnail(exchange, path);
@@ -185,6 +190,7 @@ public final class ThumbnailHandler implements HttpHandler {
 
     private void handleReplace(HttpExchange exchange, String path) throws Exception {
         String basePath = appConfig.getApiBasePath() + "thumbnails";
+        log.info("Handling PUT thumbnail request for path: " + path);
 
         if (path.startsWith(basePath + "/media-items/")) {
             handleReplaceMediaItemThumbnail(exchange, path);
@@ -231,6 +237,7 @@ public final class ThumbnailHandler implements HttpHandler {
 
     private void handleDelete(HttpExchange exchange, String path) throws Exception {
         String basePath = appConfig.getApiBasePath() + "thumbnails";
+        log.info("Handling DELETE thumbnail request for path: " + path);
 
         if (path.startsWith(basePath + "/media-items/")) {
             handleDeleteMediaItemThumbnail(exchange, path);
@@ -407,16 +414,18 @@ public final class ThumbnailHandler implements HttpHandler {
      * Returns null if the part is not a file part.
      */
     private Map.Entry<String, byte[]> parseMultipartPart(String part) {
+        int endOffset = 4;
         int headerEndIndex = part.indexOf("\r\n\r\n");
         if (headerEndIndex == -1) {
             headerEndIndex = part.indexOf("\n\n");
             if (headerEndIndex == -1) {
                 return null;
             }
+            endOffset = 2;
         }
 
         String headers = part.substring(0, headerEndIndex);
-        String content = part.substring(headerEndIndex + 4);
+        String content = part.substring(headerEndIndex + endOffset);
 
         // Check if this is a file part (has Content-Disposition with filename)
         if (!headers.contains("Content-Disposition") || !headers.contains("filename")) {
@@ -458,12 +467,14 @@ public final class ThumbnailHandler implements HttpHandler {
     }
 
     /**
-     * Writes an image response with Content-Type: image/jpeg.
+     * Writes an image response with an appropriate Content-Type (either image/jpeg or image/png).
      */
     private void writeImageResponse(HttpExchange exchange, BufferedImage image) throws IOException {
-        byte[] bytes = toJpegBytes(image);
+        byte[] bytes = toImageBytes(image);
 
-        exchange.getResponseHeaders().set("Content-Type", "image/jpeg");
+        String mimeType = image.getColorModel().hasAlpha() ? "image/png" : "image/jpeg";
+
+        exchange.getResponseHeaders().set("Content-Type", mimeType);
         exchange.sendResponseHeaders(HttpURLConnection.HTTP_OK, bytes.length);
 
         try (java.io.OutputStream os = exchange.getResponseBody()) {
@@ -472,11 +483,16 @@ public final class ThumbnailHandler implements HttpHandler {
     }
 
     /**
-     * Converts a BufferedImage to JPEG bytes.
+     * Converts a BufferedImage to bytes in the appropriate format.
+     * Most of the time, this will return a jpg image.
+     * If the given BufferedImage has an alpha channel, we will write it as PNG instead.
      */
-    private byte[] toJpegBytes(BufferedImage image) throws IOException {
+    private byte[] toImageBytes(BufferedImage image) throws IOException {
         java.io.ByteArrayOutputStream baos = new java.io.ByteArrayOutputStream();
-        ImageIO.write(image, "jpg", baos);
+        String formatName = image.getColorModel().hasAlpha() ? "png" : "jpg";
+        if (!ImageIO.write(image, formatName, baos)) {
+            throw new IOException("Failed to write image in format: " + formatName);
+        }
         return baos.toByteArray();
     }
 

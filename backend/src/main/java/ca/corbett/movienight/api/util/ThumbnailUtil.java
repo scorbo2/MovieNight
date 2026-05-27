@@ -6,6 +6,7 @@ import ca.corbett.movienight.model.MediaItem;
 
 import javax.imageio.ImageIO;
 import java.awt.image.BufferedImage;
+import java.io.File;
 import java.io.IOException;
 import java.nio.file.Path;
 
@@ -66,7 +67,8 @@ public class ThumbnailUtil {
 
     /**
      * Stores the given thumbnail image for the given MediaItem in the configured thumbnail directory.
-     * Note that the save format will always be JPEG, regardless of the original image format.
+     * The save format will be JPEG for any image that has no alpha channel (regardless of input format).
+     * For images with alpha channel, we will save as PNG instead to preserve the transparency.
      * Any previously stored thumbnail for this MediaItem will be overwritten.
      */
     public static void storeThumbnail(MediaItem mediaItem, BufferedImage image, AppConfig appConfig)
@@ -109,7 +111,8 @@ public class ThumbnailUtil {
 
     /**
      * Stores the given thumbnail image for the given MediaGroup in the configured thumbnail directory.
-     * Note that the save format will always be JPEG, regardless of the original image format.
+     * The save format will be JPEG for any image that has no alpha channel (regardless of input format).
+     * For images with alpha channel, we will save as  PNG instead to preserve the transparency.
      * Any previously stored thumbnail for this MediaGroup will be overwritten.
      */
     public static void storeThumbnail(MediaGroup mediaGroup, BufferedImage image, AppConfig appConfig)
@@ -172,11 +175,50 @@ public class ThumbnailUtil {
         return null;
     }
 
+    /**
+     * Thumbnails are generally stored as jpeg images regardless of the uploaded format.
+     * The exception is if we detect an alpha channel, we will attempt to save as PNG instead.
+     * If ImageIO fails to write the image in the expected format, an IOException will be thrown.
+     *
+     * @param something A model object whose class will be used as a basis for the thumbnail filename.
+     * @param id        The numeric id of the model object in question, also used in the thumbnail filename.
+     * @param image     Any non-null BufferedImage. If it's transparent, we write PNG, else we write JPEG.
+     * @param appConfig Contains the location of our data directory (more specifically, our thumbnail dir).
+     * @throws IOException If the write fails for any reason.
+     */
     private static void storeThumbnail(Object something, long id, BufferedImage image, AppConfig appConfig)
             throws IOException {
+        if (image == null) {
+            throw new IOException("Cannot store null image as thumbnail");
+        }
         Path thumbDir = appConfig.getThumbnailDir();
         String className = something.getClass().getSimpleName();
-        Path outputPath = thumbDir.resolve(className + "_" + id + ".jpg");
-        ImageIO.write(image, "jpg", outputPath.toFile());
+        String formatName = image.getColorModel().hasAlpha() ? "png" : "jpg";
+
+        // The thumbnail write is not guaranteed to succeed!
+        // But, we will nonetheless delete any existing thumbnails before proceeding.
+        // If our write succeeds, there will be exactly one thumbnail for this model object.
+        // If our write fails, we have "un-set" the thumbnail for that model object.
+        // Perhaps not ideal, but simple and deterministic.
+        File[] existingFiles = {
+                thumbDir.resolve(className + "_" + id + ".jpg").toFile(),
+                thumbDir.resolve(className + "_" + id + ".jpeg").toFile(),
+                thumbDir.resolve(className + "_" + id + ".png").toFile()
+        };
+        for (File file : existingFiles) {
+            if (file.exists()) {
+                if (!file.delete()) {
+                    throw new IOException("Failed to delete existing thumbnail file: " + file.getAbsolutePath());
+                }
+            }
+        }
+
+        // Now we try to create the new thumbnail file.
+        // We know the input image is valid because we've already parsed it.
+        // At this point, it can only fail if there's no writer for JPG or PNG, which is unlikely.
+        Path outputPath = thumbDir.resolve(className + "_" + id + "." + formatName);
+        if (!ImageIO.write(image, formatName, outputPath.toFile())) {
+            throw new IOException("Failed to write thumbnail image as " + formatName);
+        }
     }
 }

@@ -18,7 +18,7 @@ export function BrowseHeader(): JSX.Element {
       <div className="mx-auto flex max-w-7xl items-center justify-between gap-4 px-4 py-4 sm:px-6 lg:px-8">
         <div className="flex items-center gap-6">
           <Link to="/browse" className="text-lg font-bold text-content no-underline">
-            MovieNight
+            🎬 MovieNight
           </Link>
           <nav className="hidden items-center gap-4 text-sm text-content-secondary md:flex">
             <NavLink to="/browse" end className={({ isActive }) => (isActive ? 'text-content font-medium' : '')}>

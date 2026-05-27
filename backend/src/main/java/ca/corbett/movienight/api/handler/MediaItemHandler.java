@@ -24,6 +24,7 @@ import java.util.Optional;
  * <ul>
  *   <li>POST   /api/media-groups/{groupId}/items</li>
  *   <li>GET    /api/media-groups/{groupId}/items</li>
+ *   <li>GET    /api/media-items</li>
  * </ul>
  *
  * @author <a href="https://github.com/scorbo2">scorbo2</a>
@@ -75,10 +76,14 @@ public final class MediaItemHandler implements HttpHandler {
     }
 
     /**
-     * GET /api/media-items/{itemId} or GET /api/media-groups/{groupId}/items.
+     * GET /api/media-items, GET /api/media-items/{itemId}, or GET /api/media-groups/{groupId}/items.
      */
     private void handleGetOrList(HttpExchange exchange, String path) throws Exception {
-        if (path.startsWith(appConfig.getApiBasePath() + "media-items/")) {
+        String mediaItemsBasePath = appConfig.getApiBasePath() + "media-items";
+        if (path.equals(mediaItemsBasePath)) {
+            handleGlobalList(exchange);
+        }
+        else if (path.startsWith(mediaItemsBasePath + "/")) {
             handleGetItemById(exchange, path);
         }
         else {
@@ -90,6 +95,35 @@ public final class MediaItemHandler implements HttpHandler {
         if (!path.endsWith("/items")) {
             throw new RuntimeException("ROUTE_NOT_MATCHED");
         }
+    }
+
+    private PageParams parsePageParams(Map<String, String> params) {
+        // Pagination: if one param is present, both must be
+        Optional<Integer> pageOpt = QueryParamParser.parseIntOptional(params, "pageNumber");
+        Optional<Integer> sizeOpt = QueryParamParser.parseIntOptional(params, "pageSize");
+
+        int pageNumber;
+        int pageSize;
+
+        if (pageOpt.isPresent() && sizeOpt.isPresent()) {
+            pageNumber = pageOpt.get();
+            pageSize = sizeOpt.get();
+            if (pageNumber <= 0) {
+                throw new IllegalArgumentException("pageNumber must be greater than 0");
+            }
+            if (pageSize <= 0) {
+                throw new IllegalArgumentException("pageSize must be greater than 0");
+            }
+        }
+        else if (pageOpt.isPresent() != sizeOpt.isPresent()) {
+            throw new IllegalArgumentException("pageNumber and pageSize must both be provided or both omitted");
+        }
+        else {
+            pageNumber = 1;
+            pageSize = appConfig.getDefaultPageSize();
+        }
+
+        return new PageParams(pageNumber, pageSize);
     }
 
     /**
@@ -152,31 +186,7 @@ public final class MediaItemHandler implements HttpHandler {
         }
 
         Map<String, String> params = QueryParamParser.parse(exchange.getRequestURI().getQuery());
-
-        // Pagination: if one param is present, both must be
-        Optional<Integer> pageOpt = QueryParamParser.parseIntOptional(params, "pageNumber");
-        Optional<Integer> sizeOpt = QueryParamParser.parseIntOptional(params, "pageSize");
-
-        int pageNumber;
-        int pageSize;
-
-        if (pageOpt.isPresent() && sizeOpt.isPresent()) {
-            pageNumber = pageOpt.get();
-            pageSize = sizeOpt.get();
-            if (pageNumber <= 0) {
-                throw new IllegalArgumentException("pageNumber must be greater than 0");
-            }
-            if (pageSize <= 0) {
-                throw new IllegalArgumentException("pageSize must be greater than 0");
-            }
-        }
-        else if (pageOpt.isPresent() != sizeOpt.isPresent()) {
-            throw new IllegalArgumentException("pageNumber and pageSize must both be provided or both omitted");
-        }
-        else {
-            pageNumber = 1;
-            pageSize = appConfig.getDefaultPageSize();
-        }
+        PageParams pageParams = parsePageParams(params);
 
         String titleContains = QueryParamParser.get(params, "titleContains").orElse(null);
         String descriptionContains = QueryParamParser.get(params, "descriptionContains").orElse(null);
@@ -189,8 +199,32 @@ public final class MediaItemHandler implements HttpHandler {
                 descriptionContains,
                 mediaFilePathContains,
                 tagContains,
-                pageNumber,
-                pageSize
+                pageParams.pageNumber(),
+                pageParams.pageSize()
+        );
+
+        responseWriter.writeJson(exchange, HttpURLConnection.HTTP_OK, response);
+    }
+
+    /**
+     * GET /api/media-items — List/search items across all groups.
+     */
+    private void handleGlobalList(HttpExchange exchange) throws Exception {
+        Map<String, String> params = QueryParamParser.parse(exchange.getRequestURI().getQuery());
+        PageParams pageParams = parsePageParams(params);
+
+        String titleContains = QueryParamParser.get(params, "titleContains").orElse(null);
+        String descriptionContains = QueryParamParser.get(params, "descriptionContains").orElse(null);
+        String tagContains = QueryParamParser.get(params, "tagContains").orElse(null);
+
+        MediaItemListResponse response = mediaItemService.listItems(
+                null,
+                titleContains,
+                descriptionContains,
+                null,
+                tagContains,
+                pageParams.pageNumber(),
+                pageParams.pageSize()
         );
 
         responseWriter.writeJson(exchange, HttpURLConnection.HTTP_OK, response);
@@ -270,5 +304,8 @@ public final class MediaItemHandler implements HttpHandler {
         }
 
         responseWriter.writeNoContent(exchange);
+    }
+
+    private record PageParams(int pageNumber, int pageSize) {
     }
 }

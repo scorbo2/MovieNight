@@ -779,6 +779,103 @@ class ApiIntegrationTest {
     }
 
     // ========================================================================
+    // MediaItem - Global Collection (List/Search)
+    // ========================================================================
+
+    @Test
+    void listItems_globalTitleFilter_searchesAcrossGroups() throws Exception {
+        long groupA = createTestGroup("Group A", null);
+        long groupB = createTestGroup("Group B", null);
+
+        createTestItem(groupA, "Dexter S01E01", "/dexter.mkv");
+        createTestItem(groupB, "Breaking Bad S01E01", "/breaking.mkv");
+
+        HttpResponse<String> response = sendRequest(
+                HttpRequest.newBuilder()
+                           .uri(URI.create(BASE_URL + "/media-items?titleContains=dexter"))
+                           .GET()
+                           .build()
+        );
+
+        assertEquals(200, response.statusCode());
+        Map<String, Object> json = parseJson(response.body());
+        List<?> items = (List<?>)json.get("items");
+        assertEquals(1, items.size());
+    }
+
+    @Test
+    void listItems_globalDescriptionFilter_searchesAcrossGroups() throws Exception {
+        long groupA = createTestGroup("Group A", null);
+        long groupB = createTestGroup("Group B", null);
+
+        HttpResponse<String> createFirst = sendRequest(
+                HttpRequest.newBuilder()
+                           .uri(URI.create(BASE_URL + "/media-groups/" + groupA + "/items"))
+                           .header("Content-Type", "application/json")
+                           .POST(HttpRequest.BodyPublishers.ofString(
+                                   "{\"title\":\"Arrival\",\"description\":\"First contact\",\"mediaFilePath\":\"/arrival.mkv\"}"
+                           ))
+                           .build()
+        );
+        assertEquals(201, createFirst.statusCode());
+
+        HttpResponse<String> createSecond = sendRequest(
+                HttpRequest.newBuilder()
+                           .uri(URI.create(BASE_URL + "/media-groups/" + groupB + "/items"))
+                           .header("Content-Type", "application/json")
+                           .POST(HttpRequest.BodyPublishers.ofString(
+                                   "{\"title\":\"Interstellar\",\"description\":\"Space travel\",\"mediaFilePath\":\"/interstellar.mkv\"}"
+                           ))
+                           .build()
+        );
+        assertEquals(201, createSecond.statusCode());
+
+        HttpResponse<String> response = sendRequest(
+                HttpRequest.newBuilder()
+                           .uri(URI.create(BASE_URL + "/media-items?descriptionContains=contact"))
+                           .GET()
+                           .build()
+        );
+
+        assertEquals(200, response.statusCode());
+        Map<String, Object> json = parseJson(response.body());
+        List<?> items = (List<?>)json.get("items");
+        assertEquals(1, items.size());
+    }
+
+    @Test
+    void listItems_globalTagFilter_searchesAcrossGroups() throws Exception {
+        long groupA = createTestGroup("Group A", null);
+        long groupB = createTestGroup("Group B", null);
+
+        MediaItem sciFi = new MediaItem();
+        sciFi.setMediaGroupId(groupA);
+        sciFi.setTitle("Item A");
+        sciFi.setMediaFilePath("/a.mkv");
+        sciFi.setTags(List.of("sci-fi", "drama"));
+        database.createMediaItem(sciFi);
+
+        MediaItem comedy = new MediaItem();
+        comedy.setMediaGroupId(groupB);
+        comedy.setTitle("Item B");
+        comedy.setMediaFilePath("/b.mkv");
+        comedy.setTags(List.of("comedy"));
+        database.createMediaItem(comedy);
+
+        HttpResponse<String> response = sendRequest(
+                HttpRequest.newBuilder()
+                           .uri(URI.create(BASE_URL + "/media-items?tagContains=sci-fi"))
+                           .GET()
+                           .build()
+        );
+
+        assertEquals(200, response.statusCode());
+        Map<String, Object> json = parseJson(response.body());
+        List<?> items = (List<?>)json.get("items");
+        assertEquals(1, items.size());
+    }
+
+    // ========================================================================
     // MediaItem - Direct Resource (GET, PUT, DELETE)
     // ========================================================================
 

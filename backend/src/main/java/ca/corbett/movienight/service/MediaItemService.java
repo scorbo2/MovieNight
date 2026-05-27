@@ -52,9 +52,9 @@ public final class MediaItemService {
     }
 
     /**
-     * Lists/searches MediaItems within a specific group with pagination and filtering.
+     * Lists/searches MediaItems with pagination and filtering.
      *
-     * @param groupId               the parent group ID (from path)
+     * @param groupId               optional parent group ID (from path); null searches all groups
      * @param titleContains         title substring filter (case-insensitive)
      * @param descriptionContains   description substring filter (case-insensitive)
      * @param mediaFilePathContains media file path substring filter (case-insensitive)
@@ -64,7 +64,7 @@ public final class MediaItemService {
      * @return paginated list response
      * @throws SQLException if a database error occurs
      */
-    public MediaItemListResponse listItems(long groupId, String titleContains, String descriptionContains,
+    public MediaItemListResponse listItems(Long groupId, String titleContains, String descriptionContains,
                                            String mediaFilePathContains, String tagContains,
                                            int pageNumber, int pageSize) throws SQLException {
         Database.MediaItemQuery query = new Database.MediaItemQuery(

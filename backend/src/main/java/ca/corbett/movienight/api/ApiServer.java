@@ -162,6 +162,7 @@ public final class ApiServer {
      * <p>
      * Routes:
      * <ul>
+     *   <li>GET    /api/media-items</li>
      *   <li>GET    /api/media-items/{itemId}</li>
      *   <li>PUT    /api/media-items/{itemId}</li>
      *   <li>DELETE /api/media-items/{itemId}</li>
@@ -171,6 +172,7 @@ public final class ApiServer {
         Route route;
         MediaItemHandler handler = new MediaItemHandler(mediaItemService, responseWriter, requestParser, appConfig);
 
+        // GET /api/media-items — list/search across all groups
         // GET /api/media-items/{itemId} — get by ID
         route = new Route("GET", appConfig.getApiBasePath() + "media-items");
         router.register(route, handler);

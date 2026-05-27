@@ -5,6 +5,7 @@ import ca.corbett.movienight.api.handler.HealthHandler;
 import ca.corbett.movienight.api.handler.MediaGroupHandler;
 import ca.corbett.movienight.api.handler.MediaItemHandler;
 import ca.corbett.movienight.api.handler.PlaylistHandler;
+import ca.corbett.movienight.api.handler.StaticFrontendHandler;
 import ca.corbett.movienight.api.handler.StreamHandler;
 import ca.corbett.movienight.api.handler.ThumbnailHandler;
 import ca.corbett.movienight.api.routing.Route;
@@ -105,8 +106,11 @@ public final class ApiServer {
         // Register playlist endpoints
         apiServer.registerPlaylistEndpoints(mediaItemService, mediaGroupService);
 
-        // Mount the router at the API base path
+        // Mount the router at the API base path (more specific path first)
         server.createContext(basePath, apiServer::handleAll);
+
+        // Mount the static frontend handler at the root path (catch-all for non-API requests)
+        server.createContext("/", new StaticFrontendHandler());
 
         return apiServer;
     }

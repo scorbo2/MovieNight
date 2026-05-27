@@ -1,0 +1,195 @@
+package ca.corbett.movienight.api.handler;
+
+import com.sun.net.httpserver.HttpExchange;
+import com.sun.net.httpserver.HttpHandler;
+
+import java.io.IOException;
+import java.io.InputStream;
+import java.net.URLDecoder;
+import java.nio.charset.StandardCharsets;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+
+/**
+ * HTTP handler for serving static frontend files from the {@code static/frontend} resource directory.
+ * <p>
+ * Routes:
+ * <ul>
+ *     <li>GET / (and sub-paths)</li>
+ * </ul>
+ * <p>
+ * This handler:
+ * <ul>
+ *     <li>Serves files from the classpath resource directory {@code /static/frontend/}</li>
+ *     <li>Supports content negotiation with proper MIME types</li>
+ *     <li>Handles index.html as a default file for directory requests</li>
+ *     <li>Returns 404 for missing files</li>
+ *     <li>Prevents directory traversal attacks</li>
+ * </ul>
+ *
+ * @author <a href="https://github.com/scorbo2">scorbo2</a>
+ */
+public final class StaticFrontendHandler implements HttpHandler {
+
+    private static final Logger log = Logger.getLogger(StaticFrontendHandler.class.getName());
+
+    private static final String RESOURCE_BASE = "/static/frontend";
+    private static final String INDEX_FILE = "index.html";
+
+    public StaticFrontendHandler() {
+    }
+
+    @Override
+    public void handle(HttpExchange exchange) throws IOException {
+        try {
+            String method = exchange.getRequestMethod();
+
+            if (!"GET".equals(method) && !"HEAD".equals(method)) {
+                exchange.getResponseHeaders().set("Content-Type", "application/json; charset=utf-8");
+                byte[] body = "{\"error\":\"Method Not Allowed\",\"message\":\"Only GET and HEAD are allowed\",\"status\":405}"
+                        .getBytes(StandardCharsets.UTF_8);
+                exchange.sendResponseHeaders(405, body.length);
+                try (var os = exchange.getResponseBody()) {
+                    os.write(body);
+                }
+                return;
+            }
+
+            String path = exchange.getRequestURI().getPath();
+            handleRequest(exchange, path);
+        }
+        catch (Exception e) {
+            log.log(Level.WARNING, "Error handling static file request", e);
+            try {
+                exchange.sendResponseHeaders(500, -1);
+            }
+            catch (IOException ignored) {
+            }
+        }
+    }
+
+    private void handleRequest(HttpExchange exchange, String path) throws IOException {
+        // Decode the path to handle URL-encoded characters
+        String resourcePath = URLDecoder.decode(path, StandardCharsets.UTF_8);
+
+        // Remove leading slash for resource path
+        if (resourcePath.startsWith("/")) {
+            resourcePath = resourcePath.substring(1);
+        }
+
+        // Security: Prevent directory traversal attacks
+        if (resourcePath.contains("..")) {
+            exchange.sendResponseHeaders(400, -1);
+            return;
+        }
+
+        // Build the full resource path
+        String fullResourcePath = RESOURCE_BASE + "/" + resourcePath;
+
+        // If the path is empty or a directory, try to serve index.html
+        if (resourcePath.isEmpty() || resourcePath.endsWith("/")) {
+            fullResourcePath = RESOURCE_BASE + "/" + resourcePath + INDEX_FILE;
+        }
+
+        // Try to load the resource from the classpath
+        try (InputStream resourceStream = getClass().getResourceAsStream(fullResourcePath)) {
+            if (resourceStream == null) {
+                // Resource not found, try serving index.html for SPA routing
+                try (InputStream indexStream = getClass().getResourceAsStream(RESOURCE_BASE + "/" + INDEX_FILE)) {
+                    if (indexStream != null) {
+                        serveResource(exchange, indexStream, "text/html; charset=utf-8");
+                    }
+                    else {
+                        exchange.sendResponseHeaders(404, -1);
+                    }
+                }
+                return;
+            }
+
+            // Determine MIME type based on file extension
+            String mimeType = getMimeType(fullResourcePath);
+
+            serveResource(exchange, resourceStream, mimeType);
+        }
+    }
+
+    private void serveResource(HttpExchange exchange, InputStream resourceStream, String mimeType)
+            throws IOException {
+        byte[] buffer = readAllBytes(resourceStream);
+
+        exchange.getResponseHeaders().set("Content-Type", mimeType);
+        exchange.sendResponseHeaders(200, buffer.length);
+
+        if (!"HEAD".equals(exchange.getRequestMethod())) {
+            try (var os = exchange.getResponseBody()) {
+                os.write(buffer);
+            }
+        }
+    }
+
+    private byte[] readAllBytes(InputStream stream) throws IOException {
+        byte[] buffer = new byte[8192];
+        int bytesRead;
+        java.io.ByteArrayOutputStream baos = new java.io.ByteArrayOutputStream();
+
+        while ((bytesRead = stream.read(buffer)) != -1) {
+            baos.write(buffer, 0, bytesRead);
+        }
+
+        return baos.toByteArray();
+    }
+
+    private String getMimeType(String resourcePath) {
+        String path = resourcePath.toLowerCase();
+
+        if (path.endsWith(".html") || path.endsWith(".htm")) {
+            return "text/html; charset=utf-8";
+        }
+        else if (path.endsWith(".css")) {
+            return "text/css; charset=utf-8";
+        }
+        else if (path.endsWith(".js")) {
+            return "application/javascript; charset=utf-8";
+        }
+        else if (path.endsWith(".json")) {
+            return "application/json; charset=utf-8";
+        }
+        else if (path.endsWith(".svg")) {
+            return "image/svg+xml";
+        }
+        else if (path.endsWith(".png")) {
+            return "image/png";
+        }
+        else if (path.endsWith(".jpg") || path.endsWith(".jpeg")) {
+            return "image/jpeg";
+        }
+        else if (path.endsWith(".gif")) {
+            return "image/gif";
+        }
+        else if (path.endsWith(".webp")) {
+            return "image/webp";
+        }
+        else if (path.endsWith(".ico")) {
+            return "image/x-icon";
+        }
+        else if (path.endsWith(".woff")) {
+            return "font/woff";
+        }
+        else if (path.endsWith(".woff2")) {
+            return "font/woff2";
+        }
+        else if (path.endsWith(".ttf")) {
+            return "font/ttf";
+        }
+        else if (path.endsWith(".eot")) {
+            return "application/vnd.ms-fontobject";
+        }
+        else if (path.endsWith(".txt")) {
+            return "text/plain; charset=utf-8";
+        }
+        else {
+            return "application/octet-stream";
+        }
+    }
+}
+

@@ -284,7 +284,7 @@ public class PlaylistHandler implements HttpHandler {
                 continue;
             }
             String relPath = mediaItem.getMediaFilePath().replaceFirst("^/", "");
-            File mediaFile = appConfig.getDataDir().resolve(relPath).toFile();
+            File mediaFile = appConfig.getMediaDir().resolve(relPath).toFile();
             if (!mediaFile.exists() || !mediaFile.canRead()) {
                 log.warning("generatePlaylist: skipping media item with missing or unreadable media file: "
                                     + mediaFile.getAbsolutePath());

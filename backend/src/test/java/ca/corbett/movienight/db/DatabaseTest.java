@@ -30,7 +30,12 @@ class DatabaseTest {
 
     @BeforeEach
     void setUp() throws SQLException, IOException {
-        db = new Database(AppConfig.withDataDir(tempDir));
+        Path thumbnailDir = tempDir.resolve("thumbnails");
+        if (!thumbnailDir.toFile().mkdirs()) {
+            throw new IOException("Failed to create thumbnail directory for tests");
+        }
+        Path dbFile = tempDir.resolve("test.db");
+        db = new Database(AppConfig.withCustomPaths(tempDir, thumbnailDir, dbFile));
         db.open();
     }
 
@@ -268,7 +273,7 @@ class DatabaseTest {
         assertEquals(item.getId(), fetched.getId());
         assertEquals("Inception", fetched.getTitle());
         assertEquals("A dream within a dream", fetched.getDescription());
-        assertEquals("/files/inception.mkv", fetched.getMediaFilePath());
+        assertEquals("files/inception.mkv", fetched.getMediaFilePath()); // Note path gets normalized
         assertEquals(LocalDate.of(2024, 6, 15), fetched.getLastWatchedDate());
         assertTrue(fetched.getTags().contains("sci-fi"));
         assertTrue(fetched.getTags().contains("thriller"));
@@ -480,7 +485,7 @@ class DatabaseTest {
         MediaItem fetched = db.getMediaItemById(item.getId());
         assertNotNull(fetched);
         assertEquals("Updated Title", fetched.getTitle());
-        assertEquals("/new.mkv", fetched.getMediaFilePath());
+        assertEquals("new.mkv", fetched.getMediaFilePath()); // note path gets normalized
         assertEquals(LocalDate.of(2026, 1, 1), fetched.getLastWatchedDate());
     }
 

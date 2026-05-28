@@ -9,6 +9,7 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
+import java.io.File;
 import java.io.IOException;
 import java.net.URI;
 import java.net.http.HttpClient;
@@ -57,8 +58,14 @@ class ApiIntegrationTest {
     @BeforeAll
     static void setUpServer() throws Exception {
         tempDir = Files.createTempDirectory("integration-test-");
+        File thumbDir = tempDir.resolve("thumbnails").toFile();
+        if (!thumbDir.mkdirs()) {
+            throw new IOException("Failed to create thumbnail directory for integration tests");
+        }
+        File dbFile = tempDir.resolve("test.db").toFile();
         final int port = 0; // 0 == ephemeral random port
-        AppConfig appConfig = AppConfig.of(port, tempDir, 10, "/api/", 32);
+        AppConfig appConfig = AppConfig.of(port, tempDir, thumbDir.toPath(), dbFile.toPath(), 10, "/api/", 32);
+        System.out.println("ApiIntegrationTest using AppConfig: " + appConfig);
         database = new Database(appConfig);
         database.open();
 
@@ -929,7 +936,7 @@ class ApiIntegrationTest {
         assertEquals(200, response.statusCode());
         Map<String, Object> json = parseJson(response.body());
         assertEquals("Updated", json.get("title"));
-        assertEquals("/updated.mkv", json.get("mediaFilePath"));
+        assertEquals("updated.mkv", json.get("mediaFilePath")); // note path gets normalized
 
         // Verify via GET
         HttpResponse<String> getResp = sendRequest(
@@ -1118,7 +1125,7 @@ class ApiIntegrationTest {
     @Test
     void getMediaItemThumbnail_noThumbnail_returns404() throws Exception {
         long groupId = createTestGroup("Group", null);
-        long itemId = createTestItem(groupId, "Test Item", "/test.mkv");
+        long itemId = createTestItem(groupId, "Test Item", "/test_item_does_not_exist.mkv");
 
         HttpResponse<String> response = sendRequest(
                 HttpRequest.newBuilder()

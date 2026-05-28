@@ -21,13 +21,17 @@ class ThumbnailUtilTest {
     private AppConfig appConfig;
 
     @TempDir
-    private File dataDir;
+    private File mediaDir;
     private File thumbnailDir;
 
     @BeforeEach
-    public void setup() {
-        appConfig = AppConfig.withDataDir(dataDir.toPath());
-        thumbnailDir = appConfig.getThumbnailDir().toFile();
+    public void setup() throws IOException {
+        thumbnailDir = new File(mediaDir, "thumbnails");
+        if (!thumbnailDir.mkdirs()) {
+            throw new IOException("Failed to create thumbnail directory for tests");
+        }
+        File dbFile = new File(mediaDir, "test.db");
+        appConfig = AppConfig.withCustomPaths(mediaDir.toPath(), thumbnailDir.toPath(), dbFile.toPath());
     }
 
     @Test
@@ -35,6 +39,7 @@ class ThumbnailUtilTest {
         // GIVEN model objects that have valid thumbnails:
         MediaItem testItem = new MediaItem();
         testItem.setId(22L);
+        testItem.setMediaFilePath("test-item-22.mkv");
         ThumbnailUtil.storeThumbnail(testItem, createTestImage(), appConfig);
         MediaGroup testGroup = new MediaGroup();
         testGroup.setId(55L);
@@ -59,6 +64,7 @@ class ThumbnailUtilTest {
         // GIVEN model objects that have no thumbnails:
         MediaItem testItem = new MediaItem();
         testItem.setId(33L);
+        testItem.setMediaFilePath("test-item-33.mkv");
         MediaGroup testGroup = new MediaGroup();
         testGroup.setId(66L);
 
@@ -73,6 +79,7 @@ class ThumbnailUtilTest {
         // GIVEN model objects that have valid thumbnails:
         MediaItem testItem = new MediaItem();
         testItem.setId(44L);
+        testItem.setMediaFilePath("test-item-44.mkv");
         ThumbnailUtil.storeThumbnail(testItem, createTestImage(), appConfig);
         MediaGroup testGroup = new MediaGroup();
         testGroup.setId(77L);
@@ -89,6 +96,7 @@ class ThumbnailUtilTest {
         // GIVEN model objects that have a valid thumbnail:
         MediaItem testItem = new MediaItem();
         testItem.setId(88L);
+        testItem.setMediaFilePath("test-item-88.mkv");
         ThumbnailUtil.storeThumbnail(testItem, createTestImage(), appConfig);
         MediaGroup testGroup = new MediaGroup();
         testGroup.setId(99L);
@@ -101,10 +109,47 @@ class ThumbnailUtilTest {
     }
 
     @Test
+    public void storeThumbnail_forMediaItem_shouldStoreAsSidecar() throws IOException {
+        // GIVEN a MediaItem and a thumbnail image:
+        MediaItem testItem = new MediaItem();
+        testItem.setId(101L);
+        testItem.setMediaFilePath("MyAmazingMediaFile.mkv");
+        BufferedImage thumb = createTestImage();
+
+        // WHEN we store this thumbnail:
+        ThumbnailUtil.storeThumbnail(testItem, thumb, appConfig);
+
+        // THEN the thumbnail image should have been stored as a sidecar file
+        // alongside the media file, and NOT in the thumbnailDir:
+        File expectedThumbnailFile = new File(mediaDir, "MyAmazingMediaFile.jpg");
+        assertTrue(expectedThumbnailFile.exists(),
+                   "Thumbnail file should have been stored as sidecar: " + expectedThumbnailFile.getAbsolutePath());
+        assertFalse(new File(thumbnailDir, "MediaItem_101.jpg").exists(),
+                    "Thumbnail should not be stored in thumbnailDir for MediaItem");
+    }
+
+    @Test
+    public void storeThumbnail_forMediaGroup_shouldStoreInThumbnailDir() throws IOException {
+        // GIVEN a MediaGroup and a thumbnail image:
+        MediaGroup testGroup = new MediaGroup();
+        testGroup.setId(202L);
+        BufferedImage thumb = createTestImage();
+
+        // WHEN we store this thumbnail:
+        ThumbnailUtil.storeThumbnail(testGroup, thumb, appConfig);
+
+        // THEN the thumbnail image should have been stored in the thumbnailDir using the group ID as the filename:
+        File expectedThumbnailFile = new File(thumbnailDir, "MediaGroup_202.jpg");
+        assertTrue(expectedThumbnailFile.exists(),
+                   "Expected thumbnail file does not exist: " + expectedThumbnailFile.getAbsolutePath());
+    }
+
+    @Test
     public void removeThumbnail_withThumbnail_removesThumbnail() throws IOException {
         // GIVEN model objects that have a valid thumbnail:
         MediaItem testItem = new MediaItem();
         testItem.setId(111L);
+        testItem.setMediaFilePath("test-item-111.mkv");
         ThumbnailUtil.storeThumbnail(testItem, createTestImage(), appConfig);
         MediaGroup testGroup = new MediaGroup();
         testGroup.setId(222L);

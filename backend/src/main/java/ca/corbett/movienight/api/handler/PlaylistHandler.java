@@ -40,6 +40,14 @@ import java.util.logging.Logger;
  *     consisting of all media items in the media group with the given ID. Note that only
  *     direct child items of the given group are returned - this is not a recursive search.</li>
  * </ul>
+ * <p>
+ *     An optional query parameter <code>?local=true</code> can be added to any of the above routes to
+ *     indicate that the generated playlist should return direct filesystem paths instead of streaming URLs.
+ *     This is intended for the case where the browser is being used on the same machine as the server (or where
+ *     both client machine and server machine have access to the same shared filesystem). Player performance
+ *     will be much improved in this case, since there is no http streaming involved. The default is false,
+ *     meaning that streaming URLs will be used in the generated playlist.
+ * </p>
  *
  * @author <a href="https://github.com/scorbo2">scorbo2</a>
  */
@@ -51,6 +59,7 @@ public class PlaylistHandler implements HttpHandler {
     private final Database database;
     private final MediaGroupService mediaGroupService;
     private final AppConfig appConfig;
+    private boolean isLocal;
 
     public PlaylistHandler(Database database, MediaGroupService mediaGroupService,
                            ResponseWriter responseWriter, RequestParser requestParser,
@@ -60,6 +69,7 @@ public class PlaylistHandler implements HttpHandler {
         this.responseWriter = responseWriter;
         this.requestParser = requestParser;
         this.appConfig = appConfig;
+        this.isLocal = false;
     }
 
     public static class PlaylistMediaItemIdsRequest {
@@ -75,6 +85,7 @@ public class PlaylistHandler implements HttpHandler {
         try {
             String method = exchange.getRequestMethod();
             String path = exchange.getRequestURI().getPath();
+            isLocal = parseLocalParam(exchange);
 
             if ("GET".equals(method)) {
                 handleGetPlaylist(exchange, path);
@@ -102,6 +113,25 @@ public class PlaylistHandler implements HttpHandler {
             var mapped = ExceptionMapper.map(e);
             responseWriter.writeJson(exchange, (int)mapped[0], mapped[1]);
         }
+    }
+
+    /**
+     * Looks for a query parameter "local" in the request URI, and returns true if
+     * found and if the value is "true" (case-insensitive).
+     * If the parameter is not found, or if it has any other value, returns false.
+     * See class javadocs for a description of what this parameter does.
+     */
+    private boolean parseLocalParam(HttpExchange exchange) {
+        String query = exchange.getRequestURI().getQuery();
+        if (query != null) {
+            for (String param : query.split("&")) {
+                String[] parts = param.split("=");
+                if (parts.length == 2 && "local".equals(parts[0]) && "true".equalsIgnoreCase(parts[1])) {
+                    return true;
+                }
+            }
+        }
+        return false;
     }
 
     private void handleGetPlaylist(HttpExchange exchange, String path) throws Exception {
@@ -157,7 +187,7 @@ public class PlaylistHandler implements HttpHandler {
             throw new Database.NotFoundException("Media item not found with ID: " + itemId);
         }
 
-        String playlist = generatePlaylist(List.of(item), appConfig, getServerName(exchange));
+        String playlist = generatePlaylist(List.of(item), appConfig, getServerName(exchange), isLocal);
         responseWriter.writeText(exchange, HttpURLConnection.HTTP_OK, playlist);
     }
 
@@ -184,7 +214,7 @@ public class PlaylistHandler implements HttpHandler {
             throw new Database.NotFoundException("Media item not found with ID: " + itemId);
         }
 
-        String playlist = generatePlaylist(List.of(item), appConfig, getServerName(exchange));
+        String playlist = generatePlaylist(List.of(item), appConfig, getServerName(exchange), isLocal);
         responseWriter.writeText(exchange, HttpURLConnection.HTTP_OK, playlist);
     }
 
@@ -201,7 +231,7 @@ public class PlaylistHandler implements HttpHandler {
         }
 
         List<MediaItem> items = database.getMediaItemsByGroupId(groupId);
-        String playlist = generatePlaylist(items, appConfig, getServerName(exchange));
+        String playlist = generatePlaylist(items, appConfig, getServerName(exchange), isLocal);
         responseWriter.writeText(exchange, HttpURLConnection.HTTP_OK, playlist);
     }
 
@@ -223,7 +253,7 @@ public class PlaylistHandler implements HttpHandler {
             }
         }
 
-        String playlist = generatePlaylist(items, appConfig, getServerName(exchange));
+        String playlist = generatePlaylist(items, appConfig, getServerName(exchange), isLocal);
         responseWriter.writeText(exchange, HttpURLConnection.HTTP_OK, playlist);
     }
 
@@ -249,9 +279,10 @@ public class PlaylistHandler implements HttpHandler {
      * @param mediaItems A List of at least one MediaItem to include in the playlist.
      * @param appConfig  Contains our server port and our data directory.
      * @param serverName The server name or IP address to use in the streaming URLs in the playlist.
+     * @param isLocal   If true, the playlist will contain direct filesystem paths instead of streaming URLs.
      * @return An m3u playlist as a String. May be empty if mediaItems was empty, or if it contained no valid MediaItems.
      */
-    public static String generatePlaylist(List<MediaItem> mediaItems, AppConfig appConfig, String serverName) {
+    public static String generatePlaylist(List<MediaItem> mediaItems, AppConfig appConfig, String serverName, boolean isLocal) {
         StringBuilder m3u = new StringBuilder();
         m3u.append("#EXTM3U\n");
         for (MediaItem mediaItem : mediaItems) {
@@ -270,7 +301,14 @@ public class PlaylistHandler implements HttpHandler {
                     ? mediaItem.getTitle()
                     : "Untitled Media Item " + mediaItem.getId();
             m3u.append("#EXTINF:-1,").append(itemTitle).append("\n");
-            m3u.append(buildStreamUrl(mediaItem, serverName, appConfig));
+            if (isLocal) {
+                // Browser is on the same machine or has access to the same shared filesystem:
+                m3u.append(mediaFile.getAbsolutePath());
+            }
+            else {
+                // Browser is remote, needs to stream over HTTP:
+                m3u.append(buildStreamUrl(mediaItem, serverName, appConfig));
+            }
             m3u.append("\n");
         }
         return m3u.toString();

@@ -1,5 +1,7 @@
+import { useState } from 'react';
 import { Link, NavLink } from 'react-router-dom';
 import { Button } from '../components/ui/Button';
+import { getPlaylistLocalPreference, setPlaylistLocalPreference } from '../lib/playlist';
 import { useTheme } from '../theme/ThemeProvider';
 
 function ThemeToggle(): JSX.Element {
@@ -9,6 +11,27 @@ function ThemeToggle(): JSX.Element {
     <Button variant="secondary" size="sm" onClick={toggleTheme}>
       {theme === 'light' ? 'Dark mode' : 'Light mode'}
     </Button>
+  );
+}
+
+function PlaylistLocalToggle(): JSX.Element {
+  const [isLocal, setIsLocal] = useState<boolean>(() => getPlaylistLocalPreference());
+
+  const onChange = (nextValue: boolean): void => {
+    setIsLocal(nextValue);
+    setPlaylistLocalPreference(nextValue);
+  };
+
+  return (
+    <label className="flex items-center gap-2 text-sm text-content-secondary" htmlFor="playlist-local-toggle">
+      <input
+        id="playlist-local-toggle"
+        type="checkbox"
+        checked={isLocal}
+        onChange={(event) => onChange(event.currentTarget.checked)}
+      />
+      Local VLC paths
+    </label>
   );
 }
 
@@ -30,6 +53,7 @@ export function BrowseHeader(): JSX.Element {
           </nav>
         </div>
         <div className="flex items-center gap-3">
+          <PlaylistLocalToggle />
           <Link to="/admin" className="text-sm font-medium text-content-secondary">
             Admin
           </Link>

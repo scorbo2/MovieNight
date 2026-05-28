@@ -12,6 +12,7 @@ import { Thumbnail } from '../../components/shared/Thumbnail';
 import { Button } from '../../components/ui/Button';
 import { Card } from '../../components/ui/Card';
 import { Skeleton } from '../../components/ui/Skeleton';
+import { addPlaylistLocalQuery } from '../../lib/playlist';
 
 export function ItemDetailPage(): JSX.Element {
   const { itemId: itemIdParam } = useParams();
@@ -75,7 +76,7 @@ export function ItemDetailPage(): JSX.Element {
               <Button onClick={() => setShowPlayer((current) => !current)}>
                 {showPlayer ? 'Hide player' : 'Watch now'}
               </Button>
-              <Button variant="secondary" onClick={() => window.location.assign(buildApiUrl(`playlist/media-item/${item.id}`))}>
+              <Button variant="secondary" onClick={() => window.location.assign(buildApiUrl(addPlaylistLocalQuery(`playlist/media-item/${item.id}`)))}>
                 Watch in VLC
               </Button>
             </div>

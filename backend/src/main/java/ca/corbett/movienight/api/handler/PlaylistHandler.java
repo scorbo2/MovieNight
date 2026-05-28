@@ -1,6 +1,7 @@
 package ca.corbett.movienight.api.handler;
 
 import ca.corbett.movienight.api.util.ExceptionMapper;
+import ca.corbett.movienight.api.util.QueryParamParser;
 import ca.corbett.movienight.api.util.RequestParser;
 import ca.corbett.movienight.api.util.ResponseWriter;
 import ca.corbett.movienight.config.AppConfig;
@@ -14,6 +15,7 @@ import java.io.File;
 import java.io.IOException;
 import java.net.HttpURLConnection;
 import java.util.List;
+import java.util.Map;
 import java.util.logging.Logger;
 
 /**
@@ -40,6 +42,14 @@ import java.util.logging.Logger;
  *     consisting of all media items in the media group with the given ID. Note that only
  *     direct child items of the given group are returned - this is not a recursive search.</li>
  * </ul>
+ * <p>
+ *     An optional query parameter <code>?local=true</code> can be added to any of the above routes to
+ *     indicate that the generated playlist should return direct filesystem paths instead of streaming URLs.
+ *     This is intended for the case where the browser is being used on the same machine as the server (or where
+ *     both client machine and server machine have access to the same shared filesystem). Player performance
+ *     will be much improved in this case, since there is no http streaming involved. The default is false,
+ *     meaning that streaming URLs will be used in the generated playlist.
+ * </p>
  *
  * @author <a href="https://github.com/scorbo2">scorbo2</a>
  */
@@ -75,12 +85,13 @@ public class PlaylistHandler implements HttpHandler {
         try {
             String method = exchange.getRequestMethod();
             String path = exchange.getRequestURI().getPath();
+            boolean isLocal = parseLocalParam(exchange);
 
             if ("GET".equals(method)) {
-                handleGetPlaylist(exchange, path);
+                handleGetPlaylist(exchange, path, isLocal);
             }
             else if ("POST".equals(method)) {
-                handlePostPlaylist(exchange, path);
+                handlePostPlaylist(exchange, path, isLocal);
             }
             else {
                 exchange.getResponseHeaders().set("Content-Type", "application/json; charset=utf-8");
@@ -104,7 +115,18 @@ public class PlaylistHandler implements HttpHandler {
         }
     }
 
-    private void handleGetPlaylist(HttpExchange exchange, String path) throws Exception {
+    /**
+     * Looks for a query parameter "local" in the request URI, and returns true if
+     * found and if the value is "true" (case-insensitive).
+     * If the parameter is not found, or if it has any other value, returns false.
+     * See class javadocs for a description of what this parameter does.
+     */
+    private boolean parseLocalParam(HttpExchange exchange) {
+        Map<String, String> params = QueryParamParser.parse(exchange.getRequestURI().getQuery());
+        return QueryParamParser.parseBoolean(params, "local");
+    }
+
+    private void handleGetPlaylist(HttpExchange exchange, String path, boolean isLocal) throws Exception {
         String prefix = appConfig.getApiBasePath() + "playlist/";
         if (!path.startsWith(prefix)) {
             throw new IllegalArgumentException("Invalid path: " + path);
@@ -112,20 +134,20 @@ public class PlaylistHandler implements HttpHandler {
         String remainder = path.substring(prefix.length());
 
         if ("media-item".equals(remainder)) {
-            handleSingleMediaItemPlaylist(exchange);
+            handleSingleMediaItemPlaylist(exchange, isLocal);
         }
         else if (remainder.startsWith("media-item/")) {
-            handleSingleMediaItemPlaylistById(exchange, remainder.substring("media-item/".length()));
+            handleSingleMediaItemPlaylistById(exchange, remainder.substring("media-item/".length()), isLocal);
         }
         else if (remainder.startsWith("media-group/")) {
-            handleMediaGroupPlaylist(exchange, remainder.substring("media-group/".length()));
+            handleMediaGroupPlaylist(exchange, remainder.substring("media-group/".length()), isLocal);
         }
         else {
             throw new IllegalArgumentException("Unknown playlist route: " + remainder);
         }
     }
 
-    private void handlePostPlaylist(HttpExchange exchange, String path) throws Exception {
+    private void handlePostPlaylist(HttpExchange exchange, String path, boolean isLocal) throws Exception {
         String prefix = appConfig.getApiBasePath() + "playlist/";
         if (!path.startsWith(prefix)) {
             throw new IllegalArgumentException("Invalid path: " + path);
@@ -133,14 +155,15 @@ public class PlaylistHandler implements HttpHandler {
         String remainder = path.substring(prefix.length());
 
         if ("media-item".equals(remainder)) {
-            handleMultiMediaItemPlaylist(exchange);
+            handleMultiMediaItemPlaylist(exchange, isLocal);
         }
         else {
             throw new IllegalArgumentException("Unknown playlist route: " + remainder);
         }
     }
 
-    private void handleSingleMediaItemPlaylistById(HttpExchange exchange, String idStr) throws Exception {
+    private void handleSingleMediaItemPlaylistById(HttpExchange exchange, String idStr, boolean isLocal)
+            throws Exception {
         int itemId;
         try {
             itemId = Integer.parseInt(idStr);
@@ -157,11 +180,11 @@ public class PlaylistHandler implements HttpHandler {
             throw new Database.NotFoundException("Media item not found with ID: " + itemId);
         }
 
-        String playlist = generatePlaylist(List.of(item), appConfig, getServerName(exchange));
+        String playlist = generatePlaylist(List.of(item), appConfig, getServerName(exchange), isLocal);
         responseWriter.writeText(exchange, HttpURLConnection.HTTP_OK, playlist);
     }
 
-    private void handleSingleMediaItemPlaylist(HttpExchange exchange) throws Exception {
+    private void handleSingleMediaItemPlaylist(HttpExchange exchange, boolean isLocal) throws Exception {
         String path = exchange.getRequestURI().getPath();
         String prefix = appConfig.getApiBasePath() + "playlist/media-item";
         String idStr = path.substring(prefix.length()).replace("/", "");
@@ -184,11 +207,11 @@ public class PlaylistHandler implements HttpHandler {
             throw new Database.NotFoundException("Media item not found with ID: " + itemId);
         }
 
-        String playlist = generatePlaylist(List.of(item), appConfig, getServerName(exchange));
+        String playlist = generatePlaylist(List.of(item), appConfig, getServerName(exchange), isLocal);
         responseWriter.writeText(exchange, HttpURLConnection.HTTP_OK, playlist);
     }
 
-    private void handleMediaGroupPlaylist(HttpExchange exchange, String groupIdStr) throws Exception {
+    private void handleMediaGroupPlaylist(HttpExchange exchange, String groupIdStr, boolean isLocal) throws Exception {
         long groupId;
         try {
             groupId = Long.parseLong(groupIdStr);
@@ -201,11 +224,11 @@ public class PlaylistHandler implements HttpHandler {
         }
 
         List<MediaItem> items = database.getMediaItemsByGroupId(groupId);
-        String playlist = generatePlaylist(items, appConfig, getServerName(exchange));
+        String playlist = generatePlaylist(items, appConfig, getServerName(exchange), isLocal);
         responseWriter.writeText(exchange, HttpURLConnection.HTTP_OK, playlist);
     }
 
-    private void handleMultiMediaItemPlaylist(HttpExchange exchange) throws Exception {
+    private void handleMultiMediaItemPlaylist(HttpExchange exchange, boolean isLocal) throws Exception {
         if (!requestParser.hasBody(exchange)) {
             throw new IllegalArgumentException("Request body is required");
         }
@@ -223,7 +246,7 @@ public class PlaylistHandler implements HttpHandler {
             }
         }
 
-        String playlist = generatePlaylist(items, appConfig, getServerName(exchange));
+        String playlist = generatePlaylist(items, appConfig, getServerName(exchange), isLocal);
         responseWriter.writeText(exchange, HttpURLConnection.HTTP_OK, playlist);
     }
 
@@ -249,9 +272,10 @@ public class PlaylistHandler implements HttpHandler {
      * @param mediaItems A List of at least one MediaItem to include in the playlist.
      * @param appConfig  Contains our server port and our data directory.
      * @param serverName The server name or IP address to use in the streaming URLs in the playlist.
+     * @param isLocal   If true, the playlist will contain direct filesystem paths instead of streaming URLs.
      * @return An m3u playlist as a String. May be empty if mediaItems was empty, or if it contained no valid MediaItems.
      */
-    public static String generatePlaylist(List<MediaItem> mediaItems, AppConfig appConfig, String serverName) {
+    public static String generatePlaylist(List<MediaItem> mediaItems, AppConfig appConfig, String serverName, boolean isLocal) {
         StringBuilder m3u = new StringBuilder();
         m3u.append("#EXTM3U\n");
         for (MediaItem mediaItem : mediaItems) {
@@ -270,7 +294,14 @@ public class PlaylistHandler implements HttpHandler {
                     ? mediaItem.getTitle()
                     : "Untitled Media Item " + mediaItem.getId();
             m3u.append("#EXTINF:-1,").append(itemTitle).append("\n");
-            m3u.append(buildStreamUrl(mediaItem, serverName, appConfig));
+            if (isLocal) {
+                // Browser is on the same machine or has access to the same shared filesystem:
+                m3u.append(mediaFile.getAbsolutePath());
+            }
+            else {
+                // Browser is remote, needs to stream over HTTP:
+                m3u.append(buildStreamUrl(mediaItem, serverName, appConfig));
+            }
             m3u.append("\n");
         }
         return m3u.toString();

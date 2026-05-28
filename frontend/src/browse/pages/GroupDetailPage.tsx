@@ -14,6 +14,7 @@ import { Thumbnail } from '../../components/shared/Thumbnail';
 import { Button } from '../../components/ui/Button';
 import { Card } from '../../components/ui/Card';
 import { Skeleton } from '../../components/ui/Skeleton';
+import { addPlaylistLocalQuery } from '../../lib/playlist';
 import { getNullableStringParam, getPositiveIntParam, setParam } from '../../lib/url';
 
 export function GroupDetailPage(): JSX.Element {
@@ -90,7 +91,7 @@ export function GroupDetailPage(): JSX.Element {
             </div>
             <div className="flex flex-wrap gap-3">
               <Button
-                onClick={() => window.location.assign(buildApiUrl(`playlist/media-group/${groupId}`))}
+                onClick={() => window.location.assign(buildApiUrl(addPlaylistLocalQuery(`playlist/media-group/${groupId}`)))}
                 disabled={(itemCountQuery.data?.totalCount ?? 0) === 0}
               >
                 Watch all in VLC

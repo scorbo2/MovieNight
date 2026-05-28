@@ -123,7 +123,7 @@ public class PlaylistHandler implements HttpHandler {
      */
     private boolean parseLocalParam(HttpExchange exchange) {
         Map<String, String> params = QueryParamParser.parse(exchange.getRequestURI().getQuery());
-        return QueryParamParser.parseBoolean(params, "local");
+        return QueryParamParser.parseBooleanOptional(params, "local").orElse(false);
     }
 
     private void handleGetPlaylist(HttpExchange exchange, String path, boolean isLocal) throws Exception {

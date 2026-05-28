@@ -30,10 +30,20 @@ import java.util.logging.Logger;
  *     <li><b>apiBasePath</b>: the base path for all API endpoints (default: "/api/")</li>
  *     <li><b>rangeLimitMB</b>: the maximum length of an HTTP Range request in megabytes (default: 32)</li>
  * </ul>
+ * <p>
+ *     <b>IMPORTANT ENVIRONMENT VARIABLES:</b>
+ * </p>
+ * <ul>
+ *     <li><b>MOVIENIGHT_CONFIG_FILE</b>: points to a valid config file. Fatal if the file can't be read.</li>
+ *     <li><b>MOVIENIGHT_LOG_FILE</b>: optional path to a log file. If not set, logs will only go to the console.</li>
+ * </ul>
  *
  * @author <a href="https://github.com/scorbo2">scorbo2</a>
  */
 public final class AppConfig {
+
+    public static final String ENV_VAR_CONFIG = "MOVIENIGHT_CONFIG_FILE";
+    public static final String ENV_VAR_LOG_FILE = "MOVIENIGHT_LOG_FILE";
 
     private static final Logger log = Logger.getLogger(AppConfig.class.getName());
 
@@ -237,5 +247,18 @@ public final class AppConfig {
             throw new NumberFormatException("MB value must be a positive integer");
         }
         return mbValue;
+    }
+
+    @Override
+    public String toString() {
+        return "AppConfig{\n" +
+                "  port=" + port +
+                ",\n  dataDir=" + dataDir.toAbsolutePath() +
+                ",\n  dbFile=" + dbFile.toAbsolutePath() +
+                ",\n  thumbnailDir=" + thumbnailDir.toAbsolutePath() +
+                ",\n  defaultPageSize=" + defaultPageSize +
+                ",\n  apiBasePath='" + apiBasePath + '\'' +
+                ",\n  rangeLimitMB=" + rangeLimitMB +
+                '}';
     }
 }

@@ -32,7 +32,7 @@ cd frontend && npm run dev            # dev server with proxy to localhost:8181
 java -jar backend/target/MovieNight-2.0-SNAPSHOT.jar
 
 # With a config file:
-MOVIE_NIGHT_CONFIG=/path/to/config.properties java -jar ...
+MOVIENIGHT_CONFIG_FILE=/path/to/config.properties java -jar ...
 ```
 
 Config file is a Java `.properties` file. Recognized keys: `port`, `dataDir`, `pageSize`, `apiBasePath`, `rangeLimitMB`.

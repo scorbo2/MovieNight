@@ -19,6 +19,8 @@ import java.util.logging.Logger;
  */
 public class Main {
 
+    private static FileHandler fileHandler = null;
+
     public static void main(String[] args) throws Exception {
         configureLogging();
         Logger log = Logger.getLogger(Main.class.getName());
@@ -39,7 +41,11 @@ public class Main {
             log.info("Shutting down...");
             apiServer.stop();
             database.dispose();
-            log.info("Shutdown complete.");
+            if (fileHandler != null) {
+                fileHandler.flush();
+                fileHandler.close();
+            }
+            System.out.println("Shutdown complete.");
         }));
 
         // Don't pollute the log file with this. This is just for console users who run the app directly.
@@ -55,7 +61,7 @@ public class Main {
     public static AppConfig loadAppConfig(Logger log) {
         AppConfig config = AppConfig.defaults();
         String configPath = System.getenv(AppConfig.ENV_VAR_CONFIG);
-        if (configPath != null) {
+        if (configPath != null && !configPath.trim().isEmpty()) {
             File configFile = new File(configPath);
             if (!configFile.exists() || !configFile.isFile() || !configFile.canRead()) {
                 log.severe("Fatal: Invalid config file specified in " + AppConfig.ENV_VAR_CONFIG + ": " + configPath);
@@ -111,7 +117,7 @@ public class Main {
                 }
             }
 
-            FileHandler fileHandler = new FileHandler(logFile, true);
+            fileHandler = new FileHandler(logFile, true);
             fileHandler.setFormatter(customFormatter);
             rootLogger.addHandler(fileHandler);
 
@@ -133,7 +139,9 @@ public class Main {
         public String format(LogRecord record) {
             String thrown = "";
             if (record.getThrown() != null) {
-                thrown = "\n" + record.getThrown();
+                for (StackTraceElement element : record.getThrown().getStackTrace()) {
+                    thrown += "\n\tat " + element.toString();
+                }
             }
 
             return String.format("%1$tF %1$tr [%2$s] %3$s%4$s%n",

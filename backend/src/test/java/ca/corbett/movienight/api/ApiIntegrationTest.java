@@ -1585,6 +1585,30 @@ class ApiIntegrationTest {
     }
 
     @Test
+    void playlist_singleMediaItemLocal_returns200WithM3uAndLocalFilePaths() throws Exception {
+        long groupId = createTestGroup("Group", null);
+        long itemId = createTestItem(groupId, "Test Movie", "/test-movie.mkv");
+
+        // Create the actual media file on disk
+        Path mediaFile = tempDir.resolve("test-movie.mkv");
+        Files.writeString(mediaFile, "fake video content");
+
+        HttpResponse<String> response = sendRequest(
+                HttpRequest.newBuilder()
+                           .uri(URI.create(BASE_URL + "/playlist/media-item/" + itemId + "?local=true"))
+                           .GET()
+                           .build()
+        );
+
+        assertEquals(200, response.statusCode());
+        assertEquals("text/plain; charset=utf-8", response.headers().firstValue("Content-Type").orElse(""));
+        String body = response.body();
+        assertTrue(body.startsWith("#EXTM3U"));
+        assertTrue(body.contains("#EXTINF:-1,Test Movie"));
+        assertTrue(body.contains(mediaFile.toAbsolutePath().toString()));
+    }
+
+    @Test
     void playlist_singleMediaItem_nonexistent_returns404() throws Exception {
         HttpResponse<String> response = sendRequest(
                 HttpRequest.newBuilder()

@@ -1,6 +1,7 @@
 package ca.corbett.movienight.api.handler;
 
 import ca.corbett.movienight.api.util.ExceptionMapper;
+import ca.corbett.movienight.api.util.QueryParamParser;
 import ca.corbett.movienight.api.util.RequestParser;
 import ca.corbett.movienight.api.util.ResponseWriter;
 import ca.corbett.movienight.config.AppConfig;
@@ -14,6 +15,7 @@ import java.io.File;
 import java.io.IOException;
 import java.net.HttpURLConnection;
 import java.util.List;
+import java.util.Map;
 import java.util.logging.Logger;
 
 /**
@@ -59,7 +61,6 @@ public class PlaylistHandler implements HttpHandler {
     private final Database database;
     private final MediaGroupService mediaGroupService;
     private final AppConfig appConfig;
-    private boolean isLocal;
 
     public PlaylistHandler(Database database, MediaGroupService mediaGroupService,
                            ResponseWriter responseWriter, RequestParser requestParser,
@@ -69,7 +70,6 @@ public class PlaylistHandler implements HttpHandler {
         this.responseWriter = responseWriter;
         this.requestParser = requestParser;
         this.appConfig = appConfig;
-        this.isLocal = false;
     }
 
     public static class PlaylistMediaItemIdsRequest {
@@ -85,13 +85,13 @@ public class PlaylistHandler implements HttpHandler {
         try {
             String method = exchange.getRequestMethod();
             String path = exchange.getRequestURI().getPath();
-            isLocal = parseLocalParam(exchange);
+            boolean isLocal = parseLocalParam(exchange);
 
             if ("GET".equals(method)) {
-                handleGetPlaylist(exchange, path);
+                handleGetPlaylist(exchange, path, isLocal);
             }
             else if ("POST".equals(method)) {
-                handlePostPlaylist(exchange, path);
+                handlePostPlaylist(exchange, path, isLocal);
             }
             else {
                 exchange.getResponseHeaders().set("Content-Type", "application/json; charset=utf-8");
@@ -122,19 +122,11 @@ public class PlaylistHandler implements HttpHandler {
      * See class javadocs for a description of what this parameter does.
      */
     private boolean parseLocalParam(HttpExchange exchange) {
-        String query = exchange.getRequestURI().getQuery();
-        if (query != null) {
-            for (String param : query.split("&")) {
-                String[] parts = param.split("=");
-                if (parts.length == 2 && "local".equals(parts[0]) && "true".equalsIgnoreCase(parts[1])) {
-                    return true;
-                }
-            }
-        }
-        return false;
+        Map<String, String> params = QueryParamParser.parse(exchange.getRequestURI().getQuery());
+        return QueryParamParser.parseBoolean(params, "local");
     }
 
-    private void handleGetPlaylist(HttpExchange exchange, String path) throws Exception {
+    private void handleGetPlaylist(HttpExchange exchange, String path, boolean isLocal) throws Exception {
         String prefix = appConfig.getApiBasePath() + "playlist/";
         if (!path.startsWith(prefix)) {
             throw new IllegalArgumentException("Invalid path: " + path);
@@ -142,20 +134,20 @@ public class PlaylistHandler implements HttpHandler {
         String remainder = path.substring(prefix.length());
 
         if ("media-item".equals(remainder)) {
-            handleSingleMediaItemPlaylist(exchange);
+            handleSingleMediaItemPlaylist(exchange, isLocal);
         }
         else if (remainder.startsWith("media-item/")) {
-            handleSingleMediaItemPlaylistById(exchange, remainder.substring("media-item/".length()));
+            handleSingleMediaItemPlaylistById(exchange, remainder.substring("media-item/".length()), isLocal);
         }
         else if (remainder.startsWith("media-group/")) {
-            handleMediaGroupPlaylist(exchange, remainder.substring("media-group/".length()));
+            handleMediaGroupPlaylist(exchange, remainder.substring("media-group/".length()), isLocal);
         }
         else {
             throw new IllegalArgumentException("Unknown playlist route: " + remainder);
         }
     }
 
-    private void handlePostPlaylist(HttpExchange exchange, String path) throws Exception {
+    private void handlePostPlaylist(HttpExchange exchange, String path, boolean isLocal) throws Exception {
         String prefix = appConfig.getApiBasePath() + "playlist/";
         if (!path.startsWith(prefix)) {
             throw new IllegalArgumentException("Invalid path: " + path);
@@ -163,14 +155,15 @@ public class PlaylistHandler implements HttpHandler {
         String remainder = path.substring(prefix.length());
 
         if ("media-item".equals(remainder)) {
-            handleMultiMediaItemPlaylist(exchange);
+            handleMultiMediaItemPlaylist(exchange, isLocal);
         }
         else {
             throw new IllegalArgumentException("Unknown playlist route: " + remainder);
         }
     }
 
-    private void handleSingleMediaItemPlaylistById(HttpExchange exchange, String idStr) throws Exception {
+    private void handleSingleMediaItemPlaylistById(HttpExchange exchange, String idStr, boolean isLocal)
+            throws Exception {
         int itemId;
         try {
             itemId = Integer.parseInt(idStr);
@@ -191,7 +184,7 @@ public class PlaylistHandler implements HttpHandler {
         responseWriter.writeText(exchange, HttpURLConnection.HTTP_OK, playlist);
     }
 
-    private void handleSingleMediaItemPlaylist(HttpExchange exchange) throws Exception {
+    private void handleSingleMediaItemPlaylist(HttpExchange exchange, boolean isLocal) throws Exception {
         String path = exchange.getRequestURI().getPath();
         String prefix = appConfig.getApiBasePath() + "playlist/media-item";
         String idStr = path.substring(prefix.length()).replace("/", "");
@@ -218,7 +211,7 @@ public class PlaylistHandler implements HttpHandler {
         responseWriter.writeText(exchange, HttpURLConnection.HTTP_OK, playlist);
     }
 
-    private void handleMediaGroupPlaylist(HttpExchange exchange, String groupIdStr) throws Exception {
+    private void handleMediaGroupPlaylist(HttpExchange exchange, String groupIdStr, boolean isLocal) throws Exception {
         long groupId;
         try {
             groupId = Long.parseLong(groupIdStr);
@@ -235,7 +228,7 @@ public class PlaylistHandler implements HttpHandler {
         responseWriter.writeText(exchange, HttpURLConnection.HTTP_OK, playlist);
     }
 
-    private void handleMultiMediaItemPlaylist(HttpExchange exchange) throws Exception {
+    private void handleMultiMediaItemPlaylist(HttpExchange exchange, boolean isLocal) throws Exception {
         if (!requestParser.hasBody(exchange)) {
             throw new IllegalArgumentException("Request body is required");
         }

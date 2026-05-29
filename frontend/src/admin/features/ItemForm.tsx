@@ -3,6 +3,7 @@ import { useState } from 'react';
 import { Controller, useForm } from 'react-hook-form';
 import { z } from 'zod';
 import type { ItemUpsertPayload, MediaGroup } from '../../api/types';
+import { FileBrowserField } from '../../components/shared/FileBrowserField';
 import { Badge } from '../../components/ui/Badge';
 import { Button } from '../../components/ui/Button';
 import { Input } from '../../components/ui/Input';
@@ -85,11 +86,21 @@ export function ItemForm({ groups, initialValues, loading, onSubmit }: ItemFormP
         <FieldError message={form.formState.errors.title?.message} />
       </div>
 
-      <div className="space-y-2">
-        <label className="text-sm font-medium text-content">Media file path</label>
-        <Input error={Boolean(form.formState.errors.mediaFilePath)} {...form.register('mediaFilePath')} />
-        <FieldError message={form.formState.errors.mediaFilePath?.message} />
-      </div>
+      <Controller
+        control={form.control}
+        name="mediaFilePath"
+        render={({ field }) => (
+          <div className="space-y-2">
+            <label className="text-sm font-medium text-content">Media file path</label>
+            <FileBrowserField
+              value={field.value}
+              onChange={field.onChange}
+              error={Boolean(form.formState.errors.mediaFilePath)}
+            />
+            <FieldError message={form.formState.errors.mediaFilePath?.message} />
+          </div>
+        )}
+      />
 
       <div className="space-y-2">
         <label className="text-sm font-medium text-content">Description</label>

@@ -1645,6 +1645,11 @@ class ApiIntegrationTest {
 
         assertEquals(200, response.statusCode());
         assertEquals("audio/x-mpegurl; charset=utf-8", response.headers().firstValue("Content-Type").orElse(""));
+        String contentDisposition = response.headers().firstValue("Content-Disposition").orElse(null);
+        assertNotNull(contentDisposition); // should have one
+        assertTrue(contentDisposition.contains("attachment")); // should name an attachment
+        assertTrue(contentDisposition.contains(".m3u")); // extension should be .m3u
+        assertFalse(contentDisposition.contains(".m3u8")); // should NOT be .m3u8
         String body = response.body();
         assertTrue(body.startsWith("#EXTM3U"));
         assertTrue(body.contains("#EXTINF:-1,Test Movie"));
@@ -1669,6 +1674,11 @@ class ApiIntegrationTest {
 
         assertEquals(200, response.statusCode());
         assertEquals("audio/x-mpegurl; charset=utf-8", response.headers().firstValue("Content-Type").orElse(""));
+        String contentDisposition = response.headers().firstValue("Content-Disposition").orElse(null);
+        assertNotNull(contentDisposition); // should have one
+        assertTrue(contentDisposition.contains("attachment")); // should name an attachment
+        assertTrue(contentDisposition.contains(".m3u")); // extension should be .m3u
+        assertFalse(contentDisposition.contains(".m3u8")); // should NOT be .m3u8
         String body = response.body();
         assertTrue(body.startsWith("#EXTM3U"));
         assertTrue(body.contains("#EXTINF:-1,Test Movie"));

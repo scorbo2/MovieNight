@@ -226,7 +226,10 @@ public class PlaylistHandler implements HttpHandler {
 
         MediaGroup group = database.getMediaGroupById(groupId);
         if (group == null) {
-            throw new Database.NotFoundException("Media group not found with ID: " + groupId);
+            log.warning("Playlist requested for non-existent media group with ID: " + groupId);
+            String playlist = "#EXTM3U\n"; // empty playlist
+            responseWriter.writePlaylist(exchange, HttpURLConnection.HTTP_OK, playlist, "Empty Playlist");
+            return;
         }
         List<MediaItem> items = database.getMediaItemsByGroupId(groupId);
         String playlist = generatePlaylist(items, appConfig, getServerName(exchange), isLocal);

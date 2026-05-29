@@ -7,6 +7,7 @@ import java.io.IOException;
 import java.io.OutputStream;
 import java.net.HttpURLConnection;
 import java.nio.charset.StandardCharsets;
+import java.util.regex.Pattern;
 
 /**
  * Utility for writing HTTP responses.
@@ -19,6 +20,12 @@ import java.nio.charset.StandardCharsets;
 public final class ResponseWriter {
 
     private static final String CONTENT_TYPE = "application/json; charset=utf-8";
+    private static final Pattern INVALID_CHARS = Pattern.compile("[^a-zA-Z0-9.-]");
+    private static final Pattern LEADING_DOTS = Pattern.compile("^\\.+");
+    private static final Pattern WINDOWS_RESERVED = Pattern.compile(
+            "^(CON|PRN|AUX|NUL|COM[1-9]|LPT[1-9])(\\..*)?$",
+            Pattern.CASE_INSENSITIVE
+    );
 
     private final ObjectMapper objectMapper;
 
@@ -74,7 +81,7 @@ public final class ResponseWriter {
         }
     }
 
-    public void writePlaylist(HttpExchange exchange, int statusCode, String playlist) throws Exception {
+    public void writePlaylist(HttpExchange exchange, int statusCode, String playlist) throws IOException {
         writePlaylist(exchange, statusCode, playlist, "playlist");
     }
 
@@ -95,13 +102,47 @@ public final class ResponseWriter {
     public void writePlaylist(HttpExchange exchange, int statusCode, String playlist, String filename)
             throws IOException {
         byte[] bytes = playlist.getBytes(StandardCharsets.UTF_8);
+        String safeFilename = sanitizeFilename(filename, filename);
 
         exchange.getResponseHeaders().set("Content-Type", "audio/x-mpegurl; charset=utf-8");
-        exchange.getResponseHeaders().set("Content-Disposition", "attachment; filename=\"" + filename + ".m3u\"");
+        exchange.getResponseHeaders().set("Content-Disposition", "attachment; filename=\"" + safeFilename + ".m3u\"");
         exchange.sendResponseHeaders(statusCode, bytes.length);
 
         try (OutputStream os = exchange.getResponseBody()) {
             os.write(bytes);
         }
+    }
+
+    /**
+     * Given any arbitrary String, returns a sanitized version that is safe to use as a filename
+     * on any operating system. If the given input is null or empty, or if the resulting sanitized
+     * filename is empty, the given defaultName will be returned.
+     * <p>
+     * The only allowable characters are alphanumeric characters, dots (.), hyphens (-), and underscores (_).
+     * All other characters are replaced with underscores. Leading dots are removed. On Windows,
+     * reserved filenames such as "CON" or "AUX" are prefixed with an underscore. The resulting filename
+     * is truncated to a maximum of 200 characters.
+     * </p>
+     * <p>
+     * Note: copy+pasted from swing-extras 2.9
+     * </p>
+     */
+    public static String sanitizeFilename(String input, String defaultName) {
+        if (input == null || input.trim().isEmpty()) {
+            return defaultName;
+        }
+
+        String sanitized = INVALID_CHARS.matcher(input).replaceAll("_");
+        sanitized = LEADING_DOTS.matcher(sanitized).replaceFirst("");
+
+        if (WINDOWS_RESERVED.matcher(sanitized).matches()) {
+            sanitized = "_" + sanitized;
+        }
+
+        if (sanitized.length() > 200) {
+            sanitized = sanitized.substring(0, 200);
+        }
+
+        return sanitized.isEmpty() ? defaultName : sanitized;
     }
 }

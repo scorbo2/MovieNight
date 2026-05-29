@@ -193,7 +193,7 @@ public class FileBrowserHandler implements HttpHandler {
     private Map<String, Object> buildResponse(Path currentPath, List<File> files) {
         Map<String, Object> response = new HashMap<>();
         response.put("path", currentPath.toAbsolutePath().toString());
-        if (!currentPath.equals(appConfig.getMediaDir())) {
+        if (!currentPath.toAbsolutePath().normalize().equals(appConfig.getMediaDir().toAbsolutePath().normalize())) {
             response.put("parent", currentPath.getParent().toAbsolutePath().toString());
         }
         List<Map<String, String>> entries = new ArrayList<>();

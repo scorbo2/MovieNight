@@ -101,8 +101,8 @@ public class StreamHandler implements HttpHandler {
             throw new Database.NotFoundException("Media item not found with ID: " + mediaItemId);
         }
 
-        Path mediaFilePath = appConfig.getDataDir().resolve(item.getMediaFilePath()).normalize();
-        if (!mediaFilePath.startsWith(appConfig.getDataDir())) {
+        Path mediaFilePath = appConfig.getMediaDir().resolve(item.getMediaFilePath()).normalize();
+        if (!mediaFilePath.startsWith(appConfig.getMediaDir())) {
             throw new SecurityException("Media file path is outside of data directory: " + mediaFilePath);
         }
         File mediaFile = mediaFilePath.toFile();

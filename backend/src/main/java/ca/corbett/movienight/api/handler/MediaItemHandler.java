@@ -120,7 +120,7 @@ public final class MediaItemHandler implements HttpHandler {
         }
         else {
             pageNumber = 1;
-            pageSize = appConfig.getDefaultPageSize();
+            pageSize = appConfig.getPageSize();
         }
 
         return new PageParams(pageNumber, pageSize);

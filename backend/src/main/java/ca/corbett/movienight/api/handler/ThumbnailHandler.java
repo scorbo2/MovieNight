@@ -26,8 +26,7 @@ import java.util.stream.Collectors;
 
 /**
  * HTTP handler for thumbnail management endpoints.
- * <p>
- * Routes:
+ * <p>Routes:</p>
  * <ul>
  *   <li>GET    /api/thumbnails/media-items/{itemId}</li>
  *   <li>POST   /api/thumbnails/media-items/{itemId}</li>

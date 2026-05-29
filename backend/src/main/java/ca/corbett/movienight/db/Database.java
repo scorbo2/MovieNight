@@ -311,6 +311,8 @@ public class Database {
         requireConnected();
         validatePositiveId(id, "id");
 
+        MediaItem existingItem = getMediaItemById(id);
+
         executeInTransaction(() -> {
             try (PreparedStatement ps = connection.prepareStatement("DELETE FROM MediaItem WHERE id = ?")) {
                 ps.setLong(1, id);
@@ -318,9 +320,10 @@ public class Database {
                 if (deleted == 0) {
                     log.warning("No MediaItem found with id=" + id + "; nothing to delete");
                 }
-
-                // Also delete any thumbnail for this item:
-                ThumbnailUtil.removeMediaItemThumbnail(id, appConfig);
+                else if (existingItem != null) {
+                    // Media-item thumbnails are sidecar files, so we need the original media file path.
+                    ThumbnailUtil.removeMediaItemThumbnail(existingItem.getMediaFilePath(), appConfig);
+                }
             }
         });
     }
@@ -576,7 +579,7 @@ public class Database {
 
             item.setTitle(normalizeRequiredString(item.getTitle(), "item.title"));
             item.setDescription(normalizeOptionalString(item.getDescription()));
-            item.setMediaFilePath(normalizeRequiredString(item.getMediaFilePath(), "item.mediaFilePath"));
+            item.setMediaFilePath(normalizeRequiredMediaPath(item.getMediaFilePath(), "item.mediaFilePath"));
             item.setTags(item.getTags());
         }
     }
@@ -615,6 +618,18 @@ public class Database {
         if (normalized.isEmpty()) {
             throw new IllegalArgumentException(fieldName + " cannot be blank");
         }
+        return normalized;
+    }
+
+    private String normalizeRequiredMediaPath(String value, String fieldName) {
+        // Start with same validation as any other required string:
+        String normalized = normalizeRequiredString(value, fieldName);
+
+        // But additionally, we will trim any leading file separators, as this is a relative path:
+        if (normalized.startsWith(File.separator) && normalized.length() > 1) {
+            normalized = normalized.substring(1);
+        }
+
         return normalized;
     }
 

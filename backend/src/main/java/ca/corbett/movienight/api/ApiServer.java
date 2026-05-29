@@ -75,11 +75,11 @@ public final class ApiServer {
         Router router = new Router(responseWriter);
         RequestParser requestParser = new RequestParser(objectMapper);
 
-        MediaGroupService mediaGroupService = new MediaGroupService(database, config.getDefaultPageSize());
-        MediaItemService mediaItemService = new MediaItemService(database, config.getDefaultPageSize());
+        MediaGroupService mediaGroupService = new MediaGroupService(database, config.getPageSize());
+        MediaItemService mediaItemService = new MediaItemService(database, config.getPageSize());
 
         String basePath = config.getApiBasePath();
-        int defaultPageSize = config.getDefaultPageSize();
+        int defaultPageSize = config.getPageSize();
         ApiServer apiServer = new ApiServer(server, router, responseWriter, requestParser, database, config,
                                             objectMapper);
 

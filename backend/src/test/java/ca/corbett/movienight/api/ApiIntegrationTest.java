@@ -1644,7 +1644,7 @@ class ApiIntegrationTest {
         );
 
         assertEquals(200, response.statusCode());
-        assertEquals("text/plain; charset=utf-8", response.headers().firstValue("Content-Type").orElse(""));
+        assertEquals("audio/x-mpegurl; charset=utf-8", response.headers().firstValue("Content-Type").orElse(""));
         String body = response.body();
         assertTrue(body.startsWith("#EXTM3U"));
         assertTrue(body.contains("#EXTINF:-1,Test Movie"));
@@ -1668,7 +1668,7 @@ class ApiIntegrationTest {
         );
 
         assertEquals(200, response.statusCode());
-        assertEquals("text/plain; charset=utf-8", response.headers().firstValue("Content-Type").orElse(""));
+        assertEquals("audio/x-mpegurl; charset=utf-8", response.headers().firstValue("Content-Type").orElse(""));
         String body = response.body();
         assertTrue(body.startsWith("#EXTM3U"));
         assertTrue(body.contains("#EXTINF:-1,Test Movie"));

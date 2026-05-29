@@ -73,4 +73,35 @@ public final class ResponseWriter {
             os.write(bytes);
         }
     }
+
+    public void writePlaylist(HttpExchange exchange, int statusCode, String playlist) throws Exception {
+        writePlaylist(exchange, statusCode, playlist, "playlist");
+    }
+
+    /**
+     * Writes an M3U playlist response body with the given status code.
+     * Sets {@code Content-Type: audio/x-mpegurl} and a
+     * {@code Content-Disposition: attachment; filename="playlist.m3u"} header so that
+     * browsers download the file with the correct {@code .m3u} extension rather than
+     * sniffing the {@code #EXTM3U} header and mis-classifying the response as an HLS
+     * ({@code .m3u8}) stream.
+     *
+     * @param exchange   the HTTP exchange
+     * @param statusCode the HTTP status code
+     * @param playlist   the M3U playlist content
+     * @param filename   the filename to suggest in the Content-Disposition header (without extension)
+     * @throws IOException if writing fails
+     */
+    public void writePlaylist(HttpExchange exchange, int statusCode, String playlist, String filename)
+            throws IOException {
+        byte[] bytes = playlist.getBytes(StandardCharsets.UTF_8);
+
+        exchange.getResponseHeaders().set("Content-Type", "audio/x-mpegurl; charset=utf-8");
+        exchange.getResponseHeaders().set("Content-Disposition", "attachment; filename=\"" + filename + ".m3u\"");
+        exchange.sendResponseHeaders(statusCode, bytes.length);
+
+        try (OutputStream os = exchange.getResponseBody()) {
+            os.write(bytes);
+        }
+    }
 }

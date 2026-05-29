@@ -5,11 +5,10 @@ import { listGroups } from '../../api/groups';
 import { EmptyState } from '../../components/shared/EmptyState';
 import { ErrorState } from '../../components/shared/ErrorState';
 import { PaginationControls } from '../../components/shared/PaginationControls';
-import { SearchBar } from '../../components/shared/SearchBar';
 import { Thumbnail } from '../../components/shared/Thumbnail';
 import { Card } from '../../components/ui/Card';
 import { Skeleton } from '../../components/ui/Skeleton';
-import { getNullableStringParam, getPositiveIntParam, setParam } from '../../lib/url';
+import { getNullableStringParam, getPositiveIntParam } from '../../lib/url';
 
 export function BrowseHomePage(): JSX.Element {
   const [searchParams, setSearchParams] = useSearchParams();
@@ -36,21 +35,6 @@ export function BrowseHomePage(): JSX.Element {
 
   return (
     <div className="space-y-6">
-      <Card>
-        <SearchBar
-          values={filters}
-          showDescription
-          onSearch={(values) =>
-            updateParams((next) => {
-              setParam(next, 'titleContains', values.titleContains?.trim());
-              setParam(next, 'descriptionContains', values.descriptionContains?.trim());
-              next.set('pageNumber', '1');
-              next.set('pageSize', String(pageSize));
-            })
-          }
-        />
-      </Card>
-
       {groupsQuery.isError ? (
         <ErrorState message={groupsQuery.error instanceof Error ? groupsQuery.error.message : 'Could not load groups'} onRetry={() => void groupsQuery.refetch()} />
       ) : groupsQuery.isLoading ? (

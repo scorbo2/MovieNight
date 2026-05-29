@@ -166,10 +166,6 @@ export function GroupDetailPage(): JSX.Element {
       ) : null}
 
       <section className="space-y-4">
-        <div>
-          <h2 className="section-title">Items</h2>
-          <p className="section-copy mt-1">Filter titles, descriptions, or tags and jump into playback.</p>
-        </div>
         <Card>
           <SearchBar
             values={itemFilters}

@@ -106,68 +106,62 @@ export function GroupDetailPage(): JSX.Element {
         </div>
       </Card>
 
-      <section className="space-y-4">
-        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-          <div>
-            <h2 className="section-title">Child groups</h2>
-            <p className="section-copy mt-1">Refine the collection tree without losing your place.</p>
-          </div>
-        </div>
-        <Card>
-          <SearchBar
-            values={{ titleContains: childFilters.titleContains, descriptionContains: childFilters.descriptionContains }}
-            showDescription
-            onSearch={(values) =>
-              updateParams((next) => {
-                setParam(next, 'childTitleContains', values.titleContains?.trim());
-                setParam(next, 'childDescriptionContains', values.descriptionContains?.trim());
-                next.set('childPage', '1');
-                next.set('childPageSize', String(childPageSize));
-              })
-            }
-          />
-        </Card>
-        {childGroupsQuery.isError ? (
-          <ErrorState message={childGroupsQuery.error instanceof Error ? childGroupsQuery.error.message : 'Could not load child groups'} onRetry={() => void childGroupsQuery.refetch()} />
-        ) : childGroupsQuery.isLoading ? (
-          <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-            {Array.from({ length: 3 }).map((_, index) => (
-              <Skeleton key={index} className="aspect-video w-full rounded-xl" />
-            ))}
-          </div>
-        ) : childGroupsQuery.data && childGroupsQuery.data.items.length > 0 ? (
-          <>
-            <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-              {childGroupsQuery.data.items.map((childGroup) => (
-                <Link key={childGroup.id} className="no-underline" to={`/browse/groups/${childGroup.id}`}>
-                  <Card clickable>
-                    <Thumbnail
-                      alt={childGroup.title}
-                      src={childGroup.hasThumbnail ? getThumbnailUrl('media-groups', childGroup.id) : undefined}
-                    />
-                    <h3 className="mt-4 text-lg font-semibold text-content">{childGroup.title}</h3>
-                    <p className="mt-2 text-sm text-content-secondary">{childGroup.description ?? 'No description available.'}</p>
-                  </Card>
-                </Link>
-              ))}
+      {!childGroupsQuery.isLoading && (childGroupsQuery.isError || (childGroupsQuery.data?.items.length ?? 0) > 0) ? (
+        <section className="space-y-4">
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+            <div>
+              <h2 className="section-title">Child groups</h2>
+              <p className="section-copy mt-1">Refine the collection tree without losing your place.</p>
             </div>
-            <PaginationControls
-              totalCount={childGroupsQuery.data.totalCount}
-              pageNumber={childPage}
-              pageSize={childPageSize}
-              onPageChange={(nextPage) => updateParams((next) => next.set('childPage', String(nextPage)))}
-              onPageSizeChange={(nextPageSize) =>
+          </div>
+          <Card>
+            <SearchBar
+              values={{ titleContains: childFilters.titleContains, descriptionContains: childFilters.descriptionContains }}
+              showDescription
+              onSearch={(values) =>
                 updateParams((next) => {
+                  setParam(next, 'childTitleContains', values.titleContains?.trim());
+                  setParam(next, 'childDescriptionContains', values.descriptionContains?.trim());
                   next.set('childPage', '1');
-                  next.set('childPageSize', String(nextPageSize));
+                  next.set('childPageSize', String(childPageSize));
                 })
               }
             />
-          </>
-        ) : (
-          <EmptyState title="No child groups" description="This group has no matching child groups right now." />
-        )}
-      </section>
+          </Card>
+          {childGroupsQuery.isError ? (
+            <ErrorState message={childGroupsQuery.error instanceof Error ? childGroupsQuery.error.message : 'Could not load child groups'} onRetry={() => void childGroupsQuery.refetch()} />
+          ) : childGroupsQuery.data && childGroupsQuery.data.items.length > 0 ? (
+            <>
+              <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+                {childGroupsQuery.data.items.map((childGroup) => (
+                  <Link key={childGroup.id} className="no-underline" to={`/browse/groups/${childGroup.id}`}>
+                    <Card clickable>
+                      <Thumbnail
+                        alt={childGroup.title}
+                        src={childGroup.hasThumbnail ? getThumbnailUrl('media-groups', childGroup.id) : undefined}
+                      />
+                      <h3 className="mt-4 text-lg font-semibold text-content">{childGroup.title}</h3>
+                      <p className="mt-2 text-sm text-content-secondary">{childGroup.description ?? 'No description available.'}</p>
+                    </Card>
+                  </Link>
+                ))}
+              </div>
+              <PaginationControls
+                totalCount={childGroupsQuery.data.totalCount}
+                pageNumber={childPage}
+                pageSize={childPageSize}
+                onPageChange={(nextPage) => updateParams((next) => next.set('childPage', String(nextPage)))}
+                onPageSizeChange={(nextPageSize) =>
+                  updateParams((next) => {
+                    next.set('childPage', '1');
+                    next.set('childPageSize', String(nextPageSize));
+                  })
+                }
+              />
+            </>
+          ) : null}
+        </section>
+      ) : null}
 
       <section className="space-y-4">
         <div>

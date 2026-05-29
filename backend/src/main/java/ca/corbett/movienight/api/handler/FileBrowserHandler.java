@@ -95,11 +95,18 @@ public class FileBrowserHandler implements HttpHandler {
     private Path resolvePathParameter(HttpExchange exchange) {
         String query = exchange.getRequestURI().getQuery();
         Map<String, String> params = QueryParamParser.parse(query);
-        Path mediaDirPath = appConfig.getMediaDir();
-        Path pathParam = Path.of(params.getOrDefault("path", mediaDirPath.toAbsolutePath().toString())).normalize();
+        Path mediaDirPath = appConfig.getMediaDir().toAbsolutePath().normalize();
+        String requestedPath = params.get("path");
+        Path pathParam = (requestedPath == null || requestedPath.isBlank())
+                ? mediaDirPath
+                : Path.of(requestedPath);
+        if (!pathParam.isAbsolute()) {
+            pathParam = mediaDirPath.resolve(pathParam);
+        }
+        pathParam = pathParam.toAbsolutePath().normalize();
 
         // If the given path is not within our media dir, ignore it and use mediaDir instead.
-        if (!pathParam.startsWith(mediaDirPath.normalize())) {
+        if (!pathParam.startsWith(mediaDirPath)) {
             log.warning("Received file browser request with path outside media directory: " + pathParam);
             return mediaDirPath.normalize();
         }

@@ -1,6 +1,7 @@
 package ca.corbett.movienight.api;
 
 import ca.corbett.movienight.api.dto.ErrorResponse;
+import ca.corbett.movienight.api.handler.FileBrowserHandler;
 import ca.corbett.movienight.api.handler.HealthHandler;
 import ca.corbett.movienight.api.handler.MediaGroupHandler;
 import ca.corbett.movienight.api.handler.MediaItemHandler;
@@ -76,7 +77,7 @@ public final class ApiServer {
         RequestParser requestParser = new RequestParser(objectMapper);
 
         MediaGroupService mediaGroupService = new MediaGroupService(database, config.getPageSize());
-        MediaItemService mediaItemService = new MediaItemService(database, config.getPageSize());
+        MediaItemService mediaItemService = new MediaItemService(database, config);
 
         String basePath = config.getApiBasePath();
         int defaultPageSize = config.getPageSize();
@@ -105,6 +106,9 @@ public final class ApiServer {
 
         // Register playlist endpoints
         apiServer.registerPlaylistEndpoints(mediaItemService, mediaGroupService);
+
+        // Register file browser endpoint:
+        apiServer.registerFileBrowserEndpoint();
 
         // Mount the router at the API base path (more specific path first)
         server.createContext(basePath, apiServer::handleAll);
@@ -309,6 +313,15 @@ public final class ApiServer {
         router.register(route, handler);
     }
 
+    private void registerFileBrowserEndpoint() {
+        Route route;
+        FileBrowserHandler handler = new FileBrowserHandler(appConfig, responseWriter);
+
+        // GET /api/files[?path=...] — list files in media directory
+        route = new Route("GET", appConfig.getApiBasePath() + "files");
+        router.register(route, handler);
+    }
+
     /**
      * Handles all requests under the API base path, delegating to the router
      * and wrapping errors in JSON error responses.
@@ -349,7 +362,6 @@ public final class ApiServer {
      */
     public void start() {
         server.start();
-        log.info("API server started on port " + server.getAddress().getPort());
     }
 
     /**

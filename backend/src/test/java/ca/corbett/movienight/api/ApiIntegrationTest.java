@@ -919,6 +919,66 @@ class ApiIntegrationTest {
     }
 
     @Test
+    void createItem_withAbsoluteMediaFilePath_shouldSaveAsRelativePath() throws Exception {
+        // Given an absolute path for our new media item:
+        final String mediaFilePath = tempDir.resolve("subdir1/subdir2/ep1.mkv").toString();
+
+        // WHEN we save it:
+        long groupId = createTestGroup("Group", null);
+        String requestBody = """
+                {
+                    "title": "Episode 1",
+                    "description": "Pilot",
+                    "lastWatchedDate": "2026-05-01",
+                    "mediaFilePath": "%s",
+                    "tags": ["crime", "drama"]
+                }
+                """.formatted(mediaFilePath);
+        HttpResponse<String> response = sendRequest(
+                HttpRequest.newBuilder()
+                           .uri(URI.create(BASE_URL + "/media-groups/" + groupId + "/items"))
+                           .header("Content-Type", "application/json")
+                           .POST(HttpRequest.BodyPublishers.ofString(requestBody))
+                           .build()
+        );
+
+        // THEN the path should have had the media dir stripped off and been saved as a relative path:
+        assertEquals(201, response.statusCode());
+        Map<String, Object> json = parseJson(response.body());
+        assertEquals("subdir1/subdir2/ep1.mkv", json.get("mediaFilePath"));
+    }
+
+    @Test
+    void createItem_withRelativeMediaFilePath_shouldSaveAsIs() throws Exception {
+        // Given a relative path for our new media item:
+        final String mediaFilePath = "subdir1/subdir2/ep1.mkv";
+
+        // WHEN we save it:
+        long groupId = createTestGroup("Group", null);
+        String requestBody = """
+                {
+                    "title": "Episode 1",
+                    "description": "Pilot",
+                    "lastWatchedDate": "2026-05-01",
+                    "mediaFilePath": "%s",
+                    "tags": ["crime", "drama"]
+                }
+                """.formatted(mediaFilePath);
+        HttpResponse<String> response = sendRequest(
+                HttpRequest.newBuilder()
+                           .uri(URI.create(BASE_URL + "/media-groups/" + groupId + "/items"))
+                           .header("Content-Type", "application/json")
+                           .POST(HttpRequest.BodyPublishers.ofString(requestBody))
+                           .build()
+        );
+
+        // THEN the path should be saved as-is:
+        assertEquals(201, response.statusCode());
+        Map<String, Object> json = parseJson(response.body());
+        assertEquals("subdir1/subdir2/ep1.mkv", json.get("mediaFilePath"));
+    }
+
+    @Test
     void updateItem_fullReplacement_returns200() throws Exception {
         long groupId = createTestGroup("Group", null);
         long itemId = createTestItem(groupId, "Original", "/original.mkv");

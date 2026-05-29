@@ -6,6 +6,7 @@ import ca.corbett.movienight.api.util.RequestParser;
 import ca.corbett.movienight.api.util.ResponseWriter;
 import ca.corbett.movienight.config.AppConfig;
 import ca.corbett.movienight.db.Database;
+import ca.corbett.movienight.model.MediaGroup;
 import ca.corbett.movienight.model.MediaItem;
 import ca.corbett.movienight.service.MediaGroupService;
 import com.sun.net.httpserver.HttpExchange;
@@ -181,7 +182,7 @@ public class PlaylistHandler implements HttpHandler {
         }
 
         String playlist = generatePlaylist(List.of(item), appConfig, getServerName(exchange), isLocal);
-        responseWriter.writeText(exchange, HttpURLConnection.HTTP_OK, playlist);
+        responseWriter.writePlaylist(exchange, HttpURLConnection.HTTP_OK, playlist, item.getTitle());
     }
 
     private void handleSingleMediaItemPlaylist(HttpExchange exchange, boolean isLocal) throws Exception {
@@ -208,7 +209,7 @@ public class PlaylistHandler implements HttpHandler {
         }
 
         String playlist = generatePlaylist(List.of(item), appConfig, getServerName(exchange), isLocal);
-        responseWriter.writeText(exchange, HttpURLConnection.HTTP_OK, playlist);
+        responseWriter.writePlaylist(exchange, HttpURLConnection.HTTP_OK, playlist, item.getTitle());
     }
 
     private void handleMediaGroupPlaylist(HttpExchange exchange, String groupIdStr, boolean isLocal) throws Exception {
@@ -223,9 +224,16 @@ public class PlaylistHandler implements HttpHandler {
             throw new IllegalArgumentException("Media group ID must be a positive integer: " + groupIdStr);
         }
 
+        MediaGroup group = database.getMediaGroupById(groupId);
+        if (group == null) {
+            log.warning("Playlist requested for non-existent media group with ID: " + groupId);
+            String playlist = "#EXTM3U\n"; // empty playlist
+            responseWriter.writePlaylist(exchange, HttpURLConnection.HTTP_OK, playlist, "Empty Playlist");
+            return;
+        }
         List<MediaItem> items = database.getMediaItemsByGroupId(groupId);
         String playlist = generatePlaylist(items, appConfig, getServerName(exchange), isLocal);
-        responseWriter.writeText(exchange, HttpURLConnection.HTTP_OK, playlist);
+        responseWriter.writePlaylist(exchange, HttpURLConnection.HTTP_OK, playlist, group.getTitle());
     }
 
     private void handleMultiMediaItemPlaylist(HttpExchange exchange, boolean isLocal) throws Exception {
@@ -247,7 +255,7 @@ public class PlaylistHandler implements HttpHandler {
         }
 
         String playlist = generatePlaylist(items, appConfig, getServerName(exchange), isLocal);
-        responseWriter.writeText(exchange, HttpURLConnection.HTTP_OK, playlist);
+        responseWriter.writePlaylist(exchange, HttpURLConnection.HTTP_OK, playlist);
     }
 
     private String getServerName(HttpExchange exchange) {

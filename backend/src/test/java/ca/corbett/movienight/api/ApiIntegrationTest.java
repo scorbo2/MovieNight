@@ -1686,6 +1686,32 @@ class ApiIntegrationTest {
     }
 
     @Test
+    void playlist_withWonkyFilename_shouldSanitize() throws Exception {
+        // Given a media item with a title that is not a valid filename:
+        long groupId = createTestGroup("Group", null);
+        long itemId = createTestItem(groupId, "///***InvalidFilename!!!??", "/test-movie.mkv");
+
+        // Create the actual media file on disk
+        Path mediaFile = tempDir.resolve("test-movie.mkv");
+        Files.writeString(mediaFile, "fake video content");
+
+        // When we request a playlist for this item:
+        HttpResponse<String> response = sendRequest(
+                HttpRequest.newBuilder()
+                           .uri(URI.create(BASE_URL + "/playlist/media-item/" + itemId))
+                           .GET()
+                           .build()
+        );
+
+        assertEquals(200, response.statusCode());
+        assertEquals("audio/x-mpegurl; charset=utf-8", response.headers().firstValue("Content-Type").orElse(""));
+        String contentDisposition = response.headers().firstValue("Content-Disposition").orElse(null);
+        assertNotNull(contentDisposition); // should have one
+        assertTrue(contentDisposition.contains("attachment")); // should name an attachment
+        assertTrue(contentDisposition.contains("\"______InvalidFilename_____.m3u\"")); // should sanitize to this
+    }
+
+    @Test
     void playlist_singleMediaItem_nonexistent_returns404() throws Exception {
         HttpResponse<String> response = sendRequest(
                 HttpRequest.newBuilder()

@@ -174,9 +174,10 @@ public final class MediaItemService {
      * If the path already appears to be relative (does not start with mediaDir), it will be returned as-is.
      */
     private String convertMediaPathToRelative(String mediaFilePath) {
-        String basePath = appConfig.getMediaDir().toAbsolutePath().toString();
-        if (mediaFilePath.startsWith(basePath)) {
-            return mediaFilePath.substring(basePath.length());
+        java.nio.file.Path basePath = appConfig.getMediaDir().toAbsolutePath().normalize();
+        java.nio.file.Path candidatePath = java.nio.file.Path.of(mediaFilePath).toAbsolutePath().normalize();
+        if (candidatePath.startsWith(basePath)) {
+            return basePath.relativize(candidatePath).toString();
         }
 
         // Strip leading file separator if present

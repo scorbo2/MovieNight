@@ -77,7 +77,7 @@ public final class ApiServer {
         RequestParser requestParser = new RequestParser(objectMapper);
 
         MediaGroupService mediaGroupService = new MediaGroupService(database, config.getPageSize());
-        MediaItemService mediaItemService = new MediaItemService(database, config.getPageSize());
+        MediaItemService mediaItemService = new MediaItemService(database, config);
 
         String basePath = config.getApiBasePath();
         int defaultPageSize = config.getPageSize();

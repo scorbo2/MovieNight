@@ -3,9 +3,11 @@ package ca.corbett.movienight.service;
 import ca.corbett.movienight.api.dto.MediaItemListResponse;
 import ca.corbett.movienight.api.dto.MediaItemResponse;
 import ca.corbett.movienight.api.dto.MediaItemUpsertRequest;
+import ca.corbett.movienight.config.AppConfig;
 import ca.corbett.movienight.db.Database;
 import ca.corbett.movienight.model.MediaItem;
 
+import java.nio.file.FileSystems;
 import java.sql.SQLException;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -22,11 +24,11 @@ import java.util.stream.Collectors;
 public final class MediaItemService {
 
     private final Database database;
-    private final int defaultPageSize;
+    private final AppConfig appConfig;
 
-    public MediaItemService(Database database, int defaultPageSize) {
+    public MediaItemService(Database database, AppConfig appConfig) {
         this.database = database;
-        this.defaultPageSize = defaultPageSize;
+        this.appConfig = appConfig;
     }
 
     /**
@@ -43,7 +45,7 @@ public final class MediaItemService {
         item.setTitle(request.getTitle());
         item.setDescription(request.getDescription());
         item.setLastWatchedDate(request.getLastWatchedDate());
-        item.setMediaFilePath(request.getMediaFilePath());
+        item.setMediaFilePath(convertMediaPathToRelative(request.getMediaFilePath()));
         item.setTags(request.getTags());
 
         database.createMediaItem(item);
@@ -123,7 +125,7 @@ public final class MediaItemService {
         item.setTitle(request.getTitle());
         item.setDescription(request.getDescription());
         item.setLastWatchedDate(request.getLastWatchedDate());
-        item.setMediaFilePath(request.getMediaFilePath());
+        item.setMediaFilePath(convertMediaPathToRelative(request.getMediaFilePath()));
         item.setTags(request.getTags());
 
         try {
@@ -161,9 +163,27 @@ public final class MediaItemService {
                 item.getTitle(),
                 item.getDescription(),
                 item.getLastWatchedDate(),
-                item.getMediaFilePath(),
+                convertMediaPathToRelative(item.getMediaFilePath()),
                 item.getTags(),
                 item.isHasThumbnail()
         );
+    }
+
+    /**
+     * Given any mediaFilePath, will convert it to a relative path if it starts with the media directory base path.
+     * If the path already appears to be relative (does not start with mediaDir), it will be returned as-is.
+     */
+    private String convertMediaPathToRelative(String mediaFilePath) {
+        String basePath = appConfig.getMediaDir().toAbsolutePath().toString();
+        if (mediaFilePath.startsWith(basePath)) {
+            return mediaFilePath.substring(basePath.length());
+        }
+
+        // Strip leading file separator if present
+        if (mediaFilePath.startsWith(FileSystems.getDefault().getSeparator()) && mediaFilePath.length() > 1) {
+            mediaFilePath = mediaFilePath.substring(1);
+        }
+
+        return mediaFilePath; // return as-is if it doesn't start with base path
     }
 }

@@ -47,7 +47,7 @@ import java.util.logging.Logger;
 public class FileBrowserHandler implements HttpHandler {
 
     private static final Logger log = Logger.getLogger(FileBrowserHandler.class.getName());
-    private static final Set<String> ALLOWED_VIDEO_EXTENSIONS = Set.of("mpg", "mk4", "mp4", "mov", "avi");
+    private static final Set<String> ALLOWED_VIDEO_EXTENSIONS = Set.of("mpg", "mkv", "mp4", "mov", "avi");
 
     private final AppConfig appConfig;
     private final ResponseWriter responseWriter;

@@ -146,18 +146,20 @@ export function GroupDetailPage(): JSX.Element {
                   </Link>
                 ))}
               </div>
-              <PaginationControls
-                totalCount={childGroupsQuery.data.totalCount}
-                pageNumber={childPage}
-                pageSize={childPageSize}
-                onPageChange={(nextPage) => updateParams((next) => next.set('childPage', String(nextPage)))}
-                onPageSizeChange={(nextPageSize) =>
-                  updateParams((next) => {
-                    next.set('childPage', '1');
-                    next.set('childPageSize', String(nextPageSize));
-                  })
-                }
-              />
+              {childGroupsQuery.data.totalCount > childPageSize ? (
+                <PaginationControls
+                  totalCount={childGroupsQuery.data.totalCount}
+                  pageNumber={childPage}
+                  pageSize={childPageSize}
+                  onPageChange={(nextPage) => updateParams((next) => next.set('childPage', String(nextPage)))}
+                  onPageSizeChange={(nextPageSize) =>
+                    updateParams((next) => {
+                      next.set('childPage', '1');
+                      next.set('childPageSize', String(nextPageSize));
+                    })
+                  }
+                />
+              ) : null}
             </>
           ) : null}
         </section>
@@ -209,18 +211,20 @@ export function GroupDetailPage(): JSX.Element {
                 </Card>
               ))}
             </div>
-            <PaginationControls
-              totalCount={itemsQuery.data.totalCount}
-              pageNumber={itemPage}
-              pageSize={itemPageSize}
-              onPageChange={(nextPage) => updateParams((next) => next.set('itemPage', String(nextPage)))}
-              onPageSizeChange={(nextPageSize) =>
-                updateParams((next) => {
-                  next.set('itemPage', '1');
-                  next.set('itemPageSize', String(nextPageSize));
-                })
-              }
-            />
+            {itemsQuery.data.totalCount > itemPageSize ? (
+              <PaginationControls
+                totalCount={itemsQuery.data.totalCount}
+                pageNumber={itemPage}
+                pageSize={itemPageSize}
+                onPageChange={(nextPage) => updateParams((next) => next.set('itemPage', String(nextPage)))}
+                onPageSizeChange={(nextPageSize) =>
+                  updateParams((next) => {
+                    next.set('itemPage', '1');
+                    next.set('itemPageSize', String(nextPageSize));
+                  })
+                }
+              />
+            ) : null}
           </>
         ) : (
           <EmptyState title="No items found" description="Try broadening the item filters or check another group." />

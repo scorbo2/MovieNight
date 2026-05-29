@@ -79,18 +79,20 @@ export function BrowseHomePage(): JSX.Element {
               </Link>
             ))}
           </div>
-          <PaginationControls
-            totalCount={groupsQuery.data.totalCount}
-            pageNumber={pageNumber}
-            pageSize={pageSize}
-            onPageChange={(nextPage) => updateParams((next) => next.set('pageNumber', String(nextPage)))}
-            onPageSizeChange={(nextPageSize) =>
-              updateParams((next) => {
-                next.set('pageNumber', '1');
-                next.set('pageSize', String(nextPageSize));
-              })
-            }
-          />
+          {groupsQuery.data.totalCount > pageSize ? (
+            <PaginationControls
+              totalCount={groupsQuery.data.totalCount}
+              pageNumber={pageNumber}
+              pageSize={pageSize}
+              onPageChange={(nextPage) => updateParams((next) => next.set('pageNumber', String(nextPage)))}
+              onPageSizeChange={(nextPageSize) =>
+                updateParams((next) => {
+                  next.set('pageNumber', '1');
+                  next.set('pageSize', String(nextPageSize));
+                })
+              }
+            />
+          ) : null}
         </>
       ) : (
         <EmptyState title="No groups found" description="Try adjusting the title or description filters." />

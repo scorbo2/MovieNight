@@ -77,18 +77,20 @@ export function SearchResultsPage(): JSX.Element {
               </Card>
             ))}
           </div>
-          <PaginationControls
-            totalCount={itemsQuery.data.totalCount}
-            pageNumber={pageNumber}
-            pageSize={pageSize}
-            onPageChange={(nextPage) => updateParams((next) => next.set('pageNumber', String(nextPage)))}
-            onPageSizeChange={(nextPageSize) =>
-              updateParams((next) => {
-                next.set('pageNumber', '1');
-                next.set('pageSize', String(nextPageSize));
-              })
-            }
-          />
+          {itemsQuery.data.totalCount > pageSize ? (
+            <PaginationControls
+              totalCount={itemsQuery.data.totalCount}
+              pageNumber={pageNumber}
+              pageSize={pageSize}
+              onPageChange={(nextPage) => updateParams((next) => next.set('pageNumber', String(nextPage)))}
+              onPageSizeChange={(nextPageSize) =>
+                updateParams((next) => {
+                  next.set('pageNumber', '1');
+                  next.set('pageSize', String(nextPageSize));
+                })
+              }
+            />
+          ) : null}
         </>
       ) : (
         <EmptyState title="No matching items" description="Try broader search terms or a different tag." />

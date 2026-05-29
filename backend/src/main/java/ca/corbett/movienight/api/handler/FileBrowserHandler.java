@@ -19,6 +19,7 @@ import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.logging.Logger;
 
 /**
@@ -46,6 +47,7 @@ import java.util.logging.Logger;
 public class FileBrowserHandler implements HttpHandler {
 
     private static final Logger log = Logger.getLogger(FileBrowserHandler.class.getName());
+    private static final Set<String> ALLOWED_VIDEO_EXTENSIONS = Set.of("mpg", "mk4", "mp4", "mov", "avi");
 
     private final AppConfig appConfig;
     private final ResponseWriter responseWriter;
@@ -132,10 +134,23 @@ public class FileBrowserHandler implements HttpHandler {
             log.warning("Failed to list files in directory (null returned): " + directory);
             return List.of();
         }
+        children = Arrays.stream(children)
+                .filter(file -> file.isDirectory() || hasAllowedVideoExtension(file))
+                .toArray(File[]::new);
         Arrays.sort(children, Comparator
                 .comparing((File f) -> !f.isDirectory())
                 .thenComparing(f -> f.getName().toLowerCase()));
         return Arrays.asList(children);
+    }
+
+    private boolean hasAllowedVideoExtension(File file) {
+        String fileName = file.getName();
+        int dotIndex = fileName.lastIndexOf('.');
+        if (dotIndex < 0 || dotIndex == fileName.length() - 1) {
+            return false;
+        }
+        String extension = fileName.substring(dotIndex + 1).toLowerCase();
+        return ALLOWED_VIDEO_EXTENSIONS.contains(extension);
     }
 
     /**

@@ -36,11 +36,6 @@ export function BrowseHomePage(): JSX.Element {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-3xl font-bold text-content">Browse the catalog</h1>
-        <p className="mt-2 max-w-2xl text-content-secondary">Discover media groups, drill into collections, and jump straight into playback.</p>
-      </div>
-
       <Card>
         <SearchBar
           values={filters}

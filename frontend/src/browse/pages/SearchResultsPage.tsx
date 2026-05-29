@@ -35,11 +35,6 @@ export function SearchResultsPage(): JSX.Element {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-3xl font-bold text-content">Search media items</h1>
-        <p className="mt-2 text-content-secondary">Use title, description, and tags to find the right item fast.</p>
-      </div>
-
       <Card>
         <SearchBar
           values={filters}

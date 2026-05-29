@@ -38,7 +38,7 @@ public class Main {
 
         // 4. Register shutdown hook for graceful teardown
         Runtime.getRuntime().addShutdownHook(new Thread(() -> {
-            log.info("Shutting down...");
+            System.out.println("Shutting down...");
             apiServer.stop();
             database.dispose();
             if (fileHandler != null) {

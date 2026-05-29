@@ -66,7 +66,6 @@ public class FileBrowserHandler implements HttpHandler {
             if (!requestPath.equals(expectedPath) && !requestPath.equals(expectedPath + "/")) {
                 throw new IllegalArgumentException("Invalid path: " + requestPath);
             }
-            }
 
             if ("GET".equals(method)) {
                 Path targetPath = resolvePathParameter(exchange);

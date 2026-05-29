@@ -74,7 +74,10 @@ public class StreamHandler implements HttpHandler {
             }
         }
         catch (Exception e) {
-            throw new IOException(e);
+            // Getting a lot of these, but they seem harmless.
+            if (!"Connection reset by peer".equals(e.getMessage())) {
+                throw new IOException(e);
+            }
         }
     }
 

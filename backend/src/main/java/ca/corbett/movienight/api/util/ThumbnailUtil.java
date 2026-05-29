@@ -125,13 +125,6 @@ public class ThumbnailUtil {
     }
 
     /**
-     * Handy convenience method for thumbnail deletion when the id is known but there is no model object instance.
-     */
-    public static void removeMediaGroupThumbnail(long id, AppConfig appConfig) {
-        removeThumbnail(MediaGroup.class.getSimpleName(), id, appConfig);
-    }
-
-    /**
      * Stores the given thumbnail image for the given MediaGroup in the configured thumbnail directory.
      * The save format will be JPEG for any image that has no alpha channel (regardless of input format).
      * For images with alpha channel, we will save as PNG instead to preserve the transparency.

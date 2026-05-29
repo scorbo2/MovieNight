@@ -141,7 +141,7 @@ public final class MediaGroupHandler implements HttpHandler {
         }
         else {
             pageNumber = 1;
-            pageSize = appConfig.getDefaultPageSize();
+            pageSize = appConfig.getPageSize();
         }
 
         // Optional filters

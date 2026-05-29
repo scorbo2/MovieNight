@@ -25,8 +25,8 @@ import java.util.logging.Logger;
  * <ul>
  *     <li><b>port</b>: the port number the server should listen on</li>
  *     <li><b>dbFile</b>: the path the our SQLite db file (defaults to "MovieNight.db" in current dir)</li>
- *     <li><b>mediaDir</b>: the directory where the database file and thumbnails will be stored</li>
- *     <li><b>thumbnailDir</b>: the directory where thumbnail images will be stored</li>
+ *     <li><b>mediaDir</b>: the directory where the media files are stored</li>
+ *     <li><b>thumbnailDir</b>: the directory where media group thumbnail images will be stored</li>
  *     <li><b>pageSize</b>: the number of items to return in paginated API responses
  *         (e.g. for GET /api/media/groups)</li>
  *     <li><b>apiBasePath</b>: the base path for all API endpoints (default: "/api/")</li>
@@ -82,20 +82,20 @@ public final class AppConfig {
     private static final int DEFAULT_RANGE_LIMIT_MB = 32;
 
     private final int port;
-    private final Path mediaDir;
-    private final Path thumbnailDir;
-    private final Path dbFile;
-    private final int defaultPageSize;
+    private Path mediaDir;
+    private Path thumbnailDir;
+    private Path dbFile;
+    private final int pageSize;
     private final String apiBasePath;
     private final int rangeLimitMB;
 
     private AppConfig(int port, Path mediaDir, Path thumbnailDir, Path dbFile,
-                      int defaultPageSize, String apiBasePath, int rangeLimitMB) {
+                      int pageSize, String apiBasePath, int rangeLimitMB) {
         this.port = port;
         this.mediaDir = mediaDir;
         this.dbFile = dbFile;
         this.thumbnailDir = thumbnailDir;
-        this.defaultPageSize = defaultPageSize;
+        this.pageSize = pageSize;
         this.apiBasePath = apiBasePath;
         this.rangeLimitMB = rangeLimitMB;
     }
@@ -179,39 +179,28 @@ public final class AppConfig {
             }
         }
 
-        // Check for environment variable overrides:
-        String envDbFile = System.getenv(ENV_VAR_DB_FILE);
-        if (envDbFile != null && !envDbFile.trim().isEmpty()) {
-            log.info("Overriding dbFile from environment variable " + ENV_VAR_DB_FILE);
-            dbFile = requireValidDbFile(Path.of(envDbFile));
-        }
-        String mediaDirEnv = System.getenv(ENV_VAR_MEDIA_DIR);
-        if (mediaDirEnv != null && !mediaDirEnv.trim().isEmpty()) {
-            log.info("Overriding mediaDir from environment variable " + ENV_VAR_MEDIA_DIR);
-            mediaDir = requireValidDirectory(Path.of(mediaDirEnv));
-        }
-        String thumbnailDirEnv = System.getenv(ENV_VAR_THUMBNAIL_DIR);
-        if (thumbnailDirEnv != null && !thumbnailDirEnv.trim().isEmpty()) {
-            log.info("Overriding thumbnailDir from environment variable " + ENV_VAR_THUMBNAIL_DIR);
-            thumbnailDir = requireValidDirectory(Path.of(thumbnailDirEnv));
-        }
-
-        return new AppConfig(port, mediaDir, thumbnailDir, dbFile, pageSize, apiBasePath, rangeLimitMB);
+        AppConfig newConfig = new AppConfig(port, mediaDir, thumbnailDir, dbFile, pageSize, apiBasePath, rangeLimitMB);
+        newConfig.applyEnvVarOverrides(); // Allow environment vars to override what we just built above
+        return newConfig;
     }
 
     /**
      * Creates an {@link AppConfig} using all defaults.
-     * This is a crash-safe fallback, but is almost never what you want.
-     * Use fromFile() to instantiate from a config file.
+     * If our environment variables for mediaDir, thumbnailDir, or dbFile are set, those will override the defaults..
      */
-    public static AppConfig defaults() {
-        return new AppConfig(DEFAULT_PORT, DEFAULT_MEDIA_DIR, DEFAULT_THUMBNAIL_DIR, DEFAULT_DB_FILE,
+    public static AppConfig create() {
+        AppConfig newConfig = new AppConfig(DEFAULT_PORT, DEFAULT_MEDIA_DIR, DEFAULT_THUMBNAIL_DIR, DEFAULT_DB_FILE,
                              DEFAULT_PAGE_SIZE, DEFAULT_API_BASE_PATH, DEFAULT_RANGE_LIMIT_MB);
+        newConfig.applyEnvVarOverrides(); // Allow environment vars to override defaults
+        return newConfig;
     }
 
     /**
      * Factory method for creating a fully customized AppConfig instance.
      * Mainly here for testing. Usually better to use fromFile().
+     * <p>
+     * Note: this method ignores environment variable overrides in favor of the supplied values.
+     * </p>
      */
     public static AppConfig of(int port, Path mediaDir, Path thumbnailDir, Path dbFile,
                                int pageSize, String apiBasePath, int rangeLimitMB)
@@ -230,6 +219,9 @@ public final class AppConfig {
     /**
      * Creates an {@link AppConfig} with custom media and thumbnail directories and a custom dbFile.
      * All other values are set to defaults.
+     * <p>
+     * Note: this method ignores environment variable overrides in favor of the supplied values.
+     * </p>
      *
      * @throws IOException if any of the given paths are invalid (e.g. mediaDir doesn't exist, or dbFile is not writable)
      */
@@ -241,32 +233,104 @@ public final class AppConfig {
                              DEFAULT_PAGE_SIZE, DEFAULT_API_BASE_PATH, DEFAULT_RANGE_LIMIT_MB);
     }
 
+    /**
+     * Returns the port number the server should listen on.
+     * This applies both to the web UI and to the API endpoints.
+     * Note: a value of "0" has a special meaning of "bind to any available port",
+     * which is useful for tests. To find out which port was actually assigned in that case,
+     * you can call apiServer.getPort() after starting the server.
+     */
     public int getPort() {
         return port;
     }
 
+    /**
+     * Returns the effective mediaDir, which is the directory where media files are stored.
+     * Note that the returned value may not match what you passed in, depending on how this
+     * instance was created. If the environment variable MOVIENIGHT_MEDIA_DIR is set, then
+     * that value might override whatever value was in the config file.
+     */
     public Path getMediaDir() {
         return mediaDir;
     }
 
+    /**
+     * Returns the effective dbFile path, which is the path to our SQLite database file.
+     * Note that the returned value may not match what you passed in, depending on how this
+     * instance was created. If the environment variable MOVIENIGHT_DB_FILE is set, then that
+     * value might override whatever value was in the config file.
+     */
     public Path getDbFile() {
         return dbFile;
     }
 
+    /**
+     * Returns the effective thumbnailDir, which is the directory where media group thumbnail images are stored.
+     * Note that the returned value may not match what you passed in, depending on how this
+     * instance was created. If the environment variable MOVIENIGHT_THUMBNAIL_DIR is set, then that
+     * value might override whatever value was in the config file.
+     * <p>
+     * Note that media item thumbnails are not stored in this directory!
+     * Media item thumbnails are stored as sidecar files alongside the media file itself.
+     * See ThumbnailUtil for more details.
+     * </p>
+     */
     public Path getThumbnailDir() {
         return thumbnailDir;
     }
 
-    public int getDefaultPageSize() {
-        return defaultPageSize;
+    /**
+     * Returns the default page size for paginated API responses, such as GET /api/media-groups.
+     * This is the number of items that will be returned in each page of results when the client
+     * does not specify a page size.
+     */
+    public int getPageSize() {
+        return pageSize;
     }
 
+    /**
+     * Returns the base path for all API endpoints, which is prepended to all API paths.
+     * The web UI is always served on "/", so it's a good idea to keep this as something like
+     * "/api/" or "/MovieNight/" to avoid conflicts with the UI paths.
+     */
     public String getApiBasePath() {
         return apiBasePath;
     }
 
+    /**
+     * Returns the maximum length of an HTTP Range request in megabytes.
+     * If your local network is very fast, and you regularly stream very large media files,
+     * you can increase this value.
+     */
     public int getRangeLimitMB() {
         return rangeLimitMB;
+    }
+
+    /**
+     * Invoked internally to check for our environment variable overrides,
+     * and will update any property that has been overridden.
+     */
+    private void applyEnvVarOverrides() {
+        try {
+            String envDbFile = System.getenv(ENV_VAR_DB_FILE);
+            if (envDbFile != null && !envDbFile.trim().isEmpty()) {
+                log.info("Overriding dbFile from environment variable " + ENV_VAR_DB_FILE);
+                dbFile = requireValidDbFile(Path.of(envDbFile));
+            }
+            String mediaDirEnv = System.getenv(ENV_VAR_MEDIA_DIR);
+            if (mediaDirEnv != null && !mediaDirEnv.trim().isEmpty()) {
+                log.info("Overriding mediaDir from environment variable " + ENV_VAR_MEDIA_DIR);
+                mediaDir = requireValidDirectory(Path.of(mediaDirEnv));
+            }
+            String thumbnailDirEnv = System.getenv(ENV_VAR_THUMBNAIL_DIR);
+            if (thumbnailDirEnv != null && !thumbnailDirEnv.trim().isEmpty()) {
+                log.info("Overriding thumbnailDir from environment variable " + ENV_VAR_THUMBNAIL_DIR);
+                thumbnailDir = requireValidDirectory(Path.of(thumbnailDirEnv));
+            }
+        }
+        catch (IOException ioe) {
+            log.severe("Failed to apply environment variable overrides: " + ioe.getMessage());
+        }
     }
 
     private static int requireValidPort(int port) throws NumberFormatException {
@@ -281,7 +345,7 @@ public final class AppConfig {
     private static Path requireValidDirectory(Path dir) throws IOException {
         if (dir == null || !dir.toFile().exists() || !dir.toFile().isDirectory() || !dir.toFile().canRead()) {
             String pathStr = (dir == null) ? "null" : dir.toAbsolutePath().toString();
-            throw new IOException("Data directory does not exist or is not readable: " + pathStr);
+            throw new IOException("Directory does not exist or is not readable: " + pathStr);
         }
         return dir;
     }
@@ -326,10 +390,10 @@ public final class AppConfig {
     public String toString() {
         return "AppConfig {\n" +
                 "  port=" + port +
-                ",\n  dataDir=" + mediaDir.toAbsolutePath() +
+                ",\n  mediaDir=" + mediaDir.toAbsolutePath() +
                 ",\n  dbFile=" + dbFile.toAbsolutePath() +
                 ",\n  thumbnailDir=" + thumbnailDir.toAbsolutePath() +
-                ",\n  defaultPageSize=" + defaultPageSize +
+                ",\n  defaultPageSize=" + pageSize +
                 ",\n  apiBasePath='" + apiBasePath + '\'' +
                 ",\n  rangeLimitMB=" + rangeLimitMB +
                 "\n}";

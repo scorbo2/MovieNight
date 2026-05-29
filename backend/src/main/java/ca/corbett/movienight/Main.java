@@ -55,11 +55,13 @@ public class Main {
     /**
      * Checks for MOVIENIGHT_CONFIG_FILE and attempts to load application configuration from
      * the named file. If the environment variable is not set, or if loading fails, defaults will be used.
+     * Note that some environment variables can override our defaults, or file-based values.
+     * See AppConfig for details on how configuration is loaded and overridden.
      *
      * @return A populated AppConfig instance, either loaded from file or with defaults.
      */
     public static AppConfig loadAppConfig(Logger log) {
-        AppConfig config = AppConfig.defaults();
+        AppConfig config = AppConfig.create();
         String configPath = System.getenv(AppConfig.ENV_VAR_CONFIG);
         if (configPath != null && !configPath.trim().isEmpty()) {
             File configFile = new File(configPath);

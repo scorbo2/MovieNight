@@ -62,9 +62,10 @@ public class FileBrowserHandler implements HttpHandler {
         try {
             String method = exchange.getRequestMethod();
             String requestPath = exchange.getRequestURI().getPath();
-            String prefix = appConfig.getApiBasePath() + "files/";
-            if (!requestPath.startsWith(prefix)) {
+            String expectedPath = appConfig.getApiBasePath() + "files";
+            if (!requestPath.equals(expectedPath) && !requestPath.equals(expectedPath + "/")) {
                 throw new IllegalArgumentException("Invalid path: " + requestPath);
+            }
             }
 
             if ("GET".equals(method)) {

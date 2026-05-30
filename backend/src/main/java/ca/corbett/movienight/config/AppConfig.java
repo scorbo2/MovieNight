@@ -1,6 +1,7 @@
 package ca.corbett.movienight.config;
 
 import java.io.File;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.file.Files;
@@ -73,14 +74,16 @@ public final class AppConfig {
 
     private static final Logger log = Logger.getLogger(AppConfig.class.getName());
 
-    private static final int DEFAULT_PORT = 8080;
-    private static final Path DEFAULT_DB_FILE = Path.of("MovieNight.db");
-    private static final Path DEFAULT_MEDIA_DIR = Path.of(".");
-    private static final Path DEFAULT_THUMBNAIL_DIR = Path.of("thumbnails");
-    private static final int DEFAULT_PAGE_SIZE = 50;
-    private static final String DEFAULT_API_BASE_PATH = "/api/";
-    private static final int DEFAULT_RANGE_LIMIT_MB = 32;
+    public static final String DEFAULT_CONFIG_FILE_NAME = "MovieNight.conf";
+    public static final int DEFAULT_PORT = 8080;
+    public static final Path DEFAULT_DB_FILE = Path.of("MovieNight.db");
+    public static final Path DEFAULT_MEDIA_DIR = Path.of(".");
+    public static final Path DEFAULT_THUMBNAIL_DIR = Path.of("thumbnails");
+    public static final int DEFAULT_PAGE_SIZE = 50;
+    public static final String DEFAULT_API_BASE_PATH = "/api/";
+    public static final int DEFAULT_RANGE_LIMIT_MB = 32;
 
+    private Path logFile;
     private final int port;
     private Path mediaDir;
     private Path thumbnailDir;
@@ -90,7 +93,7 @@ public final class AppConfig {
     private final int rangeLimitMB;
 
     private AppConfig(int port, Path mediaDir, Path thumbnailDir, Path dbFile,
-                      int pageSize, String apiBasePath, int rangeLimitMB) {
+                      int pageSize, String apiBasePath, int rangeLimitMB, Path logFile) {
         this.port = port;
         this.mediaDir = mediaDir;
         this.dbFile = dbFile;
@@ -98,6 +101,7 @@ public final class AppConfig {
         this.pageSize = pageSize;
         this.apiBasePath = apiBasePath;
         this.rangeLimitMB = rangeLimitMB;
+        this.logFile = logFile;
     }
 
     /**
@@ -127,6 +131,7 @@ public final class AppConfig {
         int pageSize = DEFAULT_PAGE_SIZE;
         String apiBasePath = DEFAULT_API_BASE_PATH;
         int rangeLimitMB = DEFAULT_RANGE_LIMIT_MB;
+        Path logFile = null;
         Properties props = new Properties();
         try (InputStream in = Files.newInputStream(inFile.toPath())) { props.load(in); }
         if (props.containsKey("port")) {
@@ -144,7 +149,7 @@ public final class AppConfig {
             thumbnailDir = requireValidDirectory(Path.of(props.getProperty("thumbnailDir")));
         }
         if (props.containsKey("dbFile")) {
-            dbFile = requireValidDbFile(Path.of(props.getProperty("dbFile")));
+            dbFile = requireValidWritableFile(Path.of(props.getProperty("dbFile")));
         }
         if (props.containsKey("pageSize")) {
             try {
@@ -178,8 +183,12 @@ public final class AppConfig {
                 log.warning("Invalid rangeLimitMB in config file, using default: " + rangeLimitMB);
             }
         }
+        if (props.containsKey("logFile")) {
+            logFile = requireValidWritableFile(Path.of(props.getProperty("logFile")));
+        }
 
-        AppConfig newConfig = new AppConfig(port, mediaDir, thumbnailDir, dbFile, pageSize, apiBasePath, rangeLimitMB);
+        AppConfig newConfig = new AppConfig(port, mediaDir, thumbnailDir, dbFile, pageSize, apiBasePath, rangeLimitMB,
+                                            logFile);
         newConfig.applyEnvVarOverrides(); // Allow environment vars to override what we just built above
         return newConfig;
     }
@@ -190,7 +199,7 @@ public final class AppConfig {
      */
     public static AppConfig create() {
         AppConfig newConfig = new AppConfig(DEFAULT_PORT, DEFAULT_MEDIA_DIR, DEFAULT_THUMBNAIL_DIR, DEFAULT_DB_FILE,
-                             DEFAULT_PAGE_SIZE, DEFAULT_API_BASE_PATH, DEFAULT_RANGE_LIMIT_MB);
+                                            DEFAULT_PAGE_SIZE, DEFAULT_API_BASE_PATH, DEFAULT_RANGE_LIMIT_MB, null);
         newConfig.applyEnvVarOverrides(); // Allow environment vars to override defaults
         return newConfig;
     }
@@ -203,16 +212,17 @@ public final class AppConfig {
      * </p>
      */
     public static AppConfig of(int port, Path mediaDir, Path thumbnailDir, Path dbFile,
-                               int pageSize, String apiBasePath, int rangeLimitMB)
+                               int pageSize, String apiBasePath, int rangeLimitMB, Path logFile)
             throws IOException {
         return new AppConfig(
                 requireValidPort(port),
                 requireValidDirectory(mediaDir),
                 requireValidDirectory(thumbnailDir),
-                requireValidDbFile(dbFile),
+                requireValidWritableFile(dbFile),
                 requireValidPageSize(pageSize),
                 apiBasePath,
-                requireValidMBValue(rangeLimitMB)
+                requireValidMBValue(rangeLimitMB),
+                logFile
         );
     }
 
@@ -228,9 +238,9 @@ public final class AppConfig {
     public static AppConfig withCustomPaths(Path mediaDir, Path thumbnailDir, Path dbFile) throws IOException {
         Path validMediaDir = requireValidDirectory(mediaDir);
         Path validThumbnailDir = requireValidDirectory(thumbnailDir);
-        Path validDbFile = requireValidDbFile(dbFile);
+        Path validDbFile = requireValidWritableFile(dbFile);
         return new AppConfig(DEFAULT_PORT, validMediaDir, validThumbnailDir, validDbFile,
-                             DEFAULT_PAGE_SIZE, DEFAULT_API_BASE_PATH, DEFAULT_RANGE_LIMIT_MB);
+                             DEFAULT_PAGE_SIZE, DEFAULT_API_BASE_PATH, DEFAULT_RANGE_LIMIT_MB, null);
     }
 
     /**
@@ -280,6 +290,13 @@ public final class AppConfig {
     }
 
     /**
+     * Returns the effective logFile path, which is the path to our log file, or null if no log file is configured.
+     */
+    public Path getLogFile() {
+        return logFile;
+    }
+
+    /**
      * Returns the default page size for paginated API responses, such as GET /api/media-groups.
      * This is the number of items that will be returned in each page of results when the client
      * does not specify a page size.
@@ -315,7 +332,7 @@ public final class AppConfig {
             String envDbFile = System.getenv(ENV_VAR_DB_FILE);
             if (envDbFile != null && !envDbFile.trim().isEmpty()) {
                 log.info("Overriding dbFile from environment variable " + ENV_VAR_DB_FILE);
-                dbFile = requireValidDbFile(Path.of(envDbFile));
+                dbFile = requireValidWritableFile(Path.of(envDbFile));
             }
             String mediaDirEnv = System.getenv(ENV_VAR_MEDIA_DIR);
             if (mediaDirEnv != null && !mediaDirEnv.trim().isEmpty()) {
@@ -326,6 +343,11 @@ public final class AppConfig {
             if (thumbnailDirEnv != null && !thumbnailDirEnv.trim().isEmpty()) {
                 log.info("Overriding thumbnailDir from environment variable " + ENV_VAR_THUMBNAIL_DIR);
                 thumbnailDir = requireValidDirectory(Path.of(thumbnailDirEnv));
+            }
+            String logFileEnv = System.getenv(ENV_VAR_LOG_FILE);
+            if (logFileEnv != null && !logFileEnv.trim().isEmpty()) {
+                log.info("Overriding logFile from environment variable " + ENV_VAR_LOG_FILE);
+                logFile = requireValidWritableFile(Path.of(logFileEnv));
             }
         }
         catch (IOException ioe) {
@@ -350,7 +372,7 @@ public final class AppConfig {
         return dir;
     }
 
-    private static Path requireValidDbFile(Path dbFile) throws IOException {
+    private static Path requireValidWritableFile(Path dbFile) throws IOException {
         if (dbFile == null) {
             throw new IOException("dbFile path cannot be null");
         }
@@ -396,6 +418,35 @@ public final class AppConfig {
                 ",\n  defaultPageSize=" + pageSize +
                 ",\n  apiBasePath='" + apiBasePath + '\'' +
                 ",\n  rangeLimitMB=" + rangeLimitMB +
+                ",\n  logFile=" + (logFile != null ? logFile.toAbsolutePath() : "null") +
                 "\n}";
+    }
+
+    /**
+     * Writes all configuration properties to the given file as a Java properties file
+     * (simple name=value format). Overwrites the file if it already exists.
+     * <p>
+     * Properties written: port, mediaDir, dbFile, thumbnailDir, pageSize, apiBasePath,
+     * rangeLimitMB, and logFile (if non-null).
+     * </p>
+     *
+     * @param destination the file to write to; created or overwritten
+     * @throws IOException if the file cannot be written
+     */
+    public void writeToFile(File destination) throws IOException {
+        Properties props = new Properties();
+        props.setProperty("port", String.valueOf(port));
+        props.setProperty("mediaDir", mediaDir.toString());
+        props.setProperty("dbFile", dbFile.toString());
+        props.setProperty("thumbnailDir", thumbnailDir.toString());
+        props.setProperty("pageSize", String.valueOf(pageSize));
+        props.setProperty("apiBasePath", apiBasePath);
+        props.setProperty("rangeLimitMB", String.valueOf(rangeLimitMB));
+        if (logFile != null) {
+            props.setProperty("logFile", logFile.toString());
+        }
+        try (FileOutputStream out = new FileOutputStream(destination)) {
+            props.store(out, "MovieNight configuration");
+        }
     }
 }

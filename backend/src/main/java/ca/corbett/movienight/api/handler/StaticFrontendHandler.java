@@ -1,8 +1,10 @@
 package ca.corbett.movienight.api.handler;
 
+import ca.corbett.movienight.config.AppConfig;
 import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpHandler;
 
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URLDecoder;
@@ -25,6 +27,7 @@ import java.util.logging.Logger;
  *     <li>Handles index.html as a default file for directory requests</li>
  *     <li>Returns 404 for missing files</li>
  *     <li>Prevents directory traversal attacks</li>
+ *     <li>Injects the runtime-configured API base path into index.html</li>
  * </ul>
  *
  * @author <a href="https://github.com/scorbo2">scorbo2</a>
@@ -36,11 +39,15 @@ public final class StaticFrontendHandler implements HttpHandler {
     private static final String RESOURCE_BASE = "/static/frontend";
     private static final String INDEX_FILE = "index.html";
 
-    public StaticFrontendHandler() {
+    private final AppConfig config;
+
+    public StaticFrontendHandler(AppConfig config) {
+        this.config = config;
     }
 
     @Override
     public void handle(HttpExchange exchange) throws IOException {
+        log.fine("Received request for " + exchange.getRequestURI());
         try {
             String method = exchange.getRequestMethod();
 
@@ -117,6 +124,11 @@ public final class StaticFrontendHandler implements HttpHandler {
             throws IOException {
         byte[] buffer = readAllBytes(resourceStream);
 
+        // Inject runtime API base path into index.html
+        if (mimeType.startsWith("text/html")) {
+            buffer = injectApiBasePath(buffer);
+        }
+
         exchange.getResponseHeaders().set("Content-Type", mimeType);
         exchange.sendResponseHeaders(200, buffer.length);
 
@@ -127,16 +139,30 @@ public final class StaticFrontendHandler implements HttpHandler {
         }
     }
 
-    private byte[] readAllBytes(InputStream stream) throws IOException {
-        byte[] buffer = new byte[8192];
-        int bytesRead;
-        java.io.ByteArrayOutputStream baos = new java.io.ByteArrayOutputStream();
+    private byte[] injectApiBasePath(byte[] htmlBytes) {
+        String html = new String(htmlBytes, StandardCharsets.UTF_8);
+        String apiBasePath = config.getApiBasePath();
 
-        while ((bytesRead = stream.read(buffer)) != -1) {
-            baos.write(buffer, 0, bytesRead);
+        // Escape the path for safe JavaScript string literal
+        String escapedPath = apiBasePath.replace("\\", "\\\\").replace("\"", "\\\"");
+        String injection = "<script>window.API_BASE_PATH=\"" + escapedPath + "\";</script>";
+
+        // Insert the script right before </head>, if there is a head element. But only do it once!
+        String result = html.replaceFirst("</head>", injection + "</head>");
+        if (!result.contains(injection)) {
+            // Fallback if no </head> tag found: insert at the beginning
+            result = injection + html;
         }
 
-        return baos.toByteArray();
+        return result.getBytes(StandardCharsets.UTF_8);
+    }
+
+    private byte[] readAllBytes(InputStream stream) throws IOException {
+        try (stream) {
+            ByteArrayOutputStream baos = new ByteArrayOutputStream();
+            stream.transferTo(baos);
+            return baos.toByteArray();
+        }
     }
 
     private String getMimeType(String resourcePath) {

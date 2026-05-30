@@ -60,6 +60,7 @@ public class AppConfigInteractiveBuilder {
         int pageSize = AppConfig.DEFAULT_PAGE_SIZE;
         int rangeLimitMB = AppConfig.DEFAULT_RANGE_LIMIT_MB;
         String apiBasePath = AppConfig.DEFAULT_API_BASE_PATH;
+
         // We can optionally enable file logging:
         File logFile = null;
         if (askYesNo("Enable file-based logging?", false)) {
@@ -81,8 +82,8 @@ public class AppConfigInteractiveBuilder {
             File configFile = askWritableFile("Where should we save the config?", defaultConfigFile.getAbsolutePath());
             config.writeToFile(configFile);
             System.out.println("Config saved to " + configFile.getAbsolutePath());
-            System.out.println(
-                    "Next time, you can set the environment variable " + AppConfig.ENV_VAR_CONFIG + " to point to this file.");
+            System.out.println("Next time, you can set the environment variable "
+                                       + AppConfig.ENV_VAR_CONFIG + " to point to this file.");
         }
         else {
             System.out.println("Config not saved. You will need to re-enter these values next time.");

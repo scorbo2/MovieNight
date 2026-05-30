@@ -377,9 +377,9 @@ public final class AppConfig {
             throw new IOException("dbFile path cannot be null");
         }
 
-        // If the file exists, then it must be readable.
-        if (dbFile.toFile().exists() && !dbFile.toFile().canRead()) {
-            throw new IOException("dbFile exists but is not readable: " + dbFile.toAbsolutePath());
+        // If the file exists, then it must be readable and writable.
+        if (dbFile.toFile().exists() && (!dbFile.toFile().canRead() || !dbFile.toFile().canWrite())) {
+            throw new IOException("dbFile exists but is not read/write: " + dbFile.toAbsolutePath());
         }
 
         // If the file doesn't exist, that's fine, but its parent dir must exist and be writable.

@@ -60,9 +60,6 @@ public class AppConfigInteractiveBuilder {
         int pageSize = AppConfig.DEFAULT_PAGE_SIZE;
         int rangeLimitMB = AppConfig.DEFAULT_RANGE_LIMIT_MB;
         String apiBasePath = AppConfig.DEFAULT_API_BASE_PATH;
-        System.setProperty("VITE_API_BASE_PATH",
-                           apiBasePath); // This is for the frontend, which needs it at build time.
-
         // We can optionally enable file logging:
         File logFile = null;
         if (askYesNo("Enable file-based logging?", false)) {

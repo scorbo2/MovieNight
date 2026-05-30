@@ -1,4 +1,4 @@
-const rawBase = import.meta.env.VITE_API_BASE_PATH ?? '/MovieNight/';
+const rawBase = ((typeof window !== 'undefined' && (window as Window & { API_BASE_PATH?: string }).API_BASE_PATH) || import.meta.env.VITE_API_BASE_PATH) ?? '/MovieNight/';
 export const API_BASE = rawBase.endsWith('/') ? rawBase : `${rawBase}/`;
 
 function normalizePath(path: string): string {

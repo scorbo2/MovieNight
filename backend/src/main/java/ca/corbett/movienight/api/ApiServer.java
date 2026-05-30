@@ -114,7 +114,7 @@ public final class ApiServer {
         server.createContext(basePath, apiServer::handleAll);
 
         // Mount the static frontend handler at the root path (catch-all for non-API requests)
-        server.createContext("/", new StaticFrontendHandler());
+        server.createContext("/", new StaticFrontendHandler(config));
 
         return apiServer;
     }

@@ -2,10 +2,12 @@ package ca.corbett.movienight;
 
 import ca.corbett.movienight.api.ApiServer;
 import ca.corbett.movienight.config.AppConfig;
+import ca.corbett.movienight.config.AppConfigInteractiveBuilder;
 import ca.corbett.movienight.db.Database;
 
 import java.io.File;
 import java.io.IOException;
+import java.nio.file.Path;
 import java.util.logging.FileHandler;
 import java.util.logging.Formatter;
 import java.util.logging.Handler;
@@ -22,10 +24,9 @@ public class Main {
     private static FileHandler fileHandler = null;
 
     public static void main(String[] args) throws Exception {
-        configureLogging();
+        AppConfig config = loadAppConfig();
+        configureLogging(config.getLogFile());
         Logger log = Logger.getLogger(Main.class.getName());
-
-        AppConfig config = loadAppConfig(log);
         log.info(config.toString());
 
         Database database = new Database(config);
@@ -34,7 +35,8 @@ public class Main {
 
         ApiServer apiServer = ApiServer.create(config, database);
         apiServer.start();
-        log.info("MovieNight started on port " + config.getPort());
+        log.info("MovieNight web UI: http://localhost:" + config.getPort());
+        log.info("MovieNight API: http://localhost:" + config.getPort() + config.getApiBasePath());
 
         // 4. Register shutdown hook for graceful teardown
         Runtime.getRuntime().addShutdownHook(new Thread(() -> {
@@ -53,43 +55,90 @@ public class Main {
     }
 
     /**
-     * Checks for MOVIENIGHT_CONFIG_FILE and attempts to load application configuration from
-     * the named file. If the environment variable is not set, or if loading fails, defaults will be used.
-     * Note that some environment variables can override our defaults, or file-based values.
-     * See AppConfig for details on how configuration is loaded and overridden.
+     * Load order for configuration:
+     * <ol>
+     *     <li>If MOVIENIGHT_CONFIG_FILE is set, read the config file from that location.</li>
+     *     <li>If the env var is unspecified, check the current directory for "MovieNight.conf"</li>
+     *     <li>If not found, check for a subdirectory called "config" and look for it there</li>
+     *     <li>If still not found, we will enter interactive mode, prompting the user to enter
+     *         our config values, and then offer to save that config to a file. We will end with
+     *         instructions on how to set MOVIENIGHT_CONFIG_FILE to point to this file for next time.</li>
+     * </ol>
+     * <p>
+     *     Note that even if a config file is found, it's still possible to override certain values
+     *     with special environment variables. This is documented in the AppConfig class.
+     * </p>
      *
-     * @return A populated AppConfig instance, either loaded from file or with defaults.
+     * @return A populated AppConfig instance.
      */
-    public static AppConfig loadAppConfig(Logger log) {
-        AppConfig config = AppConfig.create();
+    public static AppConfig loadAppConfig() {
+        File configFile;
+
+        // Check out env var first:
         String configPath = System.getenv(AppConfig.ENV_VAR_CONFIG);
         if (configPath != null && !configPath.trim().isEmpty()) {
-            File configFile = new File(configPath);
+            configFile = new File(configPath);
+        }
+
+        // If the env var isn't set, check current directory and then config subdirectory:
+        else {
+            configFile = new File(AppConfig.DEFAULT_CONFIG_FILE_NAME);
+            if (!configFile.exists()) {
+                configFile = new File("config/" + AppConfig.DEFAULT_CONFIG_FILE_NAME);
+                if (!configFile.exists()) {
+                    configFile = null;
+                }
+            }
+        }
+
+        // If we got something above, let's check it:
+        if (configFile != null) {
             if (!configFile.exists() || !configFile.isFile() || !configFile.canRead()) {
-                log.severe("Fatal: Invalid config file specified in " + AppConfig.ENV_VAR_CONFIG + ": " + configPath);
+                System.out.println("Fatal: Invalid config file: " + configFile.getAbsolutePath());
                 System.exit(1);
             }
             try {
-                config = AppConfig.fromFile(configFile);
-                log.info("Config loaded from " + configPath);
+                AppConfig config = AppConfig.fromFile(configFile);
+                System.out.println("Config loaded from " + configFile.getAbsolutePath());
+                return config;
             }
             catch (Exception ex) {
-                log.severe("Fatal: Failed to load config from " + configPath + ": " + ex.getMessage());
+                System.out.println(
+                        "Fatal: Failed to load config from " + configFile.getAbsolutePath() + ": " + ex.getMessage());
                 System.exit(1);
             }
         }
-        else {
-            log.info("Hint: set " + AppConfig.ENV_VAR_CONFIG + " to set custom configuration. Using defaults.");
-        }
 
-        return config;
+        // If we get here, no config file was specified or located.
+        // So, let's go into interactive mode to build one:
+        while (true) {
+            try {
+                return AppConfigInteractiveBuilder.build("No configuration file found!");
+            }
+            catch (InterruptedException ie) {
+                // The user most likely hit Ctrl+C. Just exit silently.
+                System.exit(1);
+            }
+            catch (Exception e) {
+                // Special case the "no console" error:
+                if (AppConfigInteractiveBuilder.NO_CONSOLE_ERROR.equals(e.getMessage())) {
+                    System.out.println(e.getMessage());
+                    System.exit(1);
+                }
+
+                // Otherwise, give the user another shot at it, or let them Ctrl+C to kill us:
+                System.out.println("Error during interactive config setup: " + e.getMessage());
+                e.printStackTrace();
+                System.out.println("Let's try again. (Or hit Ctrl+C to exit.)");
+            }
+        }
     }
 
     /**
      * If MOVIENIGHT_LOG_FILE is set to a valid file path, configures java.util.logging to write logs to that
      * file in addition to the console. Otherwise, logging is stdout only.
      */
-    public static void configureLogging() {
+    private static void configureLogging(Path logPath) {
         CustomLogFormatter customFormatter = new CustomLogFormatter();
 
         // Get the root logger (affects all loggers) and add our custom formatter:
@@ -99,8 +148,7 @@ public class Main {
         }
 
         // It's not a fatal error if we were not given a log file. We'll just output a hint and go with console-only.
-        String logFile = System.getenv(AppConfig.ENV_VAR_LOG_FILE);
-        if (logFile == null || logFile.trim().isEmpty()) {
+        if (logPath == null) {
             System.out.println("Hint: You can set "
                                        + AppConfig.ENV_VAR_LOG_FILE
                                        + " environment variable to enable file logging.");
@@ -111,20 +159,20 @@ public class Main {
         // (this is in addition to console logging, not instead of it).
         try {
             // Ensure the parent directory exists
-            File logPath = new File(logFile);
-            File parentDir = logPath.getParentFile();
+            File logFile = logPath.toFile();
+            File parentDir = logFile.getParentFile();
             if (parentDir != null && !parentDir.exists()) {
                 if (!parentDir.mkdirs()) {
                     throw new IOException("Failed to create log directory: " + parentDir.getAbsolutePath());
                 }
             }
 
-            fileHandler = new FileHandler(logFile, true);
+            fileHandler = new FileHandler(logFile.getAbsolutePath(), true);
             fileHandler.setFormatter(customFormatter);
             rootLogger.addHandler(fileHandler);
 
             // Let console users know where they can find the log file:
-            System.out.println("File logging enabled: " + logFile);
+            System.out.println("File logging enabled: " + logFile.getAbsolutePath());
         }
         catch (IOException | SecurityException e) {
             // Again, not fatal if we couldn't get it set up. Just log a warning and move on.
@@ -136,14 +184,13 @@ public class Main {
     /**
      * A custom log formatter that produces more human-friendly log messages.
      */
-    public static class CustomLogFormatter extends Formatter {
+    private static class CustomLogFormatter extends Formatter {
         @Override
         public String format(LogRecord record) {
             String thrown = "";
-            if (record.getThrown() != null) {
-                for (StackTraceElement element : record.getThrown().getStackTrace()) {
-                    thrown += "\n\tat " + element.toString();
-                }
+            Throwable t = record.getThrown();
+            if (t != null) {
+                thrown = formatThrowable(t);
             }
 
             return String.format("%1$tF %1$tr [%2$s] %3$s%4$s%n",
@@ -151,6 +198,26 @@ public class Main {
                                  record.getLevel().getName(),
                                  formatMessage(record),
                                  thrown);
+        }
+
+        private String formatThrowable(Throwable t) {
+            StringBuilder sb = new StringBuilder();
+            Throwable current = t;
+            while (current != null) {
+                sb.append("\n").append(current.getClass().getName());
+                String message = current.getMessage();
+                if (message != null && !message.isEmpty()) {
+                    sb.append(": ").append(message);
+                }
+                for (StackTraceElement element : current.getStackTrace()) {
+                    sb.append("\n\tat ").append(element.toString());
+                }
+                current = current.getCause();
+                if (current != null) {
+                    sb.append("\nCaused by:");
+                }
+            }
+            return sb.toString();
         }
     }
 }

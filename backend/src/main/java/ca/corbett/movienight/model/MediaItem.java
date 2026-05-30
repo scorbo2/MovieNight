@@ -30,6 +30,12 @@ import java.util.stream.Collectors;
  * and filtering media items. Tags are normalized before being stored - they are trimmed, lowercased,
  * and deduplicated. Tags are completely optional.
  * </p>
+ * <p>
+ * <b>Determining "recently watched":</b> rather than exposing the "lastWatchedDate" directly in the UI,
+ * we calculate the amount of time that has elapsed since the last watched date, if it's within
+ * our configured "recently watched" threshold (example: 30 days), then we set "isRecentlyWatched" to true.
+ * The UI can use this simple boolean to mark media items as "recently watched".
+ * </p>
  *
  * @author <a href="https://github.com/scorbo2">scorbo2</a>
  * @since MovieNight 2.0
@@ -52,6 +58,12 @@ public class MediaItem {
      */
     @JsonProperty(value = "hasThumbnail", access = JsonProperty.Access.READ_ONLY)
     private boolean hasThumbnail = false;
+
+    /**
+     * Not stored in the database - populated at runtime as a convenience for the UI.
+     */
+    @JsonProperty(value = "isRecentlyWatched", access = JsonProperty.Access.READ_ONLY)
+    private boolean isRecentlyWatched = false;
 
     public long getId() {
         return id;
@@ -87,6 +99,10 @@ public class MediaItem {
 
     public boolean isHasThumbnail() {
         return hasThumbnail;
+    }
+
+    public boolean isRecentlyWatched() {
+        return isRecentlyWatched;
     }
 
     public void setId(long id) {
@@ -154,5 +170,9 @@ public class MediaItem {
 
     public void setHasThumbnail(boolean hasThumbnail) {
         this.hasThumbnail = hasThumbnail;
+    }
+
+    public void setRecentlyWatched(boolean isRecentlyWatched) {
+        this.isRecentlyWatched = isRecentlyWatched;
     }
 }

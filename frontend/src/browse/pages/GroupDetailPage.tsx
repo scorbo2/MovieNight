@@ -194,17 +194,18 @@ export function GroupDetailPage(): JSX.Element {
           <>
             <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
               {itemsQuery.data.items.map((item) => (
-                <Card key={item.id} className="space-y-4">
-                  <Thumbnail alt={item.title} src={item.hasThumbnail ? getThumbnailUrl('media-items', item.id) : undefined} />
-                  <div>
-                    <h3 className="text-lg font-semibold text-content">{item.title}</h3>
-                    <p className="mt-2 text-sm text-content-secondary">{item.description ?? 'No description available.'}</p>
-                  </div>
-                  <TagPills tags={item.tags} onTagClick={(tag) => navigate(`/browse/search?tagContains=${encodeURIComponent(tag)}`)} />
-                  <Link to={`/browse/items/${item.id}`}>
-                    <Button className="w-full">Open item</Button>
-                  </Link>
-                </Card>
+                <Link to={`/browse/items/${item.id}`} key={item.id} className="block no-underline">
+                  <Card clickable className="space-y-4">
+                    <Thumbnail alt={item.title} src={item.hasThumbnail ? getThumbnailUrl('media-items', item.id) : undefined} />
+                    <div>
+                      <h3 className="text-lg font-semibold text-content">
+                        {item.title}
+                      </h3>
+                      <p className="mt-2 text-sm text-content-secondary">{item.description ?? 'No description available.'}</p>
+                    </div>
+                    <TagPills tags={item.tags} onTagClick={(tag) => navigate(`/browse/search?tagContains=${encodeURIComponent(tag)}`)} />
+                  </Card>
+                </Link>
               ))}
             </div>
             {itemsQuery.data.totalCount > itemPageSize ? (

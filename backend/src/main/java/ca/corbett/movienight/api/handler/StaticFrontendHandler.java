@@ -143,8 +143,12 @@ public final class StaticFrontendHandler implements HttpHandler {
         String html = new String(htmlBytes, StandardCharsets.UTF_8);
         String apiBasePath = config.getApiBasePath();
 
-        // Escape the path for safe JavaScript string literal
-        String escapedPath = apiBasePath.replace("\\", "\\\\").replace("\"", "\\\"");
+        // Escape the path for safe JavaScript string literal (and prevent </script> injection)
+        String escapedPath = apiBasePath.replace("\\", "\\\\")
+                                        .replace("\"", "\\\"")
+                                        .replace("\n", "\\n")
+                                        .replace("\r", "\\r")
+                                        .replace("<", "\\u003c");
         String injection = "<script>window.API_BASE_PATH=\"" + escapedPath + "\";</script>";
 
         // Insert the script right before </head>, if there is a head element. But only do it once!

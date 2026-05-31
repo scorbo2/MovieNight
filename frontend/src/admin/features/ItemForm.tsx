@@ -38,7 +38,7 @@ function buildPayload(values: FormValues): ItemUpsertPayload {
     mediaGroupId: values.mediaGroupId,
     title: values.title.trim(),
     description: values.description?.trim() ? values.description.trim() : null,
-    lastWatchedDate: values.lastWatchedDate?.trim() ? values.lastWatchedDate : null,
+    lastWatchedDate: values.lastWatchedDate?.trim() ? values.lastWatchedDate.trim() : null,
     mediaFilePath: values.mediaFilePath.trim(),
     tags: values.tags,
   };

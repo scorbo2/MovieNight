@@ -14,7 +14,6 @@ const schema = z.object({
   mediaGroupId: z.coerce.number().int().positive('Group is required'),
   title: z.string().trim().min(1, 'Title is required'),
   description: z.string().optional(),
-  lastWatchedDate: z.string().optional(),
   mediaFilePath: z.string().trim().min(1, 'Media file path is required'),
   tags: z.array(z.string().trim().min(1)).default([]),
 });
@@ -38,7 +37,6 @@ function buildPayload(values: FormValues): ItemUpsertPayload {
     mediaGroupId: values.mediaGroupId,
     title: values.title.trim(),
     description: values.description?.trim() ? values.description.trim() : null,
-    lastWatchedDate: values.lastWatchedDate?.trim() ? values.lastWatchedDate.trim() : null,
     mediaFilePath: values.mediaFilePath.trim(),
     tags: values.tags,
   };
@@ -52,7 +50,6 @@ export function ItemForm({ groups, initialValues, loading, onSubmit, onSaveAndAd
       mediaGroupId: initialValues?.mediaGroupId ?? groups[0]?.id ?? 0,
       title: initialValues?.title ?? '',
       description: initialValues?.description ?? '',
-      lastWatchedDate: initialValues?.lastWatchedDate ?? '',
       mediaFilePath: initialValues?.mediaFilePath ?? '',
       tags: initialValues?.tags ?? [],
     },
@@ -64,7 +61,6 @@ export function ItemForm({ groups, initialValues, loading, onSubmit, onSaveAndAd
       mediaGroupId: values.mediaGroupId,
       title: '',
       description: '',
-      lastWatchedDate: '',
       mediaFilePath: '',
       tags: [],
     });
@@ -78,24 +74,17 @@ export function ItemForm({ groups, initialValues, loading, onSubmit, onSaveAndAd
         await onSubmit(buildPayload(values));
       })}
     >
-      <div className="grid gap-5 md:grid-cols-2">
-        <div className="space-y-2">
-          <label className="text-sm font-medium text-content">Group</label>
-          <Select error={Boolean(form.formState.errors.mediaGroupId)} {...form.register('mediaGroupId')}>
-            <option value="">Choose a group</option>
-            {groups.map((group) => (
-              <option key={group.id} value={group.id}>
-                {group.title}
-              </option>
-            ))}
-          </Select>
-          <FieldError message={form.formState.errors.mediaGroupId?.message} />
-        </div>
-
-        <div className="space-y-2">
-          <label className="text-sm font-medium text-content">Last watched date</label>
-          <Input type="date" {...form.register('lastWatchedDate')} />
-        </div>
+      <div className="space-y-2">
+        <label className="text-sm font-medium text-content">Group</label>
+        <Select error={Boolean(form.formState.errors.mediaGroupId)} {...form.register('mediaGroupId')}>
+          <option value="">Choose a group</option>
+          {groups.map((group) => (
+            <option key={group.id} value={group.id}>
+              {group.title}
+            </option>
+          ))}
+        </Select>
+        <FieldError message={form.formState.errors.mediaGroupId?.message} />
       </div>
 
       <div className="space-y-2">

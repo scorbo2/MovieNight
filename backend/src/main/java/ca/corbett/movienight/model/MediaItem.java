@@ -1,5 +1,6 @@
 package ca.corbett.movienight.model;
 
+import ca.corbett.movienight.config.AppConfig;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 import java.time.LocalDate;
@@ -174,5 +175,22 @@ public class MediaItem {
 
     public void setRecentlyWatched(boolean isRecentlyWatched) {
         this.isRecentlyWatched = isRecentlyWatched;
+    }
+
+    /**
+     * Returns true if the last watched date is on or after the current date minus
+     * our configured "recently watched" threshold (example: 30 days).
+     * If the last watched date is null (item has never been streamed), returns false.
+     */
+    public static boolean calculateRecentlyWatched(LocalDate lastWatchedDate, AppConfig config) {
+        if (lastWatchedDate == null) {
+            return false;
+        }
+        if (config.getRecentlyWatchedDays() == 0) {
+            // A threshold of 0 means "disable recently watched feature", so we will return false for everything:
+            return false;
+        }
+        LocalDate cutoffDate = LocalDate.now().minusDays(config.getRecentlyWatchedDays());
+        return !lastWatchedDate.isBefore(cutoffDate);
     }
 }

@@ -844,7 +844,7 @@ public class Database {
 
         item.setHasThumbnail(ThumbnailUtil.hasThumbnail(item, appConfig));
 
-        item.setRecentlyWatched(calculateRecentlyWatched(item.getLastWatchedDate(), appConfig));
+        item.setRecentlyWatched(MediaItem.calculateRecentlyWatched(item.getLastWatchedDate(), appConfig));
 
         String tags = rs.getString("tags");
         if (tags == null || tags.isBlank()) {
@@ -931,23 +931,6 @@ public class Database {
         }
 
         log.info("Connected to database at " + dbFile.getAbsolutePath());
-    }
-
-    /**
-     * Returns true if the last watched date is on or after the current date minus
-     * our configured "recently watched" threshold (example: 30 days).
-     * If the last watched date is null (item has never been streamed), returns false.
-     */
-    private boolean calculateRecentlyWatched(LocalDate lastWatchedDate, AppConfig config) {
-        if (lastWatchedDate == null) {
-            return false;
-        }
-        if (config.getRecentlyWatchedDays() == 0) {
-            // A threshold of 0 means "disable recently watched feature", so we will return false for everything:
-            return false;
-        }
-        LocalDate cutoffDate = LocalDate.now().minusDays(config.getRecentlyWatchedDays());
-        return !lastWatchedDate.isBefore(cutoffDate);
     }
 
     @FunctionalInterface

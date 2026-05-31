@@ -166,7 +166,7 @@ public final class MediaItemService {
                 convertMediaPathToRelative(item.getMediaFilePath()),
                 item.getTags(),
                 item.isHasThumbnail(),
-                item.isRecentlyWatched()
+                MediaItem.calculateRecentlyWatched(item.getLastWatchedDate(), appConfig)
         );
     }
 

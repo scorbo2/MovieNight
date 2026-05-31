@@ -145,4 +145,18 @@ public final class ResponseWriter {
 
         return sanitized.isEmpty() ? defaultName : sanitized;
     }
+
+    /**
+     * Given a count of bytes, returns a human-readable String representation of it.
+     */
+    public static String getPrintableSize(long size) {
+        if (size < 1024) { return size + " bytes"; }
+
+        String[] units = {"KB", "MB", "GB", "TB", "PB"};
+        int unitIndex = (int)(Math.log(size) / Math.log(1024)) - 1;
+        unitIndex = Math.min(unitIndex, units.length - 1);
+
+        double value = size / Math.pow(1024, unitIndex + 1);
+        return String.format("%.1f %s", value, units[unitIndex]);
+    }
 }

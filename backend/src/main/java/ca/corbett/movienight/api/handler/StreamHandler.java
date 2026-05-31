@@ -1,20 +1,23 @@
 package ca.corbett.movienight.api.handler;
 
+import ca.corbett.movienight.api.util.ResponseWriter;
 import ca.corbett.movienight.config.AppConfig;
 import ca.corbett.movienight.db.Database;
 import ca.corbett.movienight.model.MediaItem;
 import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpHandler;
 
-import java.io.BufferedInputStream;
 import java.io.File;
-import java.io.FileInputStream;
 import java.io.IOException;
+import java.io.OutputStream;
+import java.io.RandomAccessFile;
+import java.nio.channels.Channels;
 import java.nio.file.Path;
 import java.sql.SQLException;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -73,12 +76,33 @@ public class StreamHandler implements HttpHandler {
                 throw new UnsupportedOperationException("Method " + method + " not supported");
             }
         }
-        catch (Exception e) {
-            // Getting a lot of these, but they seem harmless.
-            if (!"Connection reset by peer".equals(e.getMessage())) {
+        catch (Throwable e) {
+            if (isClientDisconnect(e)) {
+                log.log(Level.FINE, "Client disconnected during streaming - not a big deal.");
+            }
+            else {
                 throw new IOException(e);
             }
         }
+    }
+
+    /**
+     * Certain client disconnects are not a big deal at all, and in fact happen often.
+     * In VLC, if you start streaming a video and then click on the trackbar to seek ahead
+     * by a few minutes, the client disconnects before we've fulfilled the original range
+     * request. This causes our FixedLengthOutputStream to panic and throw an IOException,
+     * because we didn't send as many bytes as we told it we would (via Content-Length).
+     * But, who cares, the client has already started a new range request wherever the
+     * user decided to seek to. It's no big deal and we can largely ignore it.
+     */
+    private boolean isClientDisconnect(Throwable e) {
+        String msg = e.getMessage() != null ? e.getMessage().toLowerCase(Locale.ROOT) : "";
+        return msg.contains("connection reset by peer") ||
+                msg.contains("insufficient bytes written to stream") ||
+                msg.contains("broken pipe") ||
+                msg.contains("closed channel") ||
+                msg.contains("already closed") ||
+                (e.getCause() instanceof Exception cause && isClientDisconnect(cause));
     }
 
     private void handleStream(HttpExchange exchange, String path) throws Exception {
@@ -129,43 +153,37 @@ public class StreamHandler implements HttpHandler {
                 // By default, we'll limit range requests to 32MB, which is good for streaming.
                 long rangeLimit = appConfig.getRangeLimitMB() * 1024 * 1024L; // defaults to 32MB
                 long bytesToRead = Math.min(range.length(), rangeLimit);
-                if (bytesToRead < rangeLimit) {
-                    log.log(Level.INFO, "Client requested {} with offset {} for media id {}. " +
-                                    "Supplying smaller range of {} instead.",
-                            new Object[]{range.length(), range.start, mediaItemId, bytesToRead});
+                if (bytesToRead < range.length()) {
+                    log.log(Level.INFO, "Client requested {0} with offset {1} for media id {2}. " +
+                                    "Supplying smaller range of {3} instead. You can change this in config! " +
+                                    "Adjust the rangeLimitMB setting to allow larger ranges.",
+                            new Object[]{
+                                    ResponseWriter.getPrintableSize(range.length()),
+                                    ResponseWriter.getPrintableSize(range.start),
+                                    mediaItemId,
+                                    ResponseWriter.getPrintableSize(bytesToRead)
+                            });
                 }
 
                 exchange.getResponseHeaders().add("Content-Type", mimeType);
                 exchange.getResponseHeaders().add("Accept-Ranges", "bytes");
-                exchange.getResponseHeaders()
-                        .add("Content-Range",
-                             "bytes " + range.start + "-" + (range.start + bytesToRead - 1) + "/" + mediaFile.length());
-                exchange.sendResponseHeaders(206, Math.min(bytesToRead, mediaFile.length())); // 206 Partial Content
-                try (var output = exchange.getResponseBody();
-                     var input = new java.io.RandomAccessFile(mediaFile, "r")) {
-                    input.seek(range.start);
-                    byte[] buffer = new byte[32 * 1024]; // 32KB buffer for streaming
-                    long bytesToWrite = bytesToRead;
-                    int bytesRead;
-                    while (bytesToWrite > 0 && (bytesRead = input.read(buffer, 0,
-                                                                       (int)Math.min(buffer.length,
-                                                                                     bytesToWrite))) != -1) {
-                        output.write(buffer, 0, bytesRead);
-                        bytesToWrite -= bytesRead;
-                    }
+                exchange.getResponseHeaders().add("Content-Range",
+                                                  "bytes " + range.start + "-" + (range.start + bytesToRead - 1) + "/" + mediaFile.length());
+                exchange.sendResponseHeaders(206, bytesToRead); // 206 partial content
+
+                try (OutputStream output = exchange.getResponseBody();
+                     RandomAccessFile channel = new RandomAccessFile(mediaFile, "r")) {
+                    channel.getChannel().transferTo(range.start, bytesToRead, Channels.newChannel(output));
                 }
             }
             else {
                 exchange.getResponseHeaders().add("Content-Type", mimeType);
                 exchange.getResponseHeaders().add("Accept-Ranges", "bytes");
                 exchange.sendResponseHeaders(200, mediaFile.length());
-                try (var output = exchange.getResponseBody();
-                     var input = new BufferedInputStream(new FileInputStream(mediaFile))) {
-                    byte[] buffer = new byte[32 * 1024]; // 32KB buffer for streaming
-                    int bytesRead;
-                    while ((bytesRead = input.read(buffer)) != -1) {
-                        output.write(buffer, 0, bytesRead);
-                    }
+
+                try (OutputStream output = exchange.getResponseBody();
+                     RandomAccessFile channel = new RandomAccessFile(mediaFile, "r")) {
+                    channel.getChannel().transferTo(0, mediaFile.length(), Channels.newChannel(output));
                 }
             }
         }

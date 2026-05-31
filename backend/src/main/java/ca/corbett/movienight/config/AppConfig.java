@@ -33,6 +33,7 @@ import java.util.logging.Logger;
  *     <li><b>apiBasePath</b>: the base path for all API endpoints (default: "/api/")</li>
  *     <li><b>rangeLimitMB</b>: the maximum length of an HTTP Range request in megabytes (default: 32)</li>
  *     <li><b>logFile</b>: an optional file for file-based logging. Can be null.</li>
+ *     <li><b>threadCount</b>: how many threads to allocate for handling HTTP requests (default: 5)</li>
  * </ul>
  * <p>
  *     <b>IMPORTANT ENVIRONMENT VARIABLES:</b>
@@ -84,6 +85,7 @@ public final class AppConfig {
     public static final String DEFAULT_API_BASE_PATH = "/api/";
     public static final int DEFAULT_RANGE_LIMIT_MB = 32;
     public static final int DEFAULT_RECENTLY_WATCHED_DAYS = 3;
+    public static final int DEFAULT_THREAD_COUNT = 5;
 
     private Path logFile;
     private final int port;
@@ -94,10 +96,11 @@ public final class AppConfig {
     private final String apiBasePath;
     private final int rangeLimitMB;
     private final int recentlyWatchedDays;
+    private final int threadCount;
 
     private AppConfig(int port, Path mediaDir, Path thumbnailDir, Path dbFile,
                       int pageSize, String apiBasePath, int rangeLimitMB, Path logFile,
-                      int recentlyWatchedDays) {
+                      int recentlyWatchedDays, int threadCount) {
         this.port = port;
         this.mediaDir = mediaDir;
         this.dbFile = dbFile;
@@ -107,6 +110,7 @@ public final class AppConfig {
         this.rangeLimitMB = rangeLimitMB;
         this.logFile = logFile;
         this.recentlyWatchedDays = recentlyWatchedDays;
+        this.threadCount = threadCount;
     }
 
     /**
@@ -137,6 +141,7 @@ public final class AppConfig {
         String apiBasePath = DEFAULT_API_BASE_PATH;
         int rangeLimitMB = DEFAULT_RANGE_LIMIT_MB;
         int recentlyWatchedDays = DEFAULT_RECENTLY_WATCHED_DAYS;
+        int threadCount = DEFAULT_THREAD_COUNT;
         Path logFile = null;
         Properties props = new Properties();
         try (InputStream in = Files.newInputStream(inFile.toPath())) { props.load(in); }
@@ -201,9 +206,27 @@ public final class AppConfig {
                                     + DEFAULT_RECENTLY_WATCHED_DAYS);
             }
         }
+        if (props.containsKey("threadCount")) {
+            try {
+                threadCount = requireInteger(Integer.parseInt(props.getProperty("threadCount")));
+                if (threadCount <= 2) {
+                    log.warning("threadCount in config file is very low (" + threadCount + ")! " +
+                                        "You may experience performance issues. Consider increasing it.");
+                }
+                int procCount = Runtime.getRuntime().availableProcessors();
+                if (threadCount > procCount * 2) {
+                    log.warning("threadCount in config file is very high (" + threadCount + ")! " +
+                                        "(You only have " + procCount + " CPU cores.) " +
+                                        "You may experience performance issues. Consider decreasing it.");
+                }
+            }
+            catch (NumberFormatException ignored) {
+                log.warning("Invalid threadCount in config file, using default: " + DEFAULT_THREAD_COUNT);
+            }
+        }
 
         AppConfig newConfig = new AppConfig(port, mediaDir, thumbnailDir, dbFile, pageSize, apiBasePath, rangeLimitMB,
-                                            logFile, recentlyWatchedDays);
+                                            logFile, recentlyWatchedDays, threadCount);
         newConfig.applyEnvVarOverrides(); // Allow environment vars to override what we just built above
         return newConfig;
     }
@@ -215,7 +238,7 @@ public final class AppConfig {
     public static AppConfig create() {
         AppConfig newConfig = new AppConfig(DEFAULT_PORT, DEFAULT_MEDIA_DIR, DEFAULT_THUMBNAIL_DIR, DEFAULT_DB_FILE,
                                             DEFAULT_PAGE_SIZE, DEFAULT_API_BASE_PATH, DEFAULT_RANGE_LIMIT_MB,
-                                            null, DEFAULT_RECENTLY_WATCHED_DAYS);
+                                            null, DEFAULT_RECENTLY_WATCHED_DAYS, DEFAULT_THREAD_COUNT);
         newConfig.applyEnvVarOverrides(); // Allow environment vars to override defaults
         return newConfig;
     }
@@ -229,7 +252,7 @@ public final class AppConfig {
      */
     public static AppConfig of(int port, Path mediaDir, Path thumbnailDir, Path dbFile,
                                int pageSize, String apiBasePath, int rangeLimitMB, Path logFile,
-                               int recentlyWatchedDays)
+                               int recentlyWatchedDays, int threadCount)
             throws IOException {
         return new AppConfig(
                 requireValidPort(port),
@@ -240,7 +263,8 @@ public final class AppConfig {
                 apiBasePath,
                 requireValidMBValue(rangeLimitMB),
                 logFile,
-                requireInteger(recentlyWatchedDays, true)
+                requireInteger(recentlyWatchedDays, true),
+                threadCount
         );
     }
 
@@ -259,7 +283,7 @@ public final class AppConfig {
         Path validDbFile = requireValidWritableFile(dbFile);
         return new AppConfig(DEFAULT_PORT, validMediaDir, validThumbnailDir, validDbFile,
                              DEFAULT_PAGE_SIZE, DEFAULT_API_BASE_PATH, DEFAULT_RANGE_LIMIT_MB, null,
-                             DEFAULT_RECENTLY_WATCHED_DAYS);
+                             DEFAULT_RECENTLY_WATCHED_DAYS, DEFAULT_THREAD_COUNT);
     }
 
     /**
@@ -357,6 +381,13 @@ public final class AppConfig {
      */
     public boolean isRecentlyWatchedFeatureEnabled() {
         return recentlyWatchedDays > 0;
+    }
+
+    /**
+     * Returns the configured number of threads to allocate for handling HTTP requests.
+     */
+    public int getThreadCount() {
+        return threadCount;
     }
 
     /**
@@ -463,6 +494,7 @@ public final class AppConfig {
                 ",\n  rangeLimitMB=" + rangeLimitMB +
                 ",\n  logFile=" + (logFile != null ? logFile.toAbsolutePath() : "null") +
                 ",\n  recentlyWatchedDays=" + recentlyWatchedDays +
+                ",\n  threadCount=" + threadCount +
                 "\n}";
     }
 
@@ -490,6 +522,7 @@ public final class AppConfig {
             props.setProperty("logFile", logFile.toString());
         }
         props.setProperty("recentlyWatchedDays", String.valueOf(recentlyWatchedDays));
+        props.setProperty("threadCount", String.valueOf(threadCount));
         try (FileOutputStream out = new FileOutputStream(destination)) {
             props.store(out, "MovieNight configuration");
         }

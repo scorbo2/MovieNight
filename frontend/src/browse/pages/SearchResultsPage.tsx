@@ -6,6 +6,7 @@ import { EmptyState } from '../../components/shared/EmptyState';
 import { ErrorState } from '../../components/shared/ErrorState';
 import { PaginationControls } from '../../components/shared/PaginationControls';
 import { SearchBar } from '../../components/shared/SearchBar';
+import { RecentlyWatchedBadge } from '../../components/shared/RecentlyWatchedBadge';
 import { TagPills } from '../../components/shared/TagPills';
 import { Thumbnail } from '../../components/shared/Thumbnail';
 import { Card } from '../../components/ui/Card';
@@ -65,7 +66,10 @@ export function SearchResultsPage(): JSX.Element {
           <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
             {itemsQuery.data.items.map((item) => (
               <Card key={item.id} className="space-y-4">
-                <Thumbnail alt={item.title} src={item.hasThumbnail ? getThumbnailUrl('media-items', item.id) : undefined} />
+                <div className="relative">
+                  <Thumbnail alt={item.title} src={item.hasThumbnail ? getThumbnailUrl('media-items', item.id) : undefined} />
+                  {item.recentlyWatched && <RecentlyWatchedBadge />}
+                </div>
                 <div>
                   <h2 className="text-lg font-semibold text-content">{item.title}</h2>
                   <p className="mt-2 text-sm text-content-secondary">{item.description ?? 'No description available.'}</p>

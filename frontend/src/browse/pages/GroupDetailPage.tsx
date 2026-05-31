@@ -9,6 +9,7 @@ import { EmptyState } from '../../components/shared/EmptyState';
 import { ErrorState } from '../../components/shared/ErrorState';
 import { PaginationControls } from '../../components/shared/PaginationControls';
 import { SearchBar } from '../../components/shared/SearchBar';
+import { RecentlyWatchedBadge } from '../../components/shared/RecentlyWatchedBadge';
 import { TagPills } from '../../components/shared/TagPills';
 import { Thumbnail } from '../../components/shared/Thumbnail';
 import { Button } from '../../components/ui/Button';
@@ -196,7 +197,10 @@ export function GroupDetailPage(): JSX.Element {
               {itemsQuery.data.items.map((item) => (
                 <Link to={`/browse/items/${item.id}`} key={item.id} className="block no-underline">
                   <Card clickable className="space-y-4">
-                    <Thumbnail alt={item.title} src={item.hasThumbnail ? getThumbnailUrl('media-items', item.id) : undefined} />
+                    <div className="relative">
+                      <Thumbnail alt={item.title} src={item.hasThumbnail ? getThumbnailUrl('media-items', item.id) : undefined} />
+                      {item.recentlyWatched && <RecentlyWatchedBadge />}
+                    </div>
                     <div>
                       <h3 className="text-lg font-semibold text-content">
                         {item.title}

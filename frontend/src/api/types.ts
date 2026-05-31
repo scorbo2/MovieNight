@@ -22,6 +22,7 @@ export interface MediaItem {
   mediaFilePath: string;
   tags: string[];
   hasThumbnail: boolean;
+  recentlyWatched: boolean;
 }
 
 export interface MediaItemListResponse {

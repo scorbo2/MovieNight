@@ -844,6 +844,8 @@ public class Database {
 
         item.setHasThumbnail(ThumbnailUtil.hasThumbnail(item, appConfig));
 
+        item.setRecentlyWatched(MediaItem.calculateRecentlyWatched(item.getLastWatchedDate(), appConfig));
+
         String tags = rs.getString("tags");
         if (tags == null || tags.isBlank()) {
             item.setTags(List.of());

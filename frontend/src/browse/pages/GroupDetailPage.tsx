@@ -133,7 +133,7 @@ export function GroupDetailPage(): JSX.Element {
             <ErrorState message={childGroupsQuery.error instanceof Error ? childGroupsQuery.error.message : 'Could not load child groups'} onRetry={() => void childGroupsQuery.refetch()} />
           ) : childGroupsQuery.data && childGroupsQuery.data.items.length > 0 ? (
             <>
-              <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+              <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4">
                 {childGroupsQuery.data.items.map((childGroup) => (
                   <Link key={childGroup.id} className="no-underline" to={`/browse/groups/${childGroup.id}`}>
                     <Card clickable>
@@ -186,14 +186,14 @@ export function GroupDetailPage(): JSX.Element {
         {itemsQuery.isError ? (
           <ErrorState message={itemsQuery.error instanceof Error ? itemsQuery.error.message : 'Could not load items'} onRetry={() => void itemsQuery.refetch()} />
         ) : itemsQuery.isLoading ? (
-          <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+          <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4">
             {Array.from({ length: 6 }).map((_, index) => (
               <Skeleton key={index} className="aspect-video w-full rounded-xl" />
             ))}
           </div>
         ) : itemsQuery.data && itemsQuery.data.items.length > 0 ? (
           <>
-            <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+            <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4">
               {itemsQuery.data.items.map((item) => (
                 <Link to={`/browse/items/${item.id}`} key={item.id} className="block no-underline">
                   <Card clickable className="space-y-4">

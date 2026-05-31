@@ -56,14 +56,14 @@ export function SearchResultsPage(): JSX.Element {
       {itemsQuery.isError ? (
         <ErrorState message={itemsQuery.error instanceof Error ? itemsQuery.error.message : 'Could not load search results'} onRetry={() => void itemsQuery.refetch()} />
       ) : itemsQuery.isLoading ? (
-        <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+        <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4">
           {Array.from({ length: 6 }).map((_, index) => (
             <Skeleton key={index} className="aspect-video w-full rounded-xl" />
           ))}
         </div>
       ) : itemsQuery.data && itemsQuery.data.items.length > 0 ? (
         <>
-          <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+          <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4">
             {itemsQuery.data.items.map((item) => (
               <Card key={item.id} className="space-y-4">
                 <div className="relative">

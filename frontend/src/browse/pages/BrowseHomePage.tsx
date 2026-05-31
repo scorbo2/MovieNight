@@ -38,7 +38,7 @@ export function BrowseHomePage(): JSX.Element {
       {groupsQuery.isError ? (
         <ErrorState message={groupsQuery.error instanceof Error ? groupsQuery.error.message : 'Could not load groups'} onRetry={() => void groupsQuery.refetch()} />
       ) : groupsQuery.isLoading ? (
-        <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+        <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4">
           {Array.from({ length: 6 }).map((_, index) => (
             <Card key={index}>
               <Skeleton className="aspect-video w-full rounded-lg" />
@@ -49,7 +49,7 @@ export function BrowseHomePage(): JSX.Element {
         </div>
       ) : groupsQuery.data && groupsQuery.data.items.length > 0 ? (
         <>
-          <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+          <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4">
             {groupsQuery.data.items.map((group) => (
               <Link key={group.id} className="no-underline" to={`/browse/groups/${group.id}`}>
                 <Card clickable className="h-full">

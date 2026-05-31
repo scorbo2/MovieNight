@@ -1,5 +1,5 @@
 import { useTheme } from '../../theme/ThemeProvider';
-import { themeList } from '../../theme/ThemeProvider';
+import { themeList } from '../../theme/themes';
 
 export function ThemeDropdown(): JSX.Element {
   const { theme, setTheme } = useTheme();

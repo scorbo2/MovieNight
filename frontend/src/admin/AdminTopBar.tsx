@@ -10,7 +10,7 @@ export function AdminTopBar(): JSX.Element {
           <h1 className="text-lg font-semibold text-content">Admin</h1>
         </div>
         <div className="flex items-center gap-3">
-          <Link to="/browse" className="text-sm font-medium text-content-secondary">
+          <Link to="/browse" className="text-sm font-medium text-content-secondary whitespace-nowrap">
             Browse app
           </Link>
           <ThemeDropdown />

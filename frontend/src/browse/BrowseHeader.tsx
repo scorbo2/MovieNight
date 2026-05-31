@@ -12,7 +12,7 @@ function PlaylistLocalToggle(): JSX.Element {
   };
 
   return (
-    <label className="flex items-center gap-2 text-sm text-content-secondary" htmlFor="playlist-local-toggle">
+    <label className="flex items-center gap-2 whitespace-nowrap text-sm text-content-secondary" htmlFor="playlist-local-toggle">
       <input
         id="playlist-local-toggle"
         type="checkbox"

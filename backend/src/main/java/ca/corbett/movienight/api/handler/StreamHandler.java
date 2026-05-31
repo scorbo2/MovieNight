@@ -12,6 +12,7 @@ import java.io.IOException;
 import java.io.OutputStream;
 import java.io.RandomAccessFile;
 import java.nio.channels.Channels;
+import java.nio.channels.WritableByteChannel;
 import java.nio.file.Path;
 import java.sql.SQLException;
 import java.time.LocalDate;
@@ -221,12 +222,13 @@ public class StreamHandler implements HttpHandler {
             throws Exception {
         try (OutputStream output = exchange.getResponseBody();
              RandomAccessFile file = new RandomAccessFile(mediaFile, "r")) {
+            WritableByteChannel targetChannel = Channels.newChannel(output);
             long bytesTransferred = 0;
             int iterations = 0;
             while (bytesTransferred < bytesToTransfer && iterations < 1000) {
                 long n = file.getChannel().transferTo(offset + bytesTransferred,
                                                       bytesToTransfer - bytesTransferred,
-                                                      Channels.newChannel(output));
+                                                      targetChannel);
                 if (n == 0) {
                     Thread.sleep(10); // Give the socket buffer time to drain
                     iterations++;
@@ -244,6 +246,10 @@ public class StreamHandler implements HttpHandler {
                                 ResponseWriter.getPrintableSize(bytesToTransfer)
                         });
             }
+        }
+        catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            throw new IOException("Streaming interrupted", e);
         }
     }
 

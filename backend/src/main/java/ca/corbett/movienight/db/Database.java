@@ -719,7 +719,7 @@ public class Database {
         }
 
         if (!countOnly) {
-            sql.append(" ORDER BY id");
+            sql.append(" ORDER BY LOWER(title), id");
             appendPagination(sql, parameters, query.pageRequest());
         }
 
@@ -751,7 +751,7 @@ public class Database {
         }
 
         if (!countOnly) {
-            sql.append(" ORDER BY id");
+            sql.append(" ORDER BY LOWER(title), id");
             appendPagination(sql, parameters, query.pageRequest());
         }
 

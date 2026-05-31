@@ -1,20 +1,19 @@
 import { createContext, useContext, useEffect, useMemo, useState, type PropsWithChildren } from 'react';
-import type { ThemeName } from './themes';
+import { themeList, type ThemeName } from './themes';
 
 const STORAGE_KEY = 'movienight-theme';
 
 interface ThemeContextValue {
   theme: ThemeName;
   setTheme: (theme: ThemeName) => void;
-  toggleTheme: () => void;
 }
 
 const ThemeContext = createContext<ThemeContextValue | undefined>(undefined);
 
 function getInitialTheme(): ThemeName {
   const stored = window.localStorage.getItem(STORAGE_KEY);
-  if (stored === 'light' || stored === 'dark') {
-    return stored;
+  if (stored === 'light' || stored === 'dark' || stored === 'medium-gray' || stored === 'deep-blue') {
+    return stored as ThemeName;
   }
 
   return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
@@ -32,7 +31,6 @@ export function ThemeProvider({ children }: PropsWithChildren): JSX.Element {
     () => ({
       theme,
       setTheme,
-      toggleTheme: () => setTheme((current) => (current === 'light' ? 'dark' : 'light')),
     }),
     [theme],
   );
@@ -48,3 +46,4 @@ export function useTheme(): ThemeContextValue {
 
   return context;
 }
+export { themeList };

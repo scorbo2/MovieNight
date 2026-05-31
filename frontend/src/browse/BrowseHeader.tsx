@@ -1,18 +1,7 @@
 import { useState } from 'react';
 import { Link, NavLink } from 'react-router-dom';
-import { Button } from '../components/ui/Button';
 import { getPlaylistLocalPreference, setPlaylistLocalPreference } from '../lib/playlist';
-import { useTheme } from '../theme/ThemeProvider';
-
-function ThemeToggle(): JSX.Element {
-  const { theme, toggleTheme } = useTheme();
-
-  return (
-    <Button variant="secondary" size="sm" onClick={toggleTheme}>
-      {theme === 'light' ? 'Dark mode' : 'Light mode'}
-    </Button>
-  );
-}
+import { ThemeDropdown } from '../components/ui/ThemeDropdown';
 
 function PlaylistLocalToggle(): JSX.Element {
   const [isLocal, setIsLocal] = useState<boolean>(() => getPlaylistLocalPreference());
@@ -57,7 +46,7 @@ export function BrowseHeader(): JSX.Element {
         </div>
         <div className="flex items-center gap-3">
           <PlaylistLocalToggle />
-          <ThemeToggle />
+          <ThemeDropdown />
         </div>
       </div>
     </header>

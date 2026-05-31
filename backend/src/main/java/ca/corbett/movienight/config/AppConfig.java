@@ -264,7 +264,7 @@ public final class AppConfig {
                 requireValidMBValue(rangeLimitMB),
                 logFile,
                 requireInteger(recentlyWatchedDays, true),
-                threadCount
+                requireInteger(threadCount)
         );
     }
 

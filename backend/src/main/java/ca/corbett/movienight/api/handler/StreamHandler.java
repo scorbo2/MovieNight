@@ -170,21 +170,13 @@ public class StreamHandler implements HttpHandler {
                 exchange.getResponseHeaders().add("Content-Range",
                                                   "bytes " + range.start + "-" + (range.start + bytesToRead - 1) + "/" + mediaFile.length());
                 exchange.sendResponseHeaders(206, bytesToRead); // 206 partial content
-
-                try (OutputStream output = exchange.getResponseBody();
-                     RandomAccessFile channel = new RandomAccessFile(mediaFile, "r")) {
-                    channel.getChannel().transferTo(range.start, bytesToRead, Channels.newChannel(output));
-                }
+                handleStreamTransfer(range.start, bytesToRead, exchange, mediaFile);
             }
             else {
                 exchange.getResponseHeaders().add("Content-Type", mimeType);
                 exchange.getResponseHeaders().add("Accept-Ranges", "bytes");
                 exchange.sendResponseHeaders(200, mediaFile.length());
-
-                try (OutputStream output = exchange.getResponseBody();
-                     RandomAccessFile channel = new RandomAccessFile(mediaFile, "r")) {
-                    channel.getChannel().transferTo(0, mediaFile.length(), Channels.newChannel(output));
-                }
+                handleStreamTransfer(0, mediaFile.length(), exchange, mediaFile);
             }
         }
         finally {
@@ -213,6 +205,46 @@ public class StreamHandler implements HttpHandler {
             case "wav" -> "audio/wav";
             default -> "application/octet-stream"; // fallback for unknown types
         };
+    }
+
+    /**
+     * Uses NIO channels to transfer a byte range from the given media file to the HTTP response output stream,
+     * starting at the specified offset.
+     *
+     * @param offset          The byte offset in the file to start transferring from
+     * @param bytesToTransfer The count of bytes to transfer from the file to the output stream
+     * @param exchange        The HttpExchange representing the client connection, used to get the output stream
+     * @param mediaFile       The media file to read from
+     * @throws Exception if an I/O error occurs during streaming
+     */
+    private void handleStreamTransfer(long offset, long bytesToTransfer, HttpExchange exchange, File mediaFile)
+            throws Exception {
+        try (OutputStream output = exchange.getResponseBody();
+             RandomAccessFile file = new RandomAccessFile(mediaFile, "r")) {
+            long bytesTransferred = 0;
+            int iterations = 0;
+            while (bytesTransferred < bytesToTransfer && iterations < 1000) {
+                long n = file.getChannel().transferTo(offset + bytesTransferred,
+                                                      bytesToTransfer - bytesTransferred,
+                                                      Channels.newChannel(output));
+                if (n == 0) {
+                    Thread.sleep(10); // Give the socket buffer time to drain
+                    iterations++;
+                    continue;
+                }
+                bytesTransferred += n;
+                iterations = 0; // reset if we got something
+            }
+            if (iterations >= 1000) {
+                log.log(Level.WARNING, "Gave up streaming after 1000 iterations without progress. " +
+                                "This likely means the client stopped consuming data. " +
+                                "Successfully transferred {0} out of {1}",
+                        new Object[]{
+                                ResponseWriter.getPrintableSize(bytesTransferred),
+                                ResponseWriter.getPrintableSize(bytesToTransfer)
+                        });
+            }
+        }
     }
 
     /**

@@ -127,8 +127,13 @@ public class Database {
     /**
      * Executes the supplied database work inside a transaction. If a transaction is already active,
      * a savepoint is used so nested transactional work can still roll back safely.
+     * <p>
+     * Dev note: this method is synchronized because our HttpServer handles requests in a thread
+     * pool, and it's entirely possible that requests can execute concurrently.
+     * SQLite is a single-writer database anyway, so we don't lose much by serializing access like this.
+     * </p>
      */
-    public <T> T executeInTransaction(TransactionCallback<T> callback) throws SQLException {
+    public synchronized <T> T executeInTransaction(TransactionCallback<T> callback) throws SQLException {
         requireConnected();
         if (callback == null) {
             throw new IllegalArgumentException("callback cannot be null");

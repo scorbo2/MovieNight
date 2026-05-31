@@ -66,7 +66,7 @@ class ApiIntegrationTest {
         File dbFile = tempDir.resolve("test.db").toFile();
         final int port = 0; // 0 == ephemeral random port
         AppConfig appConfig = AppConfig.of(port, tempDir, thumbDir.toPath(), dbFile.toPath(),
-                                           10, "/api/", 32, null, 3);
+                                           10, "/api/", 32, null, 3, 5);
         System.out.println("ApiIntegrationTest using AppConfig: " + appConfig);
         database = new Database(appConfig);
         database.open();

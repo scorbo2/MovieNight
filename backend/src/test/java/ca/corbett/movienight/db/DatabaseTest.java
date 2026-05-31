@@ -195,6 +195,19 @@ class DatabaseTest {
     }
 
     @Test
+    void listMediaGroups_shouldReturnGroupsInAlphabeticalTitleOrder() throws SQLException {
+        db.createMediaGroup(buildGroup(null, "Zebra", null));
+        db.createMediaGroup(buildGroup(null, "alpha", null));
+        db.createMediaGroup(buildGroup(null, "Bravo", null));
+
+        Database.PagedResult<MediaGroup> groups = db.listMediaGroups(
+                new Database.MediaGroupQuery(null, true, null, null, Database.PageRequest.unpaged())
+        );
+
+        assertEquals(List.of("alpha", "Bravo", "Zebra"), groups.items().stream().map(MediaGroup::getTitle).toList());
+    }
+
+    @Test
     void deleteMediaGroupById_nonExistentGroup_shouldLogWarningAndNotThrow() {
         assertDoesNotThrow(() -> db.deleteMediaGroupById(9999L));
     }
@@ -415,6 +428,40 @@ class DatabaseTest {
         assertEquals(3, firstPage.totalCount());
         assertEquals(1, filtered.items().size());
         assertEquals("Dream Heist", filtered.items().getFirst().getTitle());
+    }
+
+    @Test
+    void listMediaItems_shouldReturnItemsInAlphabeticalTitleOrder() throws SQLException {
+        MediaGroup group = buildGroup(null, "Movies", null);
+        db.createMediaGroup(group);
+
+        db.createMediaItem(buildItem(group.getId(), "Zeta", "/media/zeta.mkv"));
+        db.createMediaItem(buildItem(group.getId(), "alpha", "/media/alpha.mkv"));
+        db.createMediaItem(buildItem(group.getId(), "Bravo", "/media/bravo.mkv"));
+
+        Database.PagedResult<MediaItem> items = db.listMediaItems(
+                new Database.MediaItemQuery(group.getId(), null, null, null, null, Database.PageRequest.unpaged())
+        );
+
+        assertEquals(List.of("alpha", "Bravo", "Zeta"), items.items().stream().map(MediaItem::getTitle).toList());
+    }
+
+    @Test
+    void listMediaItems_acrossAllGroups_shouldReturnItemsInAlphabeticalTitleOrder() throws SQLException {
+        MediaGroup movies = buildGroup(null, "Movies", null);
+        MediaGroup shows = buildGroup(null, "Shows", null);
+        db.createMediaGroup(movies);
+        db.createMediaGroup(shows);
+
+        db.createMediaItem(buildItem(movies.getId(), "Zulu", "/media/zulu.mkv"));
+        db.createMediaItem(buildItem(shows.getId(), "alpha", "/media/alpha.mkv"));
+        db.createMediaItem(buildItem(movies.getId(), "Bravo", "/media/bravo.mkv"));
+
+        Database.PagedResult<MediaItem> items = db.listMediaItems(
+                new Database.MediaItemQuery(null, null, null, null, null, Database.PageRequest.unpaged())
+        );
+
+        assertEquals(List.of("alpha", "Bravo", "Zulu"), items.items().stream().map(MediaItem::getTitle).toList());
     }
 
     @Test

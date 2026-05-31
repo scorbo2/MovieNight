@@ -26,13 +26,25 @@ interface ItemFormProps {
   initialValues?: Partial<ItemUpsertPayload>;
   loading?: boolean;
   onSubmit: (payload: ItemUpsertPayload) => Promise<void>;
+  onSaveAndAddAnother?: (payload: ItemUpsertPayload) => Promise<void>;
 }
 
 function FieldError({ message }: { message?: string }): JSX.Element | null {
   return message ? <p className="text-sm text-danger">{message}</p> : null;
 }
 
-export function ItemForm({ groups, initialValues, loading, onSubmit }: ItemFormProps): JSX.Element {
+function buildPayload(values: FormValues): ItemUpsertPayload {
+  return {
+    mediaGroupId: values.mediaGroupId,
+    title: values.title.trim(),
+    description: values.description?.trim() ? values.description.trim() : null,
+    lastWatchedDate: values.lastWatchedDate?.trim() ? values.lastWatchedDate.trim() : null,
+    mediaFilePath: values.mediaFilePath.trim(),
+    tags: values.tags,
+  };
+}
+
+export function ItemForm({ groups, initialValues, loading, onSubmit, onSaveAndAddAnother }: ItemFormProps): JSX.Element {
   const [tagInput, setTagInput] = useState('');
   const form = useForm<FormValues>({
     resolver: zodResolver(schema),
@@ -46,18 +58,24 @@ export function ItemForm({ groups, initialValues, loading, onSubmit }: ItemFormP
     },
   });
 
+  const handleSaveAndAddAnother = form.handleSubmit(async (values) => {
+    await onSaveAndAddAnother!(buildPayload(values));
+    form.reset({
+      mediaGroupId: values.mediaGroupId,
+      title: '',
+      description: '',
+      lastWatchedDate: '',
+      mediaFilePath: '',
+      tags: [],
+    });
+    setTagInput('');
+  });
+
   return (
     <form
       className="space-y-5"
       onSubmit={form.handleSubmit(async (values) => {
-        await onSubmit({
-          mediaGroupId: values.mediaGroupId,
-          title: values.title.trim(),
-          description: values.description?.trim() ? values.description.trim() : null,
-          lastWatchedDate: values.lastWatchedDate?.trim() ? values.lastWatchedDate : null,
-          mediaFilePath: values.mediaFilePath.trim(),
-          tags: values.tags,
-        });
+        await onSubmit(buildPayload(values));
       })}
     >
       <div className="grid gap-5 md:grid-cols-2">
@@ -159,7 +177,17 @@ export function ItemForm({ groups, initialValues, loading, onSubmit }: ItemFormP
         )}
       />
 
-      <div className="flex justify-end">
+      <div className="flex justify-end gap-3">
+        {onSaveAndAddAnother ? (
+          <Button
+            type="button"
+            variant="secondary"
+            loading={loading}
+            onClick={() => void handleSaveAndAddAnother()}
+          >
+            Save and add another
+          </Button>
+        ) : null}
         <Button type="submit" loading={loading}>
           Save item
         </Button>

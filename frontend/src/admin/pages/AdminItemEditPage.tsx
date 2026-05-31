@@ -54,9 +54,6 @@ export function AdminItemEditPage(): JSX.Element {
         queryClient.invalidateQueries({ queryKey: ['item', item.id] }),
       ]);
       pushToast({ title: itemId ? 'Item saved' : 'Item created', tone: 'success' });
-      if (!itemId) {
-        navigate(`/admin/items/${item.id}/edit`, { replace: true });
-      }
     },
     onError: (error) => {
       pushToast({ title: 'Save failed', description: error instanceof Error ? error.message : 'Unknown error', tone: 'error' });
@@ -124,8 +121,14 @@ export function AdminItemEditPage(): JSX.Element {
               }
               loading={mutation.isPending}
               onSubmit={async (payload) => {
-                await mutation.mutateAsync(payload);
+                const savedItem = await mutation.mutateAsync(payload);
+                if (!itemId) {
+                  navigate(`/admin/items/${savedItem.id}/edit`, { replace: true });
+                }
               }}
+              onSaveAndAddAnother={!isEdit ? async (payload) => {
+                await mutation.mutateAsync(payload);
+              } : undefined}
             />
           ) : null}
 

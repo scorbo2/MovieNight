@@ -2,7 +2,7 @@
 import { getPositiveIntParam } from './url'
 
 export function getRuntimePageSize(value: string | null) {
-  const runtimeDefaultPageSize = window?.MOVIENIGHT_CONFIG?.PAGE_SIZE ?? 10;
+  const runtimeDefaultPageSize = (typeof window !== 'undefined' && window?.MOVIENIGHT_CONFIG?.PAGE_SIZE) || 10;
   return getPositiveIntParam(value, runtimeDefaultPageSize);
 }
 

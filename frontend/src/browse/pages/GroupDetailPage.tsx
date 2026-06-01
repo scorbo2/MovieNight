@@ -109,12 +109,6 @@ export function GroupDetailPage(): JSX.Element {
 
       {!childGroupsQuery.isLoading && (childGroupsQuery.isError || (childGroupsQuery.data?.items.length ?? 0) > 0) ? (
         <section className="space-y-4">
-          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-            <div>
-              <h2 className="section-title">Child groups</h2>
-              <p className="section-copy mt-1">Refine the collection tree without losing your place.</p>
-            </div>
-          </div>
           <Card>
             <SearchBar
               values={{ titleContains: childFilters.titleContains, descriptionContains: childFilters.descriptionContains }}

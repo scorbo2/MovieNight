@@ -81,7 +81,7 @@ public final class AppConfig {
     public static final Path DEFAULT_DB_FILE = Path.of("MovieNight.db");
     public static final Path DEFAULT_MEDIA_DIR = Path.of(".");
     public static final Path DEFAULT_THUMBNAIL_DIR = Path.of("thumbnails");
-    public static final int DEFAULT_PAGE_SIZE = 50;
+    public static final int DEFAULT_PAGE_SIZE = 10;
     public static final String DEFAULT_API_BASE_PATH = "/api/";
     public static final int DEFAULT_RANGE_LIMIT_MB = 32;
     public static final int DEFAULT_RECENTLY_WATCHED_DAYS = 3;

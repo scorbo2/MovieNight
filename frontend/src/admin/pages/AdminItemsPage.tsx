@@ -16,6 +16,7 @@ import { Skeleton } from '../../components/ui/Skeleton';
 import { Table, TableBody, TableHead, TableRow, TableWrapper, Td, Th } from '../../components/ui/Table';
 import { getNullableStringParam, getPositiveIntParam, setParam } from '../../lib/url';
 import { ItemDeleteDialog } from '../features/ItemDeleteDialog';
+import { getRuntimePageSize } from '../../lib/runtimeConfig';
 
 export function AdminItemsPage(): JSX.Element {
   const [searchParams, setSearchParams] = useSearchParams();
@@ -23,7 +24,7 @@ export function AdminItemsPage(): JSX.Element {
   const groupId = searchParams.get('groupId') ? Number(searchParams.get('groupId')) : NaN;
   const hasGroup = Number.isInteger(groupId) && groupId > 0;
   const pageNumber = getPositiveIntParam(searchParams.get('pageNumber'), 1);
-  const pageSize = getPositiveIntParam(searchParams.get('pageSize'), 10);
+  const pageSize = getRuntimePageSize(searchParams.get('pageSize'));
   const filters = {
     pageNumber,
     pageSize,

@@ -13,12 +13,13 @@ import { Skeleton } from '../../components/ui/Skeleton';
 import { Table, TableBody, TableHead, TableRow, TableWrapper, Td, Th } from '../../components/ui/Table';
 import { getNullableStringParam, getPositiveIntParam, setParam } from '../../lib/url';
 import { GroupDeleteDialog } from '../features/GroupDeleteDialog';
+import { getRuntimePageSize } from '../../lib/runtimeConfig';
 
 export function AdminGroupsPage(): JSX.Element {
   const [searchParams, setSearchParams] = useSearchParams();
   const [deleteTarget, setDeleteTarget] = useState<MediaGroup | null>(null);
   const pageNumber = getPositiveIntParam(searchParams.get('pageNumber'), 1);
-  const pageSize = getPositiveIntParam(searchParams.get('pageSize'), 10);
+  const pageSize = getRuntimePageSize(searchParams.get('pageSize'));
   const filters = {
     pageNumber,
     pageSize,

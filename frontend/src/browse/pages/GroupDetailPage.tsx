@@ -17,6 +17,7 @@ import { Card } from '../../components/ui/Card';
 import { Skeleton } from '../../components/ui/Skeleton';
 import { addPlaylistLocalQuery } from '../../lib/playlist';
 import { getNullableStringParam, getPositiveIntParam, setParam } from '../../lib/url';
+import { getRuntimePageSize } from '../../lib/runtimeConfig';
 
 export function GroupDetailPage(): JSX.Element {
   const { groupId: groupIdParam } = useParams();
@@ -24,9 +25,9 @@ export function GroupDetailPage(): JSX.Element {
   const [searchParams, setSearchParams] = useSearchParams();
   const groupId = Number(groupIdParam);
   const childPage = getPositiveIntParam(searchParams.get('childPage'), 1);
-  const childPageSize = getPositiveIntParam(searchParams.get('childPageSize'), 12);
+  const childPageSize = getRuntimePageSize(searchParams.get('childPageSize'));
   const itemPage = getPositiveIntParam(searchParams.get('itemPage'), 1);
-  const itemPageSize = getPositiveIntParam(searchParams.get('itemPageSize'), 12);
+  const itemPageSize = getRuntimePageSize(searchParams.get('itemPageSize'));
   const childFilters = {
     pageNumber: childPage,
     pageSize: childPageSize,

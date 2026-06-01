@@ -137,6 +137,7 @@ export function ItemForm({ groups, initialValues, loading, onSubmit, onSaveAndAd
                 }}
               />
               <Button
+                className="whitespace-nowrap"
                 type="button"
                 variant="secondary"
                 onClick={() => {

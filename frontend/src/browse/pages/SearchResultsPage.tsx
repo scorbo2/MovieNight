@@ -12,12 +12,13 @@ import { Thumbnail } from '../../components/shared/Thumbnail';
 import { Card } from '../../components/ui/Card';
 import { Skeleton } from '../../components/ui/Skeleton';
 import { getNullableStringParam, getPositiveIntParam, setParam } from '../../lib/url';
+import { getRuntimePageSize } from '../../lib/runtimeConfig';
 
 export function SearchResultsPage(): JSX.Element {
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
   const pageNumber = getPositiveIntParam(searchParams.get('pageNumber'), 1);
-  const pageSize = getPositiveIntParam(searchParams.get('pageSize'), 12);
+  const pageSize = getRuntimePageSize(searchParams.get('pageSize'));
   const filters = {
     pageNumber,
     pageSize,

@@ -19,6 +19,7 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.sql.SQLException;
+import java.time.LocalDate;
 import java.util.List;
 import java.util.Map;
 
@@ -64,7 +65,8 @@ class ApiIntegrationTest {
         }
         File dbFile = tempDir.resolve("test.db").toFile();
         final int port = 0; // 0 == ephemeral random port
-        AppConfig appConfig = AppConfig.of(port, tempDir, thumbDir.toPath(), dbFile.toPath(), 10, "/api/", 32, null);
+        AppConfig appConfig = AppConfig.of(port, tempDir, thumbDir.toPath(), dbFile.toPath(),
+                                           10, "/api/", 32, null, 3, 5);
         System.out.println("ApiIntegrationTest using AppConfig: " + appConfig);
         database = new Database(appConfig);
         database.open();
@@ -1118,6 +1120,71 @@ class ApiIntegrationTest {
         assertEquals(404, itemGet.statusCode());
     }
 
+    @Test
+    void recentlyWatched_withNullLastWatchedDate_shouldBeFalse() throws Exception {
+        // Given an item that has never been streamed (lastWatchedDate is null):
+        long groupId = createTestGroup("Group", null);
+        long itemId = createTestItem(groupId, "Episode 1", "/ep1.mkv");
+
+        // WHEN we retrieve this item:
+        HttpResponse<String> response = sendRequest(
+                HttpRequest.newBuilder()
+                           .uri(URI.create(BASE_URL + "/media-items/" + itemId))
+                           .GET()
+                           .build()
+        );
+
+        // THEN it should not be marked as recently watched:
+        assertEquals(200, response.statusCode());
+        Map<String, Object> json = parseJson(response.body());
+        assertEquals(itemId, ((Number)json.get("id")).longValue());
+        assertEquals("false", json.get("recentlyWatched").toString());
+    }
+
+    @Test
+    void recentlyWatched_withOldLastWatchedDate_shouldBeFalse() throws Exception {
+        // Given an item that hasn't been streamed in a long time (lastWatchedDate is old):
+        LocalDate oldDate = LocalDate.now().minusMonths(6);
+        long groupId = createTestGroup("Group", null);
+        long itemId = createTestItem(groupId, "Episode 1", "/ep1.mkv", oldDate);
+
+        // WHEN we retrieve this item:
+        HttpResponse<String> response = sendRequest(
+                HttpRequest.newBuilder()
+                           .uri(URI.create(BASE_URL + "/media-items/" + itemId))
+                           .GET()
+                           .build()
+        );
+
+        // THEN it should not be marked as recently watched:
+        assertEquals(200, response.statusCode());
+        Map<String, Object> json = parseJson(response.body());
+        assertEquals(itemId, ((Number)json.get("id")).longValue());
+        assertEquals("false", json.get("recentlyWatched").toString());
+    }
+
+    @Test
+    void recentlyWatched_withRecentLastWatchedDate_shouldBeTrue() throws Exception {
+        // Given an item that was streamed just yesterday:
+        LocalDate recentDate = LocalDate.now().minusDays(1);
+        long groupId = createTestGroup("Group", null);
+        long itemId = createTestItem(groupId, "Episode 1", "/ep1.mkv", recentDate);
+
+        // WHEN we retrieve this item:
+        HttpResponse<String> response = sendRequest(
+                HttpRequest.newBuilder()
+                           .uri(URI.create(BASE_URL + "/media-items/" + itemId))
+                           .GET()
+                           .build()
+        );
+
+        // THEN it should be marked as recently watched:
+        assertEquals(200, response.statusCode());
+        Map<String, Object> json = parseJson(response.body());
+        assertEquals(itemId, ((Number)json.get("id")).longValue());
+        assertEquals("true", json.get("recentlyWatched").toString());
+    }
+
     // ========================================================================
     // Error Mapping
     // ========================================================================
@@ -2091,13 +2158,19 @@ class ApiIntegrationTest {
     }
 
     private long createTestItem(long groupId, String title, String filePath) throws Exception {
+        return createTestItem(groupId, title, filePath, null);
+    }
+
+    private long createTestItem(long groupId, String title, String filePath, LocalDate lastWatched) throws Exception {
+        String body = lastWatched == null
+                ? "{\"title\":\"" + title + "\",\"mediaFilePath\":\"" + filePath + "\"}"
+                : "{\"title\":\"" + title + "\",\"mediaFilePath\":\"" + filePath + "\",\"lastWatchedDate\":\"" + lastWatched.toString() + "\"}";
+
         HttpResponse<String> response = sendRequest(
                 HttpRequest.newBuilder()
                            .uri(URI.create(BASE_URL + "/media-groups/" + groupId + "/items"))
                            .header("Content-Type", "application/json")
-                           .POST(HttpRequest.BodyPublishers.ofString(
-                                   "{\"title\":\"" + title + "\",\"mediaFilePath\":\"" + filePath + "\"}"
-                           ))
+                           .POST(HttpRequest.BodyPublishers.ofString(body))
                            .build()
         );
         assertEquals(201, response.statusCode());

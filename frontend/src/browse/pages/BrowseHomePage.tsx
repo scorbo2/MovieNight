@@ -9,11 +9,12 @@ import { Thumbnail } from '../../components/shared/Thumbnail';
 import { Card } from '../../components/ui/Card';
 import { Skeleton } from '../../components/ui/Skeleton';
 import { getNullableStringParam, getPositiveIntParam } from '../../lib/url';
+import { getRuntimePageSize } from '../../lib/runtimeConfig';
 
 export function BrowseHomePage(): JSX.Element {
   const [searchParams, setSearchParams] = useSearchParams();
   const pageNumber = getPositiveIntParam(searchParams.get('pageNumber'), 1);
-  const pageSize = getPositiveIntParam(searchParams.get('pageSize'), 12);
+  const pageSize = getRuntimePageSize(searchParams.get('pageSize'));
   const filters = {
     pageNumber,
     pageSize,
@@ -38,7 +39,7 @@ export function BrowseHomePage(): JSX.Element {
       {groupsQuery.isError ? (
         <ErrorState message={groupsQuery.error instanceof Error ? groupsQuery.error.message : 'Could not load groups'} onRetry={() => void groupsQuery.refetch()} />
       ) : groupsQuery.isLoading ? (
-        <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+        <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4">
           {Array.from({ length: 6 }).map((_, index) => (
             <Card key={index}>
               <Skeleton className="aspect-video w-full rounded-lg" />
@@ -49,7 +50,7 @@ export function BrowseHomePage(): JSX.Element {
         </div>
       ) : groupsQuery.data && groupsQuery.data.items.length > 0 ? (
         <>
-          <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+          <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4">
             {groupsQuery.data.items.map((group) => (
               <Link key={group.id} className="no-underline" to={`/browse/groups/${group.id}`}>
                 <Card clickable className="h-full">
@@ -58,7 +59,7 @@ export function BrowseHomePage(): JSX.Element {
                     src={group.hasThumbnail ? getThumbnailUrl('media-groups', group.id) : undefined}
                   />
                   <h2 className="mt-4 text-xl font-semibold text-content">{group.title}</h2>
-                  <p className="mt-2 text-sm text-content-secondary">{group.description ?? 'No description available.'}</p>
+                  {group.description && <p className="mt-2 text-sm text-content-secondary">{group.description}</p>}
                 </Card>
               </Link>
             ))}

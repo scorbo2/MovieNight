@@ -60,6 +60,8 @@ public class AppConfigInteractiveBuilder {
         int pageSize = AppConfig.DEFAULT_PAGE_SIZE;
         int rangeLimitMB = AppConfig.DEFAULT_RANGE_LIMIT_MB;
         String apiBasePath = AppConfig.DEFAULT_API_BASE_PATH;
+        int recentlyWatchedDays = AppConfig.DEFAULT_RECENTLY_WATCHED_DAYS;
+        int threadCount = AppConfig.DEFAULT_THREAD_COUNT;
 
         // We can optionally enable file logging:
         File logFile = null;
@@ -75,7 +77,9 @@ public class AppConfigInteractiveBuilder {
                                         pageSize,
                                         apiBasePath,
                                         rangeLimitMB,
-                                        logFile == null ? null : logFile.toPath());
+                                        logFile == null ? null : logFile.toPath(),
+                                        recentlyWatchedDays,
+                                        threadCount);
 
         if (askYesNo("Would you like to save this config?", true)) {
             File defaultConfigFile = new File(AppConfig.DEFAULT_CONFIG_FILE_NAME).getAbsoluteFile();

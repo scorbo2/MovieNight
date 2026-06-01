@@ -32,6 +32,8 @@ import java.util.logging.Logger;
  *         (e.g. for GET /api/media/groups)</li>
  *     <li><b>apiBasePath</b>: the base path for all API endpoints (default: "/api/")</li>
  *     <li><b>rangeLimitMB</b>: the maximum length of an HTTP Range request in megabytes (default: 32)</li>
+ *     <li><b>logFile</b>: an optional file for file-based logging. Can be null.</li>
+ *     <li><b>threadCount</b>: how many threads to allocate for handling HTTP requests (default: 5)</li>
  * </ul>
  * <p>
  *     <b>IMPORTANT ENVIRONMENT VARIABLES:</b>
@@ -79,9 +81,11 @@ public final class AppConfig {
     public static final Path DEFAULT_DB_FILE = Path.of("MovieNight.db");
     public static final Path DEFAULT_MEDIA_DIR = Path.of(".");
     public static final Path DEFAULT_THUMBNAIL_DIR = Path.of("thumbnails");
-    public static final int DEFAULT_PAGE_SIZE = 50;
+    public static final int DEFAULT_PAGE_SIZE = 10;
     public static final String DEFAULT_API_BASE_PATH = "/api/";
     public static final int DEFAULT_RANGE_LIMIT_MB = 32;
+    public static final int DEFAULT_RECENTLY_WATCHED_DAYS = 3;
+    public static final int DEFAULT_THREAD_COUNT = 5;
 
     private Path logFile;
     private final int port;
@@ -91,9 +95,12 @@ public final class AppConfig {
     private final int pageSize;
     private final String apiBasePath;
     private final int rangeLimitMB;
+    private final int recentlyWatchedDays;
+    private final int threadCount;
 
     private AppConfig(int port, Path mediaDir, Path thumbnailDir, Path dbFile,
-                      int pageSize, String apiBasePath, int rangeLimitMB, Path logFile) {
+                      int pageSize, String apiBasePath, int rangeLimitMB, Path logFile,
+                      int recentlyWatchedDays, int threadCount) {
         this.port = port;
         this.mediaDir = mediaDir;
         this.dbFile = dbFile;
@@ -102,6 +109,8 @@ public final class AppConfig {
         this.apiBasePath = apiBasePath;
         this.rangeLimitMB = rangeLimitMB;
         this.logFile = logFile;
+        this.recentlyWatchedDays = recentlyWatchedDays;
+        this.threadCount = threadCount;
     }
 
     /**
@@ -131,6 +140,8 @@ public final class AppConfig {
         int pageSize = DEFAULT_PAGE_SIZE;
         String apiBasePath = DEFAULT_API_BASE_PATH;
         int rangeLimitMB = DEFAULT_RANGE_LIMIT_MB;
+        int recentlyWatchedDays = DEFAULT_RECENTLY_WATCHED_DAYS;
+        int threadCount = DEFAULT_THREAD_COUNT;
         Path logFile = null;
         Properties props = new Properties();
         try (InputStream in = Files.newInputStream(inFile.toPath())) { props.load(in); }
@@ -153,7 +164,7 @@ public final class AppConfig {
         }
         if (props.containsKey("pageSize")) {
             try {
-                pageSize = requireValidPageSize(Integer.parseInt(props.getProperty("pageSize")));
+                pageSize = requireInteger(Integer.parseInt(props.getProperty("pageSize")));
             }
             catch (NumberFormatException ignored) {
                 log.warning("Invalid pageSize in config file, using default: " + DEFAULT_PAGE_SIZE);
@@ -186,9 +197,36 @@ public final class AppConfig {
         if (props.containsKey("logFile")) {
             logFile = requireValidWritableFile(Path.of(props.getProperty("logFile")));
         }
+        if (props.containsKey("recentlyWatchedDays")) {
+            try {
+                recentlyWatchedDays = requireInteger(Integer.parseInt(props.getProperty("recentlyWatchedDays")), true);
+            }
+            catch (NumberFormatException ignored) {
+                log.warning("Invalid recentlyWatchedDays in config file, using default: "
+                                    + DEFAULT_RECENTLY_WATCHED_DAYS);
+            }
+        }
+        if (props.containsKey("threadCount")) {
+            try {
+                threadCount = requireInteger(Integer.parseInt(props.getProperty("threadCount")));
+                if (threadCount <= 2) {
+                    log.warning("threadCount in config file is very low (" + threadCount + ")! " +
+                                        "You may experience performance issues. Consider increasing it.");
+                }
+                int procCount = Runtime.getRuntime().availableProcessors();
+                if (threadCount > procCount * 2) {
+                    log.warning("threadCount in config file is very high (" + threadCount + ")! " +
+                                        "(You only have " + procCount + " CPU cores.) " +
+                                        "You may experience performance issues. Consider decreasing it.");
+                }
+            }
+            catch (NumberFormatException ignored) {
+                log.warning("Invalid threadCount in config file, using default: " + DEFAULT_THREAD_COUNT);
+            }
+        }
 
         AppConfig newConfig = new AppConfig(port, mediaDir, thumbnailDir, dbFile, pageSize, apiBasePath, rangeLimitMB,
-                                            logFile);
+                                            logFile, recentlyWatchedDays, threadCount);
         newConfig.applyEnvVarOverrides(); // Allow environment vars to override what we just built above
         return newConfig;
     }
@@ -199,7 +237,8 @@ public final class AppConfig {
      */
     public static AppConfig create() {
         AppConfig newConfig = new AppConfig(DEFAULT_PORT, DEFAULT_MEDIA_DIR, DEFAULT_THUMBNAIL_DIR, DEFAULT_DB_FILE,
-                                            DEFAULT_PAGE_SIZE, DEFAULT_API_BASE_PATH, DEFAULT_RANGE_LIMIT_MB, null);
+                                            DEFAULT_PAGE_SIZE, DEFAULT_API_BASE_PATH, DEFAULT_RANGE_LIMIT_MB,
+                                            null, DEFAULT_RECENTLY_WATCHED_DAYS, DEFAULT_THREAD_COUNT);
         newConfig.applyEnvVarOverrides(); // Allow environment vars to override defaults
         return newConfig;
     }
@@ -212,17 +251,20 @@ public final class AppConfig {
      * </p>
      */
     public static AppConfig of(int port, Path mediaDir, Path thumbnailDir, Path dbFile,
-                               int pageSize, String apiBasePath, int rangeLimitMB, Path logFile)
+                               int pageSize, String apiBasePath, int rangeLimitMB, Path logFile,
+                               int recentlyWatchedDays, int threadCount)
             throws IOException {
         return new AppConfig(
                 requireValidPort(port),
                 requireValidDirectory(mediaDir),
                 requireValidDirectory(thumbnailDir),
                 requireValidWritableFile(dbFile),
-                requireValidPageSize(pageSize),
+                requireInteger(pageSize),
                 apiBasePath,
                 requireValidMBValue(rangeLimitMB),
-                logFile
+                logFile,
+                requireInteger(recentlyWatchedDays, true),
+                requireInteger(threadCount)
         );
     }
 
@@ -240,7 +282,8 @@ public final class AppConfig {
         Path validThumbnailDir = requireValidDirectory(thumbnailDir);
         Path validDbFile = requireValidWritableFile(dbFile);
         return new AppConfig(DEFAULT_PORT, validMediaDir, validThumbnailDir, validDbFile,
-                             DEFAULT_PAGE_SIZE, DEFAULT_API_BASE_PATH, DEFAULT_RANGE_LIMIT_MB, null);
+                             DEFAULT_PAGE_SIZE, DEFAULT_API_BASE_PATH, DEFAULT_RANGE_LIMIT_MB, null,
+                             DEFAULT_RECENTLY_WATCHED_DAYS, DEFAULT_THREAD_COUNT);
     }
 
     /**
@@ -324,6 +367,30 @@ public final class AppConfig {
     }
 
     /**
+     * Returns the threshold, in days, for considering a media item as "recently watched".
+     * Media that has been streamed within this threshold will be marked in the UI as "recently watched".
+     * Set to 0 to disable this feature (no media item will be so marked in the UI at all).
+     */
+    public int getRecentlyWatchedDays() {
+        return recentlyWatchedDays;
+    }
+
+    /**
+     * Shorthand for checking if recentlyWatchedDays is greater than zero.
+     * 0 means "turns this feature off entirely".
+     */
+    public boolean isRecentlyWatchedFeatureEnabled() {
+        return recentlyWatchedDays > 0;
+    }
+
+    /**
+     * Returns the configured number of threads to allocate for handling HTTP requests.
+     */
+    public int getThreadCount() {
+        return threadCount;
+    }
+
+    /**
      * Invoked internally to check for our environment variable overrides,
      * and will update any property that has been overridden.
      */
@@ -394,11 +461,18 @@ public final class AppConfig {
         return dbFile;
     }
 
-    private static int requireValidPageSize(int pageSize) throws NumberFormatException {
-        if (pageSize <= 0) {
-            throw new NumberFormatException("Page size must be a positive integer");
+    private static int requireInteger(int value) throws NumberFormatException {
+        return requireInteger(value, false);
+    }
+
+    private static int requireInteger(int value, boolean allowZero) throws NumberFormatException {
+        if (allowZero && value == 0) {
+            return value;
         }
-        return pageSize;
+        if (value <= 0) {
+            throw new NumberFormatException("Value must be a positive integer");
+        }
+        return value;
     }
 
     private static int requireValidMBValue(int mbValue) throws NumberFormatException {
@@ -419,6 +493,8 @@ public final class AppConfig {
                 ",\n  apiBasePath='" + apiBasePath + '\'' +
                 ",\n  rangeLimitMB=" + rangeLimitMB +
                 ",\n  logFile=" + (logFile != null ? logFile.toAbsolutePath() : "null") +
+                ",\n  recentlyWatchedDays=" + recentlyWatchedDays +
+                ",\n  threadCount=" + threadCount +
                 "\n}";
     }
 
@@ -427,7 +503,7 @@ public final class AppConfig {
      * (simple name=value format). Overwrites the file if it already exists.
      * <p>
      * Properties written: port, mediaDir, dbFile, thumbnailDir, pageSize, apiBasePath,
-     * rangeLimitMB, and logFile (if non-null).
+     * rangeLimitMB, logFile (if non-null), and recentlyWatchedDays.
      * </p>
      *
      * @param destination the file to write to; created or overwritten
@@ -445,6 +521,8 @@ public final class AppConfig {
         if (logFile != null) {
             props.setProperty("logFile", logFile.toString());
         }
+        props.setProperty("recentlyWatchedDays", String.valueOf(recentlyWatchedDays));
+        props.setProperty("threadCount", String.valueOf(threadCount));
         try (FileOutputStream out = new FileOutputStream(destination)) {
             props.store(out, "MovieNight configuration");
         }

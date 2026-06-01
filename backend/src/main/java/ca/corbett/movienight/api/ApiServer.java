@@ -24,6 +24,7 @@ import com.sun.net.httpserver.HttpServer;
 
 import java.io.IOException;
 import java.net.InetSocketAddress;
+import java.util.concurrent.Executors;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -71,6 +72,7 @@ public final class ApiServer {
         ObjectMapper objectMapper = JsonSupport.getObjectMapper();
 
         HttpServer server = HttpServer.create(new InetSocketAddress(config.getPort()), 0);
+        server.setExecutor(Executors.newFixedThreadPool(config.getThreadCount()));
 
         ResponseWriter responseWriter = new ResponseWriter(objectMapper);
         Router router = new Router(responseWriter);
@@ -80,7 +82,6 @@ public final class ApiServer {
         MediaItemService mediaItemService = new MediaItemService(database, config);
 
         String basePath = config.getApiBasePath();
-        int defaultPageSize = config.getPageSize();
         ApiServer apiServer = new ApiServer(server, router, responseWriter, requestParser, database, config,
                                             objectMapper);
 

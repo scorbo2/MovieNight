@@ -14,7 +14,6 @@ const schema = z.object({
   mediaGroupId: z.coerce.number().int().positive('Group is required'),
   title: z.string().trim().min(1, 'Title is required'),
   description: z.string().optional(),
-  lastWatchedDate: z.string().optional(),
   mediaFilePath: z.string().trim().min(1, 'Media file path is required'),
   tags: z.array(z.string().trim().min(1)).default([]),
 });
@@ -26,13 +25,24 @@ interface ItemFormProps {
   initialValues?: Partial<ItemUpsertPayload>;
   loading?: boolean;
   onSubmit: (payload: ItemUpsertPayload) => Promise<void>;
+  onSaveAndAddAnother?: (payload: ItemUpsertPayload) => Promise<void>;
 }
 
 function FieldError({ message }: { message?: string }): JSX.Element | null {
   return message ? <p className="text-sm text-danger">{message}</p> : null;
 }
 
-export function ItemForm({ groups, initialValues, loading, onSubmit }: ItemFormProps): JSX.Element {
+function buildPayload(values: FormValues): ItemUpsertPayload {
+  return {
+    mediaGroupId: values.mediaGroupId,
+    title: values.title.trim(),
+    description: values.description?.trim() ? values.description.trim() : null,
+    mediaFilePath: values.mediaFilePath.trim(),
+    tags: values.tags,
+  };
+}
+
+export function ItemForm({ groups, initialValues, loading, onSubmit, onSaveAndAddAnother }: ItemFormProps): JSX.Element {
   const [tagInput, setTagInput] = useState('');
   const form = useForm<FormValues>({
     resolver: zodResolver(schema),
@@ -40,44 +50,41 @@ export function ItemForm({ groups, initialValues, loading, onSubmit }: ItemFormP
       mediaGroupId: initialValues?.mediaGroupId ?? groups[0]?.id ?? 0,
       title: initialValues?.title ?? '',
       description: initialValues?.description ?? '',
-      lastWatchedDate: initialValues?.lastWatchedDate ?? '',
       mediaFilePath: initialValues?.mediaFilePath ?? '',
       tags: initialValues?.tags ?? [],
     },
+  });
+
+  const handleSaveAndAddAnother = form.handleSubmit(async (values) => {
+    await onSaveAndAddAnother!(buildPayload(values));
+    form.reset({
+      mediaGroupId: values.mediaGroupId,
+      title: '',
+      description: '',
+      mediaFilePath: '',
+      tags: [],
+    });
+    setTagInput('');
   });
 
   return (
     <form
       className="space-y-5"
       onSubmit={form.handleSubmit(async (values) => {
-        await onSubmit({
-          mediaGroupId: values.mediaGroupId,
-          title: values.title.trim(),
-          description: values.description?.trim() ? values.description.trim() : null,
-          lastWatchedDate: values.lastWatchedDate?.trim() ? values.lastWatchedDate : null,
-          mediaFilePath: values.mediaFilePath.trim(),
-          tags: values.tags,
-        });
+        await onSubmit(buildPayload(values));
       })}
     >
-      <div className="grid gap-5 md:grid-cols-2">
-        <div className="space-y-2">
-          <label className="text-sm font-medium text-content">Group</label>
-          <Select error={Boolean(form.formState.errors.mediaGroupId)} {...form.register('mediaGroupId')}>
-            <option value="">Choose a group</option>
-            {groups.map((group) => (
-              <option key={group.id} value={group.id}>
-                {group.title}
-              </option>
-            ))}
-          </Select>
-          <FieldError message={form.formState.errors.mediaGroupId?.message} />
-        </div>
-
-        <div className="space-y-2">
-          <label className="text-sm font-medium text-content">Last watched date</label>
-          <Input type="date" {...form.register('lastWatchedDate')} />
-        </div>
+      <div className="space-y-2">
+        <label className="text-sm font-medium text-content">Group</label>
+        <Select error={Boolean(form.formState.errors.mediaGroupId)} {...form.register('mediaGroupId')}>
+          <option value="">Choose a group</option>
+          {groups.map((group) => (
+            <option key={group.id} value={group.id}>
+              {group.title}
+            </option>
+          ))}
+        </Select>
+        <FieldError message={form.formState.errors.mediaGroupId?.message} />
       </div>
 
       <div className="space-y-2">
@@ -130,6 +137,7 @@ export function ItemForm({ groups, initialValues, loading, onSubmit }: ItemFormP
                 }}
               />
               <Button
+                className="whitespace-nowrap"
                 type="button"
                 variant="secondary"
                 onClick={() => {
@@ -159,7 +167,17 @@ export function ItemForm({ groups, initialValues, loading, onSubmit }: ItemFormP
         )}
       />
 
-      <div className="flex justify-end">
+      <div className="flex justify-end gap-3">
+        {onSaveAndAddAnother ? (
+          <Button
+            type="button"
+            variant="secondary"
+            loading={loading}
+            onClick={() => void handleSaveAndAddAnother()}
+          >
+            Save and add another
+          </Button>
+        ) : null}
         <Button type="submit" loading={loading}>
           Save item
         </Button>

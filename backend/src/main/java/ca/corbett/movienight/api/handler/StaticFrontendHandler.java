@@ -27,7 +27,7 @@ import java.util.logging.Logger;
  *     <li>Handles index.html as a default file for directory requests</li>
  *     <li>Returns 404 for missing files</li>
  *     <li>Prevents directory traversal attacks</li>
- *     <li>Injects the runtime-configured API base path into index.html</li>
+ *     <li>Injects runtime-configured values (API base path, page size, etc.) into index.html</li>
  * </ul>
  *
  * @author <a href="https://github.com/scorbo2">scorbo2</a>
@@ -124,9 +124,9 @@ public final class StaticFrontendHandler implements HttpHandler {
             throws IOException {
         byte[] buffer = readAllBytes(resourceStream);
 
-        // Inject runtime API base path into index.html
+        // Inject runtime-configured values into index.html
         if (mimeType.startsWith("text/html")) {
-            buffer = injectApiBasePath(buffer);
+            buffer = injectConfigValues(buffer);
         }
 
         exchange.getResponseHeaders().set("Content-Type", mimeType);
@@ -139,17 +139,24 @@ public final class StaticFrontendHandler implements HttpHandler {
         }
     }
 
-    private byte[] injectApiBasePath(byte[] htmlBytes) {
+    /**
+     * Certain values that are configurable on the backend need to be pushed to the UI
+     * somehow. We use injection for that purpose, so that the UI code can reference them
+     * as global variables without needing to make an API call first.
+     */
+    private byte[] injectConfigValues(byte[] htmlBytes) {
         String html = new String(htmlBytes, StandardCharsets.UTF_8);
         String apiBasePath = config.getApiBasePath();
+        int pageSize = config.getPageSize();
 
-        // Escape the path for safe JavaScript string literal (and prevent </script> injection)
+        // Escape the API base path for safe JavaScript string literal (and prevent </script> injection)
         String escapedPath = apiBasePath.replace("\\", "\\\\")
                                         .replace("\"", "\\\"")
                                         .replace("\n", "\\n")
                                         .replace("\r", "\\r")
                                         .replace("<", "\\u003c");
-        String injection = "<script>window.API_BASE_PATH=\"" + escapedPath + "\";</script>";
+        String injection = "<script>window.MOVIENIGHT_CONFIG = { API_BASE_PATH: \"" + escapedPath
+                + "\", PAGE_SIZE: " + pageSize + " };</script>";
 
         // Insert the script right before </head>, if there is a head element. But only do it once!
         String result = html.replaceFirst("</head>", injection + "</head>");

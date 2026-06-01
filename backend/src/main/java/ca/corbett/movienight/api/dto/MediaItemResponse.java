@@ -20,10 +20,11 @@ public final class MediaItemResponse {
     private final String mediaFilePath;
     private final List<String> tags;
     private final boolean hasThumbnail;
+    private final boolean isRecentlyWatched;
 
     public MediaItemResponse(long id, long mediaGroupId, String title, String description,
                              LocalDate lastWatchedDate, String mediaFilePath, List<String> tags,
-                             boolean hasThumbnail) {
+                             boolean hasThumbnail, boolean isRecentlyWatched) {
         this.id = id;
         this.mediaGroupId = mediaGroupId;
         this.title = title;
@@ -32,6 +33,7 @@ public final class MediaItemResponse {
         this.mediaFilePath = mediaFilePath;
         this.tags = tags;
         this.hasThumbnail = hasThumbnail;
+        this.isRecentlyWatched = isRecentlyWatched;
     }
 
     public long getId() {
@@ -64,5 +66,9 @@ public final class MediaItemResponse {
 
     public boolean isHasThumbnail() {
         return hasThumbnail;
+    }
+
+    public boolean isRecentlyWatched() {
+        return isRecentlyWatched;
     }
 }

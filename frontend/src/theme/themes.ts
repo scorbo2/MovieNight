@@ -7,8 +7,16 @@ export const themes = {
     id: 'dark',
     label: 'Dark',
   },
+  mediumGray: {
+    id: 'medium-gray',
+    label: 'Medium Gray',
+  },
+  deepBlue: {
+    id: 'deep-blue',
+    label: 'Deep Blue',
+  },
 } as const;
 
-export type ThemeName = keyof typeof themes;
+export type ThemeName = (typeof themes)[keyof typeof themes]['id'];
 
 export const themeList = Object.values(themes);

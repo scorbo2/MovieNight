@@ -59,7 +59,7 @@ export function ItemDetailPage(): JSX.Element {
           <div className="space-y-4">
             <div>
               <h1 className="text-3xl font-bold text-content">{item.title}</h1>
-              <p className="mt-2 text-content-secondary">{item.description ?? 'No description available for this item.'}</p>
+              {item.description && <p className="mt-2 text-content-secondary">{item.description}</p>}
             </div>
             <div className="grid gap-3 sm:grid-cols-2">
               <div className="rounded-lg bg-bg-subtle p-4">

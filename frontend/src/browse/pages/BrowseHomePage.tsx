@@ -58,7 +58,7 @@ export function BrowseHomePage(): JSX.Element {
                     src={group.hasThumbnail ? getThumbnailUrl('media-groups', group.id) : undefined}
                   />
                   <h2 className="mt-4 text-xl font-semibold text-content">{group.title}</h2>
-                  <p className="mt-2 text-sm text-content-secondary">{group.description ?? 'No description available.'}</p>
+                  {group.description && <p className="mt-2 text-sm text-content-secondary">{group.description}</p>}
                 </Card>
               </Link>
             ))}

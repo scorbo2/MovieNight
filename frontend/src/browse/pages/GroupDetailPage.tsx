@@ -88,7 +88,7 @@ export function GroupDetailPage(): JSX.Element {
           <div className="space-y-4">
             <div>
               <h1 className="text-3xl font-bold text-content">{groupQuery.data.title}</h1>
-              <p className="mt-2 text-content-secondary">{groupQuery.data.description ?? 'No description available for this group.'}</p>
+              {groupQuery.data.description && <p className="mt-2 text-content-secondary">{groupQuery.data.description}</p>}
             </div>
             <div className="flex flex-wrap gap-3">
               <Button
@@ -142,7 +142,7 @@ export function GroupDetailPage(): JSX.Element {
                         src={childGroup.hasThumbnail ? getThumbnailUrl('media-groups', childGroup.id) : undefined}
                       />
                       <h3 className="mt-4 text-lg font-semibold text-content">{childGroup.title}</h3>
-                      <p className="mt-2 text-sm text-content-secondary">{childGroup.description ?? 'No description available.'}</p>
+                      {childGroup.description && <p className="mt-2 text-sm text-content-secondary">{childGroup.description}</p>}
                     </Card>
                   </Link>
                 ))}
@@ -205,7 +205,7 @@ export function GroupDetailPage(): JSX.Element {
                       <h3 className="text-lg font-semibold text-content">
                         {item.title}
                       </h3>
-                      <p className="mt-2 text-sm text-content-secondary">{item.description ?? 'No description available.'}</p>
+                      {item.description && <p className="mt-2 text-sm text-content-secondary">{item.description}</p>}
                     </div>
                     <TagPills tags={item.tags} onTagClick={(tag) => navigate(`/browse/search?tagContains=${encodeURIComponent(tag)}`)} />
                   </Card>

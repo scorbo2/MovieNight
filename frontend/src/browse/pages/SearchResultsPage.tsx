@@ -72,7 +72,7 @@ export function SearchResultsPage(): JSX.Element {
                 </div>
                 <div>
                   <h2 className="text-lg font-semibold text-content">{item.title}</h2>
-                  <p className="mt-2 text-sm text-content-secondary">{item.description ?? 'No description available.'}</p>
+                  {item.description && <p className="mt-2 text-sm text-content-secondary">{item.description}</p>}
                 </div>
                 <TagPills tags={item.tags} onTagClick={(tag) => navigate(`/browse/search?tagContains=${encodeURIComponent(tag)}`)} />
                 <Link to={`/browse/items/${item.id}`} className="block">

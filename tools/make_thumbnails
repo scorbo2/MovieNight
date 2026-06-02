@@ -2,7 +2,7 @@
 set -euo pipefail
 
 # Goes through a given target directory looking for video files.
-# We consider *.mkv and *.mp4 files.
+# We consider common video file extensions (e.g., *.mkv, *.mp4, *.wmv, *.avi).
 # For each one found, we generate a thumbnail image for it
 # by grabbing a screenshot from a fixed time offset.
 # The thumbnail is saved alongside the video as a sidecar.

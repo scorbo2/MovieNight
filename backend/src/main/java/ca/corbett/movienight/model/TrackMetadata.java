@@ -1,6 +1,6 @@
 package ca.corbett.movienight.model;
 
-import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.annotation.JsonAlias;
 
 /**
  * Represents simple metadata for an audio or a subtitle track within a video file.
@@ -30,7 +30,7 @@ public class TrackMetadata {
      * The user-friendly name of the track's language, derived from the "language" field.
      * This value is not localized.
      */
-    @JsonProperty(value = "language_name", access = JsonProperty.Access.READ_ONLY)
+    @JsonAlias("language_name")
     private String languageName;
 
     /**

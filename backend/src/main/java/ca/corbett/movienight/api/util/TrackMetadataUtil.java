@@ -9,6 +9,7 @@ import com.fasterxml.jackson.annotation.JsonSetter;
 import com.fasterxml.jackson.annotation.Nulls;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
+import java.io.File;
 import java.nio.file.Path;
 import java.util.List;
 import java.util.logging.Logger;
@@ -37,22 +38,28 @@ public class TrackMetadataUtil {
      * empty track lists in this case.
      */
     public static void populateTrackMetadata(MediaItem item, AppConfig appConfig) {
-        Path sidecar = appConfig.getMediaDir().resolve(item.getMediaFilePath()).resolveSibling(item.getMediaFilePath() + ".tracks.json");
+        // We have to resolve the media file within our configured media dir first:
+        Path mediaDir = appConfig.getMediaDir();
+        File mediaFile = mediaDir.resolve(item.getMediaFilePath()).normalize().toFile();
+
+        // Then we have to compute the expected sidecar file:
+        File sidecarFile = new File(mediaFile.getParentFile(), mediaFile.getName() + ".tracks.json");
 
         // If it doesn't exist, we're done here:
-        if (!sidecar.toFile().exists()) {
+        if (!sidecarFile.exists()) {
             return;
         }
 
         // Otherwise, try to parse it using our expected wrapper format:
         try {
-            MetadataWrapper wrapper = objectMapper.readValue(sidecar.toFile(), MetadataWrapper.class);
+            MetadataWrapper wrapper = objectMapper.readValue(sidecarFile, MetadataWrapper.class);
             item.setAudioTracks(wrapper.audioTracks);
             item.setSubtitleTracks(wrapper.subtitleTracks);
         } catch (Exception e) {
             // If parsing fails for any reason, just log it and move on - we don't want to break
             // the whole API just because of a bad sidecar file.
-            log.warning("Failed to parse track metadata sidecar file: " + sidecar + " - " + e.getMessage());
+            log.warning("Failed to parse track metadata sidecar file: "
+                                + sidecarFile.getAbsolutePath() + " - " + e.getMessage());
         }
     }
 

@@ -54,12 +54,14 @@ import java.util.logging.Logger;
  * <p>
  *     For the single-item endpoint (<code>GET /api/playlist/media-item/{id}</code>), two additional optional
  *     query parameters are available:
- *     <ul>
- *         <li><code>?audioTrackId=N</code> - sets the audio track ID for the media item.
- *         When set, adds an <code>#EXTVLCOPT:audio-track-id=N</code> line to the playlist.</li>
- *         <li><code>?subtitleTrackId=N</code> - sets the subtitle track ID for the media item.
- *         When set, adds an <code>#EXTVLCOPT:sub-track-id=N</code> line to the playlist.</li>
- *     </ul>
+ * </p>
+ * <ul>
+ *     <li><code>?audioTrackId=N</code> - sets the audio track ID for the media item.
+ *     When set, adds an <code>#EXTVLCOPT:audio-track-id=N</code> line to the playlist.</li>
+ *     <li><code>?subtitleTrackId=N</code> - sets the subtitle track ID for the media item.
+ *     When set, adds an <code>#EXTVLCOPT:sub-track-id=N</code> line to the playlist.</li>
+ * </ul>
+ * <p>
  *     These are VLC-specific options that allow selecting specific audio or subtitle tracks.
  * </p>
  *

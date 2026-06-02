@@ -23,9 +23,10 @@ function languageCodeToCountryCode(languageCode: string): string {
     const SAFE_FALLBACK = 'UN'; // United Nations flag as a generic fallback
     if (!languageCode) return SAFE_FALLBACK;
 
-    // If we get a 2-letter code, we can assume it's ISO 639-1 and use it directly.
+    // If we get a 2-letter code, it's likely ISO 639-1 (language), which doesn't map 1:1 to a country flag.
+    // Use a safe fallback unless we explicitly add a mapping for it.
     if (languageCode.length === 2) {
-        return languageCode.toUpperCase();
+        return SAFE_FALLBACK;
     }
 
     // Otherwise, you might think we could just take the first 2 characters of the language code,

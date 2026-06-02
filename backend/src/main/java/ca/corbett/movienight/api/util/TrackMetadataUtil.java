@@ -26,8 +26,7 @@ public class TrackMetadataUtil {
     /**
      * ObjectMapper is thread-safe and reusable, so we can use a single static instance for the whole class.
      */
-    private static final ObjectMapper objectMapper = new ObjectMapper();
-
+    private static final ObjectMapper objectMapper = JsonSupport.getObjectMapper();
     private TrackMetadataUtil() {
     }
 

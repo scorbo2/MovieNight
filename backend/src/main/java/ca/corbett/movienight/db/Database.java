@@ -1,6 +1,7 @@
 package ca.corbett.movienight.db;
 
 import ca.corbett.movienight.api.util.ThumbnailUtil;
+import ca.corbett.movienight.api.util.TrackMetadataUtil;
 import ca.corbett.movienight.config.AppConfig;
 import ca.corbett.movienight.model.MediaGroup;
 import ca.corbett.movienight.model.MediaItem;
@@ -850,6 +851,8 @@ public class Database {
         item.setHasThumbnail(ThumbnailUtil.hasThumbnail(item, appConfig));
 
         item.setRecentlyWatched(MediaItem.calculateRecentlyWatched(item.getLastWatchedDate(), appConfig));
+
+        TrackMetadataUtil.populateTrackMetadata(item, appConfig);
 
         String tags = rs.getString("tags");
         if (tags == null || tags.isBlank()) {

@@ -13,6 +13,14 @@ export interface MediaGroupListResponse {
   pageSize: number;
 }
 
+export interface TrackMetadata {
+  index: number;
+  language: string;
+  languageName: string;
+  codec: string;
+  title: string | null;
+}
+
 export interface MediaItem {
   id: number;
   mediaGroupId: number;
@@ -23,6 +31,8 @@ export interface MediaItem {
   tags: string[];
   hasThumbnail: boolean;
   recentlyWatched: boolean;
+  audioTracks: TrackMetadata[];
+  subtitleTracks: TrackMetadata[];
 }
 
 export interface MediaItemListResponse {

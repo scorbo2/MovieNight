@@ -166,7 +166,9 @@ public final class MediaItemService {
                 convertMediaPathToRelative(item.getMediaFilePath()),
                 item.getTags(),
                 item.isHasThumbnail(),
-                MediaItem.calculateRecentlyWatched(item.getLastWatchedDate(), appConfig)
+                MediaItem.calculateRecentlyWatched(item.getLastWatchedDate(), appConfig),
+                item.getAudioTracks(),
+                item.getSubtitleTracks()
         );
     }
 

@@ -66,6 +66,18 @@ public class MediaItem {
     @JsonProperty(value = "isRecentlyWatched", access = JsonProperty.Access.READ_ONLY)
     private boolean isRecentlyWatched = false;
 
+    /**
+     * Not stored in the database - loaded from our tracks JSON sidecar file if present.
+     */
+    @JsonProperty(value = "audioTracks", access = JsonProperty.Access.READ_ONLY)
+    private List<TrackMetadata> audioTracks = new ArrayList<>();
+
+    /**
+     * Not stored in the database - loaded from our tracks JSON sidecar file if present.
+     */
+    @JsonProperty(value = "subtitleTracks", access = JsonProperty.Access.READ_ONLY)
+    private List<TrackMetadata> subtitleTracks = new ArrayList<>();
+
     public long getId() {
         return id;
     }
@@ -128,6 +140,32 @@ public class MediaItem {
 
     public void setMediaFilePath(String mediaFilePath) {
         this.mediaFilePath = mediaFilePath;
+    }
+
+    public List<TrackMetadata> getAudioTracks() {
+        return new ArrayList<>(audioTracks);
+    }
+
+    public List<TrackMetadata> getSubtitleTracks() {
+        return new ArrayList<>(subtitleTracks);
+    }
+
+    public void setAudioTracks(List<TrackMetadata> audioTracks) {
+        if (audioTracks == null) {
+            this.audioTracks = new ArrayList<>();
+        }
+        else {
+            this.audioTracks = new ArrayList<>(audioTracks);
+        }
+    }
+
+    public void setSubtitleTracks(List<TrackMetadata> subtitleTracks) {
+        if (subtitleTracks == null) {
+            this.subtitleTracks = new ArrayList<>();
+        }
+        else {
+            this.subtitleTracks = new ArrayList<>(subtitleTracks);
+        }
     }
 
     /**

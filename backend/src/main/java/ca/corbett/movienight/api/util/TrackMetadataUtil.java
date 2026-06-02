@@ -39,11 +39,20 @@ public class TrackMetadataUtil {
      */
     public static void populateTrackMetadata(MediaItem item, AppConfig appConfig) {
         // We have to resolve the media file within our configured media dir first:
-        Path mediaDir = appConfig.getMediaDir();
-        File mediaFile = mediaDir.resolve(item.getMediaFilePath()).normalize().toFile();
+        Path mediaDir = appConfig.getMediaDir().toAbsolutePath().normalize();
+        Path mediaPath = mediaDir.resolve(item.getMediaFilePath()).normalize();
+        if (!mediaPath.startsWith(mediaDir)) {
+            log.warning("TrackMetadataUtil: mediaFilePath resolved outside mediaDir; skipping: " + item.getMediaFilePath());
+            return;
+        }
+        File mediaFile = mediaPath.toFile();
 
         // Then we have to compute the expected sidecar file:
-        File sidecarFile = new File(mediaFile.getParentFile(), mediaFile.getName() + ".tracks.json");
+        File parentDir = mediaFile.getParentFile();
+        if (parentDir == null) {
+            return;
+        }
+        File sidecarFile = new File(parentDir, mediaFile.getName() + ".tracks.json");
 
         // If it doesn't exist, we're done here:
         if (!sidecarFile.exists()) {

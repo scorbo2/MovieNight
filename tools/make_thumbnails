@@ -1,0 +1,49 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+# Goes through a given target directory looking for video files.
+# We consider *.mkv and *.mp4 files.
+# For each one found, we generate a thumbnail image for it
+# by grabbing a screenshot from a fixed time offset.
+# The thumbnail is saved alongside the video as a sidecar.
+# If the target thumbnail already exists, that file is skipped.
+# The target_dir is scanned recursively! Add -maxdepth 1
+# to the find command to skip subdirectories.
+#
+# USAGE: make_thumbnails [target_dir]
+# REQUIREMENTS: ffmpeg, grab_thumbnail
+
+
+# Modify this value (in seconds) to change where we grab a frame:
+TIME_INDEX=3
+
+# Scale thumbnails to this width (pixels):
+THUMB_WIDTH=640
+
+# Make sure grab_thumbnail is on our path:
+if ! command -v grab_thumbnail &>/dev/null; then
+    echo "Error: grab_thumbnail not found." >&2
+    exit 1
+fi
+
+# 1. Handle directory argument (defaults to current directory)
+TARGET_DIR="${1:-.}"
+
+if [[ ! -d "$TARGET_DIR" ]]; then
+    echo "Error: '$TARGET_DIR' is not a valid directory." >&2
+    exit 1
+fi
+
+video_count=0
+
+# We can delegate to our grab_thumbnail script to avoid duplication of code:
+while IFS= read -r -d '' video; do
+    grab_thumbnail "$video" "$TIME_INDEX" "$THUMB_WIDTH"
+    video_count=$((video_count + 1))
+done < <(find "$TARGET_DIR" -type f \( -iname "*.mkv" -o -iname "*.mp4" -o -iname "*.wmv" -o -iname "*.avi" \) -print0 | LC_ALL=C sort -z)
+
+# Handle no videos found
+if [[ $video_count -eq 0 ]]; then
+    echo "No video files found in '$TARGET_DIR'." >&2
+    exit 1
+fi

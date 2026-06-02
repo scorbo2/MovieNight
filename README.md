@@ -13,7 +13,9 @@ the Browse/Search UI to explore your collection and stream media!
 
 ## Getting started
 
-MovieNight has been tested on Linux. To get started, clone the repository and build it (Maven/Java25):
+MovieNight has been tested on Linux. To get started, clone the repository and build it.
+You'll need Java 25 and a recent version of Maven to build the back end code.
+You will also need npm installed to build the front end code (but you don't have to do that manually).
 
 ```bash
 git clone https://github.com/scorbo2/MovieNight.git
@@ -24,7 +26,7 @@ mvn clean package
 ```
 
 This generates a standalone executable Jar file in the `backend/target` directory.
-You can run it with default settings using:
+The jar contains the built front-end as well, so you can launch the whole thing together:
 
 ```bash
 # Note: version number may vary from this example:
@@ -32,9 +34,11 @@ java -jar target/MovieNight-2.0.jar
 ```
 
 If this is your first time running, the application, it will enter "interactive config mode" and ask
-you questions to create the initial config. See the "Interactive Config Mode" section below for more details.
-You can avoid that by creating a config file yourself and specifying its location with the
-`MOVIENIGHT_CONFIG_FILE` environment variable (see "Custom Config File" section).
+you questions to create the initial config. You'll be given the option of saving this config to a config
+file on disk, which you can later edit to change settings. If the config file is stored together with
+the jar file (or in a "config" subdirectory), the application will pick it up automatically on next run.
+If you prefer to keep the config file elsewhere, you can specify its location with the `MOVIENIGHT_CONFIG_FILE`
+environment variable (see "Custom Config File" section later for more details).
 
 ## First time run
 

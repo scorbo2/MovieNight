@@ -54,7 +54,7 @@ if [[ -f "$THUMB" ]]; then
 fi
 
 # 4. Extract frame
-if ffmpeg -nostdin -ss "$OFFSET" -i "$VIDEO" -vframes 1 -q:v 2 -vf "scale=${WIDTH}:-1" "$THUMB" -y -loglevel error 2>/dev/null; then
+if ffmpeg -nostdin -y -loglevel error -ss "$OFFSET" -i "$VIDEO" -vframes 1 -q:v 2 -vf "scale=${WIDTH}:-1" "$THUMB"; then
     echo "Created: $THUMB"
 else
     echo "Failed to extract frame from '$VIDEO'." >&2

@@ -8,7 +8,7 @@ The scripts in this directory can be used to help manage video libraries.
 
 Use `make_thumbnails` to walk a directory looking for video files.
 For each video found, a thumbnail will be extracted from the frame at the 3s mark.
-The frame will be scaled as needed so that it's width is 640 pixels, then it will
+The frame will be scaled as needed so that its width is 640 pixels, then it will
 be saved alongside the video file. For example, given `Bladerunner.mkv`, running
 the script in that directory will generate a `Bladerunner.jpg` (if it does not
 already exist):

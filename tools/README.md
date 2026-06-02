@@ -20,8 +20,8 @@ make_thumbnails /path/to/mediaDir
 
 This script is great for processing an entire directory of images in one shot.
 But what if the 3s mark doesn't result in a good thumbnail? Well, you can use
-the `grab_thumbnail` script on a specific video file, and specify the size and the
-time index to use. For example:
+the `grab_thumbnail` script on a specific video file, and specify the time offset and the
+output width to use. For example:
 
 ```shell
 # I don't want to do a whole directory! Let's just do one video.

@@ -24,9 +24,9 @@ the `grab_thumbnail` script on a specific video file, and specify the size and t
 time index to use. For example:
 
 ```shell
-# I don't want to do a whole directory! Let's just do one image.
+# I don't want to do a whole directory! Let's just do one video.
 # Grab the frame at the 77s mark and scale it to 800px wide:
-grab_thumbnail Bladerunner.mkv 800 77
+grab_thumbnail Bladerunner.mkv 77 800
 ```
 
 ### Track metadata extraction

@@ -174,7 +174,7 @@ right-click the item in your Downloads list and select "Always open similar file
 ![Firefox "Always open similar files" option](screenshots/vlc_firefox_setup.png)
 
 After that point, VLC should launch automatically and begin playing the media item. **This is necessary if you
-want to access additional language tracks and/or subtitle tracks!** Unfortunately, the inline HTML 5 video player
+want to access additional language tracks and/or subtitle tracks!** Unfortunately, the inline HTML5 video player
 does not support multiple language tracks, so you will only be able to hear the default language track.
 But VLC supports it! MovieNight can detect if a media file has multiple language and/or subtitle tracks,
 and it will present additional dropdown choosers on the media item details page, like this:

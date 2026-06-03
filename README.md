@@ -7,15 +7,17 @@
 MovieNight is a media-organizing and streaming application designed to work on a local network.
 If you have a large local collection of movies, TV shows, and/or music videos, MovieNight
 provides a simple and friendly interface to browse your collection and stream media to your devices.
-The basic read-only interface is available without authentication. An Admin interface is also
-available, with basic authentication and optional localhost-only access restriction. Use the Admin
-interface to add, edit, and delete media items in your collection, and then use the read-only
-interface to browse and stream your media!
+Videos can either be watched inline in the browser, or launched in VLC, if VLC is installed and your
+browser is properly configured.
+
+An Admin UI is provided to add, edit, or delete media items in your collection. Then you can use
+the Browse/Search UI to explore your collection and stream media!
 
 ## Getting started
 
-MovieNight is still in early development, so there is no installer package available yet.
-To get started, clone the repository and build with Maven (Java 17+ required):
+MovieNight has been tested on Linux. To get started, clone the repository and build it.
+You'll need Java 25 and a recent version of Maven to build the back end code.
+You will also need npm installed to build the front end code (but you don't have to do that manually).
 
 ```bash
 git clone https://github.com/scorbo2/MovieNight.git
@@ -25,181 +27,211 @@ cd MovieNight/backend
 mvn clean package
 ```
 
-This generates a standalone executable Jar file in the `target` directory.
-You can run it with default settings using:
+This generates a fully standalone executable Jar file in the `backend/target` directory.
+The jar contains the built front-end as well, so you can launch the whole thing all together!
+However, the jar file is generated in the `MovieNight/backend/target` directory, and it's generally
+not a good idea to run from there. The application stores configuration and thumbnails in the same
+directory as the jar by default. The next time you do a clean build, you may lose this data.
+So, let's move the jar file somewhere dedicated (in this example, we'll house it on the same machine
+where we built it, but you could scp it to a different machine on your network):
+
+```shell
+mkdir ~/MovieNight
+mv target/MovieNight-2.0.jar ~/MovieNight/
+cd ~/MovieNight
+
+# Now we can start it up!
+java -jar MovieNight-2.0.jar
+```
+
+If this is your first time running the application, it will enter "interactive config mode" and ask
+you questions to create the initial config. You'll be given the option of saving this config to a config
+file on disk, which you can later edit to change settings. If the config file is stored together with
+the jar file (or in a "config" subdirectory), the application will pick it up automatically on next run.
+If you prefer to keep the config file elsewhere, you can specify its location with the `MOVIENIGHT_CONFIG_FILE`
+environment variable (see "Configuration" section later for more details). By default, interactive mode
+will save the config file to the current working directory.
+
+The application will start up on port `8080` by default (unless you picked a different port above), and will
+be accessible at `http://<your-server-ip>:8080` from any device on the same local network. The Browse UI and
+the Admin UI are both served in the same single-page application at that address. Let's fire up a browser and
+check it out!
+
+## First time run
+
+When the UI first comes up, it will look pretty empty!
+
+![MovieNight UI - First Run](screenshots/ui-first-run.png)
+
+Click the `Admin` link at the top of the page to access the Admin dashboard:
+
+![MovieNight Admin UI - First Run](screenshots/ui-admin-mode.png)
+
+At any point, you can optionally click the "dark mode" toggle in the very top right to stop burning your eyes:
+
+![MovieNight UI - Dark Mode](screenshots/ui-admin-mode-dark.png)
+
+### Setting up media groups
+
+Click the "New Group" quick action to add your first media group. Media groups are containers that can
+contain media items or other media groups. This can be a great way to organize your collection,
+especially if you have a large and varied collection of media. Here's one suggested way to get
+started with groups:
+
+- Movies
+- TV Shows
+- Music Videos
+
+When creating your first groups, select "None (top-level)" for the "Parent group". This creates a "top-level" group.
+These top-level groups will be displayed on the main browse page. You can also add a thumbnail image for each group,
+which makes browse mode look a lot nicer. Once our initial groups are set up, click "Browse app" in the top right
+to return to browse mode:
+
+![MovieNight UI - Browse Mode](screenshots/ui-browse-mode.png)
+
+Okay, looking a bit better now! But we don't have any media items yet. 
+
+### Setting up media items
+
+Go back to Admin mode and click "Items" from the left menu in the dashboard. This brings up the items page:
+
+![MovieNight Admin UI - Items Page](screenshots/ui-admin-mode-items.png)
+
+Once you select a parent group from the "Media Group" dropdown, the "New Item" button will become enabled.
+Note that you need at least one top-level group to add items! Media items can't be added to the top-level.
+Let's add a new item to the "Music Videos" group:
+
+![MovieNight Admin UI - New Item Form](screenshots/ui-admin-mode-new-item.png)
+
+The only mandatory fields are Group, Title, and Media file path. There's an optional Description field,
+and also an optional "Tags" field. Tags are keywords that you can associate with media items, and are useful
+for searching across media groups. For example, you could add tags for your favorite actors or directors, and
+easily find all media items that match those tags, regardless of which group(s) they are in. See the section
+on Search Mode later on.
+
+Clicking the Browse button next to the Media file path field will open a file browser. But note that this
+file browser is showing you the *server's* file system, not your local file system. The browser will be locked
+to whatever directory you configured to be the server's media directory.
+
+Click "Save item" to save the new item and return to the items list, or click "Save and add another" to
+save the new item and immediately start adding another one.
+
+#### Thumbnails
+
+If a media file has a companion thumbnail image in the same directory with the same filename, it will be picked
+up automatically. For example:
+
+```shell
+Bladerunner.mkv
+Bladerunner.jpg
+```
+
+Both JPEG and PNG image formats are supported. Alternatively, you can use the "Thumbnail" tab on the "Edit item"
+screen to pick any image file on your local machine to upload as the thumbnail for that media item. Each media
+item can have only zero or one thumbnail image associated with it.
+
+MovieNight comes with a pair of helper scripts that can be used to generate thumbnail images for all media files
+in a given directory. You must have `ffmpeg` installed and access to a bash shell to use these scripts.
+Refer to the [README.md](tools/README.md) in the `tools` subdirectory for more information on how to do this.
+
+Note that if you use the Thumbnails tab to upload a thumbnail for a media item, it will be stored alongside
+the media file itself, as with the Bladerunner example above. Media Groups can also have thumbnails, but those
+images are stored in the server's configured thumbnails directory instead (since they don't belong to any
+particular file or directory on disk).
+
+Once we've added some media items, the browse page starts to look a lot more fun!
+
+![MovieNight UI - Browse Mode with Media](screenshots/ui-example.jpg)
+
+### Search Mode
+
+Click the "Search" link at the very top to access Search mode. An alphabetized list of all media items in your
+collection is shown in the grid. Above the grid are filter fields that allow you to filter the list
+by title, by description, or by tags. This is a great way to quickly find what you're looking for!
+
+## Playback
+
+There are two main options for media playback:
+
+- directly in the browser (using the HTML5 video player)
+- in VLC (if VLC is installed and your browser is configured to launch VLC for M3U playlists)
+
+### Inline playback
+
+This is the quickest and easiest option, and will work with almost any modern web browser.
+On any media item details page, just click the "Watch now" button to open an inline video player.
+You can hit play to begin playback, and optionally hit the fullscreen button to expand to full screen.
+Hit ESC to exit fullscreen mode and return to the browser tab.
+
+### VLC integration
+
+If your video files have multiple language tracks, or if you just generally prefer VLC's interface for playback,
+If your video files have multiple language tracks, or if you just generally prefer VLC's interface for playback,
+then MovieNight has you covered! On any media item details page, click the "Watch in VLC" button to generate and download
+an M3U playlist file that will stream that file from the server. Depending on your browser, you may have to do
+right-click the item in your Downloads list and select "Always open similar files", as shown here:
+
+![Firefox "Always open similar files" option](screenshots/vlc_firefox_setup.png)
+
+After that point, VLC should launch automatically and begin playing the media item. **This is necessary if you
+want to access additional language tracks and/or subtitle tracks!** Unfortunately, the inline HTML5 video player
+does not support multiple language tracks, so you will only be able to hear the default language track.
+But VLC supports it! MovieNight can detect if a media file has multiple language and/or subtitle tracks,
+and it will present additional dropdown choosers on the media item details page, like this:
+
+![MovieNight UI - Language and subtitle choosers](screenshots/ui-multi-language.png)
+
+We see that we have selected the German audio track and the French subtitle track, for language learning
+on extra-hard mode. These options only apply to the "Watch in VLC" action! When we launch VLC with these
+options selected, the video will start playing in VLC with the selected audio and subtitle tracks already selected.
+
+Note that when browsing Media Groups, you will notice a "Watch all in VLC" action button at the top of the
+group display page. This does exactly what it sounds like - it will generate and download an M3U playlist
+containing all media items that are direct children of that media group. This is great for binge-watching! :)
+
+## Configuration
+
+Let's take a closer look at "interactive mode" on a first-time launch. The application will prompt you
+for a few basic configuration items, and then create a skeletal configuration file for you, that you
+have the option to save. The process might look like this:
 
 ```bash
-# Note: version number may vary from this example:
-java -jar target/MovieNight-1.0.jar
+scorbett@sclaptop6:~/MovieNight/backend$ java -jar target/MovieNight-2.0.jar 
+No configuration file found!
+
+What port shall we listen on? [8080]: 9999
+Where are our media files? [/home/scorbett/MovieNight/.]: 
+Where are our thumbnails? [/home/scorbett/MovieNight/thumbnails]:
+Where is our database file? [/home/scorbett/MovieNight/MovieNight.db]: 
+Database file does not exist. Will be created.
+Enable file-based logging? [y/N]: y
+Where should we write logs? [/home/scorbett/MovieNight/MovieNight.log]: 
+Would you like to save this config? [Y/n]: n
+Config not saved. You will need to re-enter these values next time.
+File logging enabled: /home/scorbett/MovieNight/MovieNight.log
+...
 ```
 
-By default, this will listen on port 8080 and will use `/var/lib/movienight` for storing media metadata.
-(Make sure that directory exists and is writable by the application before running).
-The access credentials for the Admin API will be `admin`/`change-me` - but these are not great defaults!
+All configuration questions have a default value, so you could just hit `Enter` at each prompt to accept the
+defaults. In the example above, note that we picked port `9999` instead of the default `8080`. At a minimum,
+you'll likely want to change the media directory from the default (which is the current working directory wherever
+you launched the application from). You can also enable file-based logging, if you wish.
 
-### Running with custom settings
+The application then echoes out the active configuration and starts up on the requested port. We see the URL
+where the web UI is available, and also the URL for the back-end API (you can typically ignore this, but it's
+handy for debugging).
 
-Create an `application-prod.properties` file in the same directory as the executable Jar file, and then
-you can customize the settings:
+If you opt to save the generated config, you can hand-edit the generated config at any time and restart the
+application to pick up the changes. Note that the config file offers you a few extra options that were
+not presented in interactive mode. A full config file example is included, with descriptions of each property:
+[example](backend/src/main/resources/application.properties)
 
-```properties
-server.port=8080
-#
-# This defaults to the system temp dir if unspecified:
-logging.file.name=/path/to/movienight.log
-#
-# If false, Admin access is allowed from anywhere:
-movienight.admin.localhost-only=false
-#
-# Number of days to consider a media item as "recently watched"
-# (set this to 0 to disable the "recently watched" feature)
-movienight.recently-watched-days=3
-#
-# This db file will be created and managed automatically.
-# But the directory where it lives has to be writable by us.
-spring.datasource.url=jdbc:sqlite:/path/to/movienight.db
-#
-# All uploaded thumbnails will go to this data dir:
-movienight.data-dir=/path/to/movienight-data-dir
-#
-# Don't leave this as admin/change-me!
-movienight.admin.username=admin
-movienight.admin.password=change-me
-```
+## License
 
-Alternatively, many of the above settings can be controlled with environment variables:
+MovieNight is licensed under the MIT License. See [LICENSE](LICENSE) for more information.
 
-```bash
-export MOVIENIGHT_LOG_FILE=/path/to/movienight.log
-export MOVIENIGHT_DB_PATH=/path/to/movienight.db
-export MOVIENIGHT_DATA_DIR=/path/to/movienight-data-dir
-export MOVIENIGHT_ADMIN_USERNAME=admin
-export MOVIENIGHT_ADMIN_PASSWORD=change-me
-```
+## Links and more information
 
-## First-time startup
-
-MovieNight comes with a few built-in categories to get you started. It looks like this:
-
-![MovieNight Screenshot](screenshots/initial_startup.png)
-
-These categories are very basic, and don't have thumbnails, so the initial experience is pretty bland!
-Fortunately, this is very easy to fix. Hit the "Admin" button in the upper right corner to switch
-to Admin mode. Here, we can edit the predefined categories, or delete them entirely and create our own.
-You can upload thumbnails for each category. The edit form looks like this:
-
-![MovieNight Admin Screenshot](screenshots/admin_edit.png)
-
-Each media type has its own categorization type:
-
-- Movies are categorized by genre (Action, Comedy, etc.)
-- TV shows are categorized by series (The Office, Breaking Bad, etc.)
-- Music videos are categorized by artist (Duran Duran, The Beatles, etc.)
-
-The edit form for each category allows you to set the name, optional description, and optional
-thumbnail image for that type. The screenshot above shows the edit form for a Movie genre,
-but the other edit forms are very similar.
-
-## Adding media items
-
-Once you've added your categories (genres, series, and artists), you are ready to start adding media items!
-Note that there is no "upload" feature in MovieNight. The assumption is that MovieNight will be run
-on a local server that also contains (or has access to) your media files. So, the edit form for each
-media type includes a file browser that will allow you to navigate whatever filesystem the server has access to.
-You select the media file, and MovieNight will record its location on the filesystem. Later, it will be streamed
-from that location. The only thing MovieNight needs to store is the metadata (title, description, thumbnail)
-for the media, and the file path to the media file itself. Here's a look at the edit form for a Movie media item:
-
-![Movie Edit Form Screenshot](screenshots/movie_edit.png)
-
-The only mandatory fields here are `title`, `genre`, and `video file path`. The `genre` field is a dropdown
-that will show all the genres you've created in the Admin interface. The `video file path` can either be
-entered manually, or via the file browser. Remember that the file browser is showing you the server's filesystem,
-not the filesystem on whatever system you are accessing the Admin interface from!
-
-Note that as soon as you hit the save button, you will be prompted by your browser for the Admin API credentials.
-The Admin API defaults to using basic authentication (username/password). You can change the username and password
-in the settings, as described in the "Running with custom settings" section above.
-
-## Browsing and searching
-
-So you've added your media items, and you've built up quite a large list! In order to help you navigate your collection,
-MovieNight will start by showing you the categories for the media type in question. For example, let's click
-on the "Movies" category on the homepage. This will show us all the genres we've created:
-
-![Movie Genres Screenshot](screenshots/movie_genres.png)
-
-This looks much better! We see a card with each genre that we've defined, along with a count of how many
-movies are in that genre. Clicking on a genre will take you to a filtered list of movies in that genre:
-
-![Movies in Genre Screenshot](screenshots/movies_in_genre.png)
-
-Each media item also has the concept of "tags". These are arbitrary free-form strings that you can enter
-as additional searchable metadata for the media item. For example, you could tag a movie with "Christmas"
-if it's a Christmas movie, or you can enter actor/actress names as tags. This makes it much easier to
-search through your library as your collection grows! Use the search bar at the top of the list
-to search by title or tag. For example, let's search for "blade":
-
-![Search Results Screenshot](screenshots/search_results.png)
-
-We see the two "Bladerunner" films are shown. Our search term is also shown at the top, next to an "x"
-control that allows you to cancel the search and return to the category view.
-
-## Streaming media
-
-Each media item card has a "Watch" button which will bring up an inline media player for that item.
-Use the media player controls to play, pause, or seek through the media. You can go full screen for
-a better viewing experience! Click the "Hide" button while streaming to hide the media player and stop the stream.
-
-### Note about very large media files
-
-If you have full-length high-resolution movies in your collection, you may encounter a significant delay
-when you begin streaming. You can mitigate this by configuring the max size of range requests in the properties file:
-
-```properties
-# You can optionally restrict range requests to a certain size, in MB.
-# Set this to 0 to allow range requests of any size (up to 2GB for Integer.MAX_VALUE).
-# Caution: setting this too low may cause LONG delays streaming large videos.
-# The default value is 32MB.
-movienight.max-range-request-size-mb=32
-```
-
-The default value of 32 is a good starting point, but you can increase it if you find that your media files
-are taking too long to start streaming. If your server has a lot of memory, and your local network has
-decent bandwidth, you can set this to 0 to allow range requests of any size.
-
-### "Wait, why can't I change audio tracks or subtitles?"
-
-Welcome to the wonderful world of the HTML 5 `video` tag! This tag was intended for simple video streaming,
-and doesn't easily expose options for multiple audio tracks/languages. Fortunately, MovieNight has an answer for this!
-If you have VLC installed on your client device, you can enable VLC integration in the settings:
-
-```properties
-# Enable this to present a "Watch in VLC" button in each media card:
-movienight.enable-vlc-integration=false
-```
-
-This is disabled by default, as it requires a bit of setup on the client side. If you enable this property,
-the UI will show a "Watch in VLC" button on each media card (for Movies, TV shows, and Music videos).
-Clicking this will cause your browser to download a very small `.m3u` file. This is a VLC-compatible playlist
-file, which contains the URL to the media stream. The first time you click this button, your browser will likely
-just download the file, which is not very helpful. In Firefox, you can right-click the downloaded file in
-your downloads list, and select "Always Open Similar Files", like this:
-
-![Firefox VLC Integration Screenshot](screenshots/vlc_firefox_setup.png)
-
-Now, the next time you click the "Watch in VLC" button, VLC will be launched automatically, and streaming will
-start immediately! This allows you to take full advantage of VLC's powerful playback features, including
-multiple audio track selection, subtitle selection, and more.
-
-The inline video player is still available, even if VLC integration is enabled. This gives you the best of
-both worlds - you can use the inline player for quick and easy streaming, or switch to VLC when you need
-more advanced playback features.
-
-## More information
-
-Project page: https://github.com/scorbo2/MovieNight
-
-Issues page: https://github.com/scorbo2/MovieNight/issues
-
-MovieNight is distributed under the [MIT License](LICENSE).
+- [GitHub Repository](https://github.com/scorbo2/MovieNight) - browse the source code or contribute to the project!
+- [Issues page](https://github.com/scorbo2/MovieNight/issues) - file an issue if you're having problems, or if you have
+  a feature request!

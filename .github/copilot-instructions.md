@@ -1,41 +1,100 @@
 # MovieNight Copilot Instructions
 
-## Build and test commands
+## Architecture Overview
 
-- Frontend production build: `cd frontend && npm run build`
-- Full packaged application build: `cd backend && mvn clean package`
-- Full backend test suite: `cd backend && mvn test`
-- Single backend test class: `cd backend && mvn -Dtest=StreamControllerTest test`
-- Single backend test method: `cd backend && mvn -Dtest=StreamControllerTest#someTestMethod test`
-- There is currently no dedicated lint script in `frontend/package.json` or `backend/pom.xml`.
+MovieNight is a self-hosted media library browser. The backend is a **Java 25 HTTP server with no framework** (uses `com.sun.net.httpserver` directly) backed by SQLite. The frontend is a **React/TypeScript SPA** built with Vite. During development they run separately; for production the frontend is built into backend static resources and served from the same process.
 
-`backend/pom.xml` is the top-level build entrypoint: its Maven build installs Node, runs `npm ci`, runs the frontend build, and then packages the Spring Boot jar. The Vite build writes into `backend/src/main/resources/static/frontend`, so changes to frontend build output affect the packaged backend immediately.
+```
+frontend/           React + TypeScript + Tailwind (Vite)
+backend/            Java 25 + SQLite + custom HTTP server (Maven)
+  └─ src/main/resources/static/frontend/   (frontend build output)
+```
 
-## High-level architecture
+## Build & Test Commands
 
-MovieNight is a two-part app: a React/Vite frontend in `frontend/` and a Spring Boot backend in `backend/`. The backend serves both the REST API and the built SPA. `SpaForwardController` forwards `/`, `/admin`, and `/admin/**` to the frontend entrypoint, while `frontend/src/App.jsx` keeps routing intentionally small: browse mode at `/` and admin mode at `/admin`.
+**Backend:**
+```bash
+cd backend && mvn package -q          # build fat jar (outputs MovieNight-2.0-SNAPSHOT.jar)
+cd backend && mvn test -q             # run all tests
+cd backend && mvn test -q -Dtest=DatabaseTest          # run a single test class
+cd backend && mvn test -q -Dtest=ApiIntegrationTest#testCreateGroup  # run a single test method
+```
 
-The main product flow is mirrored across three media families:
+**Frontend:**
+```bash
+cd frontend && npm run build          # build and emit to backend/src/main/resources/static/frontend/
+cd frontend && npm run dev            # dev server with proxy to localhost:8181
+```
 
-- movies -> genres
-- episodes -> series
-- music videos -> artists
+**Running the app:**
+```bash
+# With defaults (port 8080, current dir as data dir):
+java -jar backend/target/MovieNight-2.0-SNAPSHOT.jar
 
-Each family has the same general structure: JPA model + repository, service-layer business logic, REST controller, and matching frontend list/form components. The frontend keeps most orchestration in `frontend/src/pages/MediaLibraryPage.jsx`: tab state, fetches, CRUD actions, thumbnail upload/delete flows, and error handling all live there rather than being spread across many hooks.
+# With a config file:
+MOVIENIGHT_CONFIG_FILE=/path/to/config.properties java -jar ...
+```
 
-SQLite stores media metadata, tags, relationships, and watch history. Actual video files are not uploaded into the app; admin users point the app at files already present on the server filesystem, using `/api/files` to browse directories. Thumbnail images are also filesystem-backed under `movienight.data-dir`.
+Config file is a Java `.properties` file. Recognized keys: `port`, `dataDir`, `pageSize`, `apiBasePath`, `rangeLimitMB`.
 
-Streaming is separate from CRUD. Frontend cards play via `/api/stream/{encodedId}`. `MediaService` resolves encoded IDs with prefixes `M`, `E`, and `V` to file paths and updates the media item's `lastWatchedDate`; `StreamController` serves the file, handles HTTP range requests, and can also generate VLC playlist files.
+## Data Model
 
-Security is split by intent rather than by separate apps. Read-only browsing is public for `GET /api/**` except `/api/files`. Admin UI routes plus all `POST`/`PUT`/`DELETE` API routes require HTTP Basic auth, and localhost-only admin access is enabled by default. Errors are normalized through `GlobalExceptionHandler`, and every request gets an `X-Correlation-Id` from `CorrelationIdFilter`.
+Two domain objects:
 
-## Key conventions
+- **`MediaGroup`** — a named group (like a folder). Groups are hierarchical: `parentGroupId == null` means top-level. Groups can contain other groups and/or items.
+- **`MediaItem`** — a single streamable file. Always belongs to one `MediaGroup` via `mediaGroupId`. Key fields:
+  - `mediaFilePath` — **relative** to the configured `dataDir`, not absolute.
+  - `tags` — always normalized on save: trimmed, lowercased, deduplicated.
+  - `hasThumbnail` — computed at runtime from the filesystem; **not stored in the database**.
+  - `lastWatchedDate` — nullable `LocalDate`.
 
-- Preserve the symmetry between the three media families. Features added to one stack often need corresponding backend and frontend changes for the other two.
-- Do not persist UI convenience flags directly. Fields such as `hasThumbnail`, `movieCount`, `episodeCount`, `videoCount`, and `watchedRecently` are transient/read-only JSON fields populated in services before responses are returned.
-- Thumbnails are managed as a second step after the main entity save. Frontend forms pass `_thumbnail` and `_clearThumbnail`; `MediaLibraryPage.jsx` strips those helper fields from the JSON payload, saves the entity first, then calls the separate thumbnail endpoint.
-- Thumbnail support only activates when `movienight.data-dir` is configured **and already exists**. `ThumbnailService` creates per-entity subdirectories under that base path and validates uploads as JPG/PNG within 26x26 to 2000x2000 pixels.
-- Tag handling is normalized in model setters. Tags are trimmed, lowercased, de-duplicated, and stored as element collections; backend search uses case-insensitive `Specification`s and joins the tag collection with `query.distinct(true)` when filtering by tag.
-- Category-like names are not normalized uniformly across all models. `Genre` lowercases names in `setName()`, while `Series` and `Artist` currently preserve case. Check the target model before changing naming behavior.
-- Frontend media cards across all list components determine thumbnail object fit at runtime from `naturalWidth`/`naturalHeight`, using `object-fill` for landscape thumbnails and `object-contain` otherwise. Keep that behavior aligned when changing card rendering.
-- The file browser operates on server-local filesystem paths, not client paths, and intentionally skips dotfiles and symlinks.
+Thumbnails are stored in `{dataDir}/thumbnails/` as `MediaItem_{id}.jpg` or `MediaGroup_{id}.jpg`.
+
+## Backend Conventions
+
+### Custom Router
+The backend uses a hand-rolled `Router` (no Spring, no Javalin). Routes are registered in `ApiServer` in a deliberate order — **more specific routes must be registered before more general ones**. When a handler cannot handle a request it throws `new RuntimeException("ROUTE_NOT_MATCHED")` wrapped in an `IOException`; the router then tries the next matching route.
+
+### Adding a New Endpoint
+1. Create or extend a `Handler` class in `api/handler/` implementing `HttpHandler`.
+2. Add `DTO` classes in `api/dto/` if needed.
+3. Register the route in `ApiServer` in the correct order relative to existing routes.
+4. Add CRUD methods to `Database.java` if the handler needs DB access (all SQL lives there).
+5. Optionally wrap business logic in a `Service` class in `service/`.
+
+### Error Handling
+All exceptions are mapped to JSON error responses via `ExceptionMapper`. `Database.NotFoundException` → 404. Unhandled exceptions → 500.
+
+### Database Access
+All SQL is in `Database.java`. All write operations are synchronized on `lockObject`. Use the existing `open()`/`dispose()` lifecycle. Tests create a temp dir and a fresh DB per test class via `@BeforeAll`.
+
+## Frontend Conventions
+
+### Two UI Sections
+- `/browse` — public-facing media browser (`src/browse/`)
+- `/admin` — management UI (`src/admin/`)
+
+Each section has its own `AppShell` component and nav. `App.tsx` owns the top-level route tree.
+
+### API Layer
+All API calls go through `apiFetch()` in `src/api/client.ts`. Never call `fetch()` directly. The API base path is read from `VITE_API_BASE_PATH` (defaults to `/MovieNight/`). During `npm run dev`, Vite proxies `/MovieNight/` to `localhost:8181`.
+
+Module layout in `src/api/`:
+- `client.ts` — `apiFetch`, `buildApiUrl`, `buildQueryString`
+- `types.ts` — shared TypeScript interfaces mirroring backend DTOs
+- `groups.ts`, `items.ts`, `thumbnails.ts` — typed API functions per resource
+
+### Component Layers
+- `src/components/ui/` — generic, reusable UI primitives (Button, Input, Card, Dialog, Toast, etc.)
+- `src/components/shared/` — app-specific shared components (Thumbnail, TagPills, SearchBar, Breadcrumbs, etc.)
+- `src/admin/features/` — complex admin-specific feature components (forms, delete dialogs)
+- `src/admin/pages/` / `src/browse/pages/` — page-level components, one per route
+
+### Forms
+Forms use `react-hook-form` + `zod` for validation. Resolvers are wired via `@hookform/resolvers/zod`.
+
+### Data Fetching
+TanStack Query (`@tanstack/react-query`) is used for all server state. Follow the existing pattern of calling the typed API functions from `src/api/` inside `useQuery`/`useMutation` hooks.
+
+### Theming
+Light/dark theme is managed by `ThemeProvider` in `src/theme/`. CSS custom properties are defined in `tokens.css`. Tailwind classes use the standard `dark:` variant.

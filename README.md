@@ -37,11 +37,11 @@ where we built it, but you could scp it to a different machine on your network):
 
 ```shell
 mkdir ~/MovieNight
-mv target/MovieNight-2.0-SNAPSHOT.jar ~/MovieNight/
+mv target/MovieNight-2.0.jar ~/MovieNight/
 cd ~/MovieNight
 
 # Now we can start it up!
-java -jar MovieNight-2.0-SNAPSHOT.jar
+java -jar MovieNight-2.0.jar
 ```
 
 If this is your first time running the application, it will enter "interactive config mode" and ask
@@ -196,7 +196,7 @@ for a few basic configuration items, and then create a skeletal configuration fi
 have the option to save. The process might look like this:
 
 ```bash
-scorbett@sclaptop6:~/MovieNight/backend$ java -jar target/MovieNight-2.0-SNAPSHOT.jar 
+scorbett@sclaptop6:~/MovieNight/backend$ java -jar target/MovieNight-2.0.jar 
 No configuration file found!
 
 What port shall we listen on? [8080]: 9999

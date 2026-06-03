@@ -93,7 +93,7 @@ public final class ThumbnailHandler implements HttpHandler {
 
     private void handleGet(HttpExchange exchange, String path) throws Exception {
         String basePath = appConfig.getApiBasePath() + "thumbnails";
-        log.info("Handling GET thumbnail request for path: " + path);
+        log.fine("Handling GET thumbnail request for path: " + path);
 
         if (path.startsWith(basePath + "/media-items/")) {
             handleGetMediaItemThumbnail(exchange, path);

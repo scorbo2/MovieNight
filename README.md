@@ -27,12 +27,21 @@ cd MovieNight/backend
 mvn clean package
 ```
 
-This generates a standalone executable Jar file in the `backend/target` directory.
-The jar contains the built front-end as well, so you can launch the whole thing together:
+This generates a fully standalone executable Jar file in the `backend/target` directory.
+The jar contains the built front-end as well, so you can launch the whole thing all together!
+However, the jar file is generated in the `MovieNight/backend/target` directory, and it's generally
+not a good idea to run from there. The application stores configuration and thumbnails in the same
+directory as the jar by default. The next time you do a clean build, you may lose this data.
+So, let's move the jar file somewhere dedicated (in this example, we'll house it on the same machine
+where we built it, but you could scp it to a different machine on your network):
 
-```bash
-# Note: version number may vary from this example:
-java -jar target/MovieNight-2.0.jar
+```shell
+mkdir ~/MovieNight
+mv target/MovieNight-2.0-SNAPSHOT.jar ~/MovieNight/
+cd ~/MovieNight
+
+# Now we can start it up!
+java -jar MovieNight-2.0-SNAPSHOT.jar
 ```
 
 If this is your first time running the application, it will enter "interactive config mode" and ask
@@ -40,7 +49,13 @@ you questions to create the initial config. You'll be given the option of saving
 file on disk, which you can later edit to change settings. If the config file is stored together with
 the jar file (or in a "config" subdirectory), the application will pick it up automatically on next run.
 If you prefer to keep the config file elsewhere, you can specify its location with the `MOVIENIGHT_CONFIG_FILE`
-environment variable (see "Configuration" section later for more details).
+environment variable (see "Configuration" section later for more details). By default, interactive mode
+will save the config file to the current working directory.
+
+The application will start up on port `8080` by default (unless you picked a different port above), and will
+be accessible at `http://<your-server-ip>:8080` from any device on the same local network. The Browse UI and
+the Admin UI are both served in the same single-page application at that address. Let's fire up a browser and
+check it out!
 
 ## First time run
 
@@ -117,7 +132,12 @@ item can have only zero or one thumbnail image associated with it.
 
 MovieNight comes with a pair of helper scripts that can be used to generate thumbnail images for all media files
 in a given directory. You must have `ffmpeg` installed and access to a bash shell to use these scripts.
-Refer to the `README.md` in the `tools` subdirectory for more information on how to do this.
+Refer to the [README.md](tools/README.md) in the `tools` subdirectory for more information on how to do this.
+
+Note that if you use the Thumbnails tab to upload a thumbnail for a media item, it will be stored alongside
+the media file itself, as with the Bladerunner example above. Media Groups can also have thumbnails, but those
+images are stored in the server's configured thumbnails directory instead (since they don't belong to any
+particular file or directory on disk).
 
 Once we've added some media items, the browse page starts to look a lot more fun!
 
@@ -140,31 +160,16 @@ scorbett@sclaptop6:~/MovieNight/backend$ java -jar target/MovieNight-2.0-SNAPSHO
 No configuration file found!
 
 What port shall we listen on? [8080]: 9999
-Where are our media files? [/home/scorbett/MovieNight/backend/.]: 
-Where are our thumbnails? [/home/scorbett/MovieNight/backend/thumbnails]: /home/scorbett/MovieNight/backend/
-Where is our database file? [/home/scorbett/MovieNight/backend/MovieNight.db]: 
+Where are our media files? [/home/scorbett/MovieNight/.]: 
+Where are our thumbnails? [/home/scorbett/MovieNight/thumbnails]:
+Where is our database file? [/home/scorbett/MovieNight/MovieNight.db]: 
 Database file does not exist. Will be created.
 Enable file-based logging? [y/N]: y
-Where should we write logs? [/home/scorbett/MovieNight/backend/MovieNight.log]: 
+Where should we write logs? [/home/scorbett/MovieNight/MovieNight.log]: 
 Would you like to save this config? [Y/n]: n
 Config not saved. You will need to re-enter these values next time.
-File logging enabled: /home/scorbett/MovieNight/backend/MovieNight.log
-2026-05-29 11:18:03 P.M. [INFO] AppConfig {
-  port=9999,
-  mediaDir=/home/scorbett/MovieNight/backend/.,
-  dbFile=/home/scorbett/MovieNight/backend/MovieNight.db,
-  thumbnailDir=/home/scorbett/MovieNight/backend,
-  defaultPageSize=50,
-  apiBasePath='/api/',
-  rangeLimitMB=32,
-  logFile=/home/scorbett/MovieNight/backend/MovieNight.log
-
-2026-05-29 11:18:04 P.M. [INFO] Connected to database at /home/scorbett/MovieNight/backend/MovieNight.db
-2026-05-29 11:18:04 P.M. [INFO] Database initialized and connected.
-2026-05-29 11:18:04 P.M. [INFO] MovieNight web UI: http://localhost:9999
-2026-05-29 11:18:04 P.M. [INFO] MovieNight API: http://localhost:9999/api/
-Server is running. Press Ctrl+C to stop.  
-}
+File logging enabled: /home/scorbett/MovieNight/MovieNight.log
+...
 ```
 
 All configuration questions have a default value, so you could just hit `Enter` at each prompt to accept the
@@ -178,7 +183,7 @@ handy for debugging).
 
 If you opt to save the generated config, you can hand-edit the generated config at any time and restart the
 application to pick up the changes. Note that the config file offers you a few extra options that were
-not presented in interactive mode. A full config file example is included:
+not presented in interactive mode. A full config file example is included, with descriptions of each property:
 [example](backend/src/main/resources/application.properties)
 
 ## License

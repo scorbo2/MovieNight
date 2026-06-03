@@ -51,6 +51,19 @@ import java.util.logging.Logger;
  *     will be much improved in this case, since there is no http streaming involved. The default is false,
  *     meaning that streaming URLs will be used in the generated playlist.
  * </p>
+ * <p>
+ *     For the single-item endpoint (<code>GET /api/playlist/media-item/{id}</code>), two additional optional
+ *     query parameters are available:
+ * </p>
+ * <ul>
+ *     <li><code>?audioTrackId=N</code> - sets the audio track ID for the media item.
+ *     When set, adds an <code>#EXTVLCOPT:audio-track-id=N</code> line to the playlist.</li>
+ *     <li><code>?subtitleTrackId=N</code> - sets the subtitle track ID for the media item.
+ *     When set, adds an <code>#EXTVLCOPT:sub-track-id=N</code> line to the playlist.</li>
+ * </ul>
+ * <p>
+ *     These are VLC-specific options that allow selecting specific audio or subtitle tracks.
+ * </p>
  *
  * @author <a href="https://github.com/scorbo2">scorbo2</a>
  */
@@ -181,7 +194,12 @@ public class PlaylistHandler implements HttpHandler {
             throw new Database.NotFoundException("Media item not found with ID: " + itemId);
         }
 
-        String playlist = generatePlaylist(List.of(item), appConfig, getServerName(exchange), isLocal);
+        Map<String, String> params = QueryParamParser.parse(exchange.getRequestURI().getQuery());
+        Integer audioTrackId = QueryParamParser.parseIntOptional(params, "audioTrackId").orElse(null);
+        Integer subtitleTrackId = QueryParamParser.parseIntOptional(params, "subtitleTrackId").orElse(null);
+
+        String playlist = generatePlaylist(List.of(item), appConfig, getServerName(exchange), isLocal,
+                audioTrackId, subtitleTrackId);
         responseWriter.writePlaylist(exchange, HttpURLConnection.HTTP_OK, playlist, item.getTitle());
     }
 
@@ -208,7 +226,12 @@ public class PlaylistHandler implements HttpHandler {
             throw new Database.NotFoundException("Media item not found with ID: " + itemId);
         }
 
-        String playlist = generatePlaylist(List.of(item), appConfig, getServerName(exchange), isLocal);
+        Map<String, String> params = QueryParamParser.parse(exchange.getRequestURI().getQuery());
+        Integer audioTrackId = QueryParamParser.parseIntOptional(params, "audioTrackId").orElse(null);
+        Integer subtitleTrackId = QueryParamParser.parseIntOptional(params, "subtitleTrackId").orElse(null);
+
+        String playlist = generatePlaylist(List.of(item), appConfig, getServerName(exchange), isLocal,
+                audioTrackId, subtitleTrackId);
         responseWriter.writePlaylist(exchange, HttpURLConnection.HTTP_OK, playlist, item.getTitle());
     }
 
@@ -232,7 +255,7 @@ public class PlaylistHandler implements HttpHandler {
             return;
         }
         List<MediaItem> items = database.getMediaItemsByGroupId(groupId);
-        String playlist = generatePlaylist(items, appConfig, getServerName(exchange), isLocal);
+        String playlist = generatePlaylist(items, appConfig, getServerName(exchange), isLocal, null, null);
         responseWriter.writePlaylist(exchange, HttpURLConnection.HTTP_OK, playlist, group.getTitle());
     }
 
@@ -254,7 +277,7 @@ public class PlaylistHandler implements HttpHandler {
             }
         }
 
-        String playlist = generatePlaylist(items, appConfig, getServerName(exchange), isLocal);
+        String playlist = generatePlaylist(items, appConfig, getServerName(exchange), isLocal, null, null);
         responseWriter.writePlaylist(exchange, HttpURLConnection.HTTP_OK, playlist);
     }
 
@@ -277,13 +300,16 @@ public class PlaylistHandler implements HttpHandler {
      * in the list, in the order they appear in the list. Invalid MediaItems (null, no id, missing media file)
      * will be silently ignored.
      *
-     * @param mediaItems A List of at least one MediaItem to include in the playlist.
-     * @param appConfig  Contains our server port and our data directory.
-     * @param serverName The server name or IP address to use in the streaming URLs in the playlist.
-     * @param isLocal   If true, the playlist will contain direct filesystem paths instead of streaming URLs.
+     * @param mediaItems     A List of at least one MediaItem to include in the playlist.
+     * @param appConfig      Contains our server port and our data directory.
+     * @param serverName     The server name or IP address to use in the streaming URLs in the playlist.
+     * @param isLocal        If true, the playlist will contain direct filesystem paths instead of streaming URLs.
+     * @param audioTrackId   Optional audio track ID. If non-null, adds an #EXTVLCOPT line before each item.
+     * @param subtitleTrackId Optional subtitle track ID. If non-null, adds an #EXTVLCOPT line before each item.
      * @return An m3u playlist as a String. May be empty if mediaItems was empty, or if it contained no valid MediaItems.
      */
-    public static String generatePlaylist(List<MediaItem> mediaItems, AppConfig appConfig, String serverName, boolean isLocal) {
+    public static String generatePlaylist(List<MediaItem> mediaItems, AppConfig appConfig, String serverName,
+            boolean isLocal, Integer audioTrackId, Integer subtitleTrackId) {
         StringBuilder m3u = new StringBuilder();
         m3u.append("#EXTM3U\n");
         for (MediaItem mediaItem : mediaItems) {
@@ -302,6 +328,13 @@ public class PlaylistHandler implements HttpHandler {
                     ? mediaItem.getTitle()
                     : "Untitled Media Item " + mediaItem.getId();
             m3u.append("#EXTINF:-1,").append(itemTitle).append("\n");
+            // Add VLC options for track selection if specified
+            if (audioTrackId != null) {
+                m3u.append("#EXTVLCOPT:audio-track-id=").append(audioTrackId).append("\n");
+            }
+            if (subtitleTrackId != null) {
+                m3u.append("#EXTVLCOPT:sub-track-id=").append(subtitleTrackId).append("\n");
+            }
             if (isLocal) {
                 // Browser is on the same machine or has access to the same shared filesystem:
                 m3u.append(mediaFile.getAbsolutePath());

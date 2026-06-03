@@ -1,0 +1,62 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+# Grabs a single frame at the specified offset from the 
+# given video file using ffmpeg, and saves it as a sidecar
+# file alongside the video. Does nothing if the target
+# thumbnail file already exists.
+#
+# USAGE: grab_thumbnail <video.mkv> <offsetSeconds> <thumbWidth>
+# REQUIREMENTS: ffmpeg
+
+
+# 1. Verify ffmpeg is installed
+if ! command -v ffmpeg &>/dev/null; then
+    echo "Error: ffmpeg is not installed." >&2
+    exit 1
+fi
+
+# 2. Validate arguments
+if [[ $# -lt 3 ]]; then
+    echo "Usage: $0 <video_file> <time_offset_seconds> <thumb_width_pixels>" >&2
+    exit 1
+fi
+
+VIDEO="$1"
+OFFSET="$2"
+WIDTH="$3"
+
+# Validate video file exists
+if [[ ! -f "$VIDEO" ]]; then
+    echo "Error: '$VIDEO' is not a valid file." >&2
+    exit 1
+fi
+
+# Validate offset is a number
+if ! [[ "$OFFSET" =~ ^[0-9]+(\.[0-9]+)?$ ]]; then
+    echo "Error: Time offset must be a valid number (e.g., 1.5)." >&2
+    exit 1
+fi
+
+# Validate thumb width is a whole number
+if ! [[ "$WIDTH" =~ ^[0-9]+$ ]]; then
+    echo "Error: Thumbnail width must be a whole number (e.g. 640)." >&2
+    exit 1
+fi
+
+# 3. Generate sidecar path
+THUMB="${VIDEO%.*}.jpg"
+
+# Skip if thumbnail already exists
+if [[ -f "$THUMB" ]]; then
+    echo "Skipping: $THUMB (already exists)"
+    exit 0
+fi
+
+# 4. Extract frame
+if ffmpeg -nostdin -y -loglevel error -ss "$OFFSET" -i "$VIDEO" -vframes 1 -q:v 2 -vf "scale=${WIDTH}:-1" "$THUMB"; then
+    echo "Created: $THUMB"
+else
+    echo "Failed to extract frame from '$VIDEO'." >&2
+    exit 1
+fi

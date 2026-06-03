@@ -16,3 +16,29 @@ export function addPlaylistLocalQuery(path: string): string {
   return path.includes('?') ? `${path}&local=true` : `${path}?local=true`;
 }
 
+/**
+ * Appends audioTrackId and subtitleTrackId query parameters to a playlist path,
+ * but only when the values are defined (i.e. more than one track is available and the user selected one).
+ */
+export function addPlaylistTrackQuery(
+  path: string,
+  audioTrackId?: number,
+  subtitleTrackId?: number,
+): string {
+  const params = new URLSearchParams();
+
+  if (audioTrackId !== undefined) {
+    params.set('audioTrackId', String(audioTrackId));
+  }
+  if (subtitleTrackId !== undefined) {
+    params.set('subtitleTrackId', String(subtitleTrackId));
+  }
+
+  const queryString = params.toString();
+  if (!queryString) {
+    return path;
+  }
+
+  return path.includes('?') ? `${path}&${queryString}` : `${path}?${queryString}`;
+}
+

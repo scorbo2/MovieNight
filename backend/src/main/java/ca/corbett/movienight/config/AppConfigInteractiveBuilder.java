@@ -48,7 +48,7 @@ public class AppConfigInteractiveBuilder {
         File mediaDir = askExistingDir("Where are our media files?",
                                        AppConfig.DEFAULT_MEDIA_DIR.toAbsolutePath().toString());
         File thumbDir = askExistingDir("Where are our thumbnails?",
-                                       AppConfig.DEFAULT_THUMBNAIL_DIR.toAbsolutePath().toString());
+                                       AppConfig.DEFAULT_THUMBNAIL_DIR.toAbsolutePath().toString(), true);
         File dbFile = askWritableFile("Where is our database file?",
                                       AppConfig.DEFAULT_DB_FILE.toAbsolutePath().toString());
         if (!dbFile.exists()) {
@@ -116,6 +116,10 @@ public class AppConfigInteractiveBuilder {
     }
 
     private static File askExistingDir(String question, String defaultPath) {
+        return askExistingDir(question, defaultPath, false);
+    }
+
+    private static File askExistingDir(String question, String defaultPath, boolean createIfNotExist) {
         while (true) {
             System.out.print(question + " [" + defaultPath + "]: ");
             String input = System.console().readLine().trim();
@@ -123,6 +127,12 @@ public class AppConfigInteractiveBuilder {
                 input = defaultPath;
             }
             File dir = new File(input);
+            if (!dir.exists() && createIfNotExist) {
+                if (!dir.mkdirs()) {
+                    System.out.println("Failed to create directory. Please enter a different path.");
+                    continue;
+                }
+            }
             if (!dir.exists() || !dir.isDirectory() || !dir.canRead()) {
                 System.out.println("Please enter a valid directory path.");
                 continue;

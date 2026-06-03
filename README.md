@@ -149,6 +149,46 @@ Click the "Search" link at the very top to access Search mode. An alphabetized l
 collection is shown in the grid. Above the grid are filter fields that allow you to filter the list
 by title, by description, or by tags. This is a great way to quickly find what you're looking for!
 
+## Playback
+
+There are two main options for media playback:
+
+- directly in the browser (using the HTML5 video player)
+- in VLC (if VLC is installed and your browser is configured to launch VLC for M3U playlists)
+
+### Inline playback
+
+This is the quickest and easiest option, and will work with almost any modern web browser.
+On any media item details page, just click the "Watch now" button to open an inline video player.
+You can hit play to begin playback, and optionally hit the fullscreen button to expand to full screen.
+Hit ESC to exit fullscreen mode and return to the browser tab.
+
+### VLC integration
+
+If your video files have multiple language tracks, or if you just generally prefer VLC's interface for playback,
+then MovieNight has you covered! On any media item details page, click the "Watch in VLC" to generate and download
+an M3U playlist file that will stream that file from the server. Depending on your browser, you may have to do
+some client-side configuration to get the playlist to open automatically. For example, in Firefox, you can
+right-click the item in your Downloads list and select "Always open similar files", as shown here:
+
+![Firefox "Always open similar files" option](screenshots/vlc_firefox_setup.png)
+
+After that point, VLC should launch automatically and begin playing the media item. **This is necessary if you
+want to access additional language tracks and/or subtitle tracks!** Unfortunately, the inline HTML 5 video player
+does not support multiple language tracks, so you will only be able to hear the default language track.
+But VLC supports it! MovieNight can detect if a media file has multiple language and/or subtitle tracks,
+and it will present additional dropdown choosers on the media item details page, like this:
+
+![MovieNight UI - Language and subtitle choosers](screenshots/ui-multi-language.png)
+
+We see that we have selected the German audio track and the French subtitle track, for language learning
+on extra-hard mode. These options only apply to the "Watch in VLC" action! When we launch VLC with these
+options selected, the video will start playing in VLC with the selected audio and subtitle tracks already selected.
+
+Note that when browsing Media Groups, you will notice a "Watch all in VLC" action button at the top of the
+group display page. This does exactly what it sounds like - it will generate and download an M3U playlist
+containing all media items that are direct children of that media group. This is great for binge-watching! :)
+
 ## Configuration
 
 Let's take a closer look at "interactive mode" on a first-time launch. The application will prompt you

@@ -73,8 +73,8 @@ At any point, you can optionally click the "dark mode" toggle in the very top ri
 
 ### Setting up media groups
 
-Click the "New Group" quick action to add your first media group. Media groups are contains that can
-contain media items, or other media groups. This can be a great way to organize your collection,
+Click the "New Group" quick action to add your first media group. Media groups are containers that can
+contain media items or other media groups. This can be a great way to organize your collection,
 especially if you have a large and varied collection of media. Here's one suggested way to get
 started with groups:
 

@@ -166,9 +166,9 @@ Hit ESC to exit fullscreen mode and return to the browser tab.
 ### VLC integration
 
 If your video files have multiple language tracks, or if you just generally prefer VLC's interface for playback,
-then MovieNight has you covered! On any media item details page, click the "Watch in VLC" to generate and download
+If your video files have multiple language tracks, or if you just generally prefer VLC's interface for playback,
+then MovieNight has you covered! On any media item details page, click the "Watch in VLC" button to generate and download
 an M3U playlist file that will stream that file from the server. Depending on your browser, you may have to do
-some client-side configuration to get the playlist to open automatically. For example, in Firefox, you can
 right-click the item in your Downloads list and select "Always open similar files", as shown here:
 
 ![Firefox "Always open similar files" option](screenshots/vlc_firefox_setup.png)

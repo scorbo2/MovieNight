@@ -104,7 +104,7 @@ Let's add a new item to the "Music Videos" group:
 ![MovieNight Admin UI - New Item Form](screenshots/ui-admin-mode-new-item.png)
 
 The only mandatory fields are Group, Title, and Media file path. There's an optional Description field,
-and also an optional "Tags" fields. Tags are keywords that you can associate with media items, and are useful
+and also an optional "Tags" field. Tags are keywords that you can associate with media items, and are useful
 for searching across media groups. For example, you could add tags for your favorite actors or directors, and
 easily find all media items that match those tags, regardless of which group(s) they are in. See the section
 on Search Mode later on.

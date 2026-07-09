@@ -1,0 +1,109 @@
+# MovieNight — Agent Instructions
+
+## Architecture
+
+Self-hosted media library browser. Two halves, one build:
+
+- **Backend** — `backend/`: Java 25, no framework (raw `com.sun.net.httpserver`), SQLite, Maven. Main class: `ca.corbett.movienight.Main`.
+- **Frontend** — `frontend/`: React 18 + TypeScript + Tailwind + Vite.
+- The Maven build compiles the frontend *into* the backend JAR as static resources. The final artifact is a single executable JAR.
+
+```
+backend/
+  └─ src/main/java/ca/corbett/movienight/
+       Main.java              # entrypoint
+       api/                   # ApiServer, handlers, DTOs, routing, utilities
+       config/                # AppConfig + interactive config builder
+       db/                    # Database.java (ALL SQL lives here)
+       model/                 # MediaGroup, MediaItem, TrackMetadata
+       service/               # MediaGroupService, MediaItemService
+  └─ src/main/resources/
+       application.properties # config defaults
+       static/frontend/       # frontend build output (gitignored)
+frontend/
+  └─ src/
+       App.tsx                # top-level route tree
+       admin/                 # /admin routes (shell, pages, features)
+       browse/                # /browse routes (shell, pages)
+       api/                   # apiFetch, types, typed API functions
+       components/ui/         # generic UI primitives
+       components/shared/     # app-specific shared components
+       theme/                 # ThemeProvider, tokens.css
+```
+
+## Build & Run
+
+### Full build (the one command that matters)
+```bash
+cd backend && mvn clean package
+```
+This installs Node locally, runs `npm ci`, builds the frontend via Vite, then assembles a fat JAR. Output: `backend/target/MovieNight-2.0.jar`.
+
+### Frontend dev server
+```bash
+cd frontend && npm run dev
+```
+Vite dev server proxies `/MovieNight/` to `http://localhost:8181`. The backend must be running separately for this to work.
+
+### Running the app
+```bash
+java -jar backend/target/MovieNight-2.0.jar
+```
+First run enters interactive config mode. Subsequent runs pick up the saved config file. Override with `MOVIENIGHT_CONFIG_FILE=/path/to/config.properties`.
+
+### Running tests
+```bash
+cd backend && mvn test                    # all tests
+cd backend && mvn test -Dtest=DatabaseTest        # single test class
+cd backend && mvn test -Dtest=ApiIntegrationTest#testCreateGroup  # single test method
+```
+Tests use JUnit 5 + Mockito. Each test class creates a temp dir and fresh SQLite DB via `@BeforeAll`.
+
+## Config Keys
+
+Config is a Java `.properties` file. All recognized keys (from `application.properties`):
+
+| Key | Default | Description |
+|---|---|---|
+| `port` | `8181` | HTTP listen port |
+| `mediaDir` | current dir | parent directory for media files |
+| `thumbnailDir` | `{cwd}/thumbnails` | media group thumbnails |
+| `dbFile` | `{cwd}/MovieNight.db` | SQLite database path |
+| `pageSize` | `8` | API pagination size |
+| `apiBasePath` | `/MovieNight/` | API URL prefix |
+| `rangeLimitMB` | `32` | max HTTP range request size |
+| `recentlyWatchedDays` | `3` | days threshold for "recently watched" badge (0 = disable) |
+| `threadCount` | `5` | HTTP server thread pool size |
+
+## Backend Conventions
+
+- **No framework.** The backend uses a hand-rolled `Router`. Routes are registered in `ApiServer` in deliberate order — **specific routes before general ones**. Unmatched routes throw `RuntimeException("ROUTE_NOT_MATCHED")` wrapped in `IOException` to fall through to the next handler.
+- **All SQL in `Database.java`.** All writes are `synchronized` on `lockObject`. Use the existing `open()`/`dispose()` lifecycle.
+- **`mediaFilePath` is relative** to `mediaDir`, not absolute.
+- **`hasThumbnail`** is computed at runtime from the filesystem; **not stored in DB**.
+- **Tags** are normalized on save: trimmed, lowercased, deduplicated.
+- **Error handling** via `ExceptionMapper`. `Database.NotFoundException` → 404. Unhandled → 500.
+
+### Adding a new endpoint
+1. Create/extend a `Handler` in `api/handler/` implementing `HttpHandler`.
+2. Add DTOs in `api/dto/` if needed.
+3. Register the route in `ApiServer` (mind the order).
+4. Add CRUD methods to `Database.java` if DB access is needed.
+5. Optionally wrap business logic in a `Service` in `service/`.
+
+## Frontend Conventions
+
+- **All API calls** go through `apiFetch()` in `src/api/client.ts`. Never call `fetch()` directly.
+- **API base path** from `VITE_API_BASE_PATH` env var (default: `/MovieNight/`).
+- **Data fetching** via TanStack Query (`@tanstack/react-query`). Call typed API functions from `src/api/` inside `useQuery`/`useMutation`.
+- **Forms** use `react-hook-form` + `zod` (via `@hookform/resolvers/zod`).
+- **Theming** via `ThemeProvider` in `src/theme/`. CSS custom properties in `tokens.css`. Tailwind uses `dark:` variant.
+- **Build output** goes to `../backend/src/main/resources/static/frontend/` (gitignored).
+
+## What NOT to touch
+
+- `backend/src/main/resources/static/frontend/` — generated by Vite build, gitignored
+- `backend/target/` — Maven build output, gitignored
+- `frontend/node/` — Maven frontend-maven-plugin's local Node, gitignored
+- `MovieNight.db` — runtime database, gitignored
+- `thumbnails/` — runtime thumbnails, gitignored
